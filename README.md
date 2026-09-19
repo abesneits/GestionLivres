@@ -14,6 +14,30 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 - **Export** de toute la collection ou d'une liste : CSV, Excel, JSON, TXT, HTML
 - **Outils** : édition en masse, gestion des types de supports et du catalogue de tags
 
+## Aperçu
+
+Les livres affichés ci-dessous sont des exemples.
+
+**Ma collection** : recherche, filtres par support, statut et tag, affichage en grille ou en tableau.
+
+![Ma collection](docs/02-collection.png)
+
+**Listes de lecture** et **statistiques** :
+
+![Listes de lecture](docs/03-listes.png)
+
+![Statistiques](docs/04-statistiques.png)
+
+**Ajout par ISBN** et **export avec recherche avancée** :
+
+![Ajout par ISBN](docs/05-ajouter.png)
+
+![Export](docs/06-export.png)
+
+**Assistant d'installation** :
+
+![Assistant d'installation](docs/01-installation.png)
+
 ## Prérequis
 
 - PHP **8.0 ou supérieur** avec les extensions `pdo_mysql`, `fileinfo`, `mbstring`, `json` (et de préférence `curl` et `simplexml`)
