@@ -1,0 +1,48 @@
+
+# Sécurité pour le dossier uploads
+# Empêcher l'exécution de scripts dans ce dossier
+
+# Interdire l'exécution de PHP et autres scripts (Apache 2.2 et 2.4)
+<Files "*.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</Files>
+
+<Files "*.php*">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</Files>
+<FilesMatch "\.(phtml|pl|py|jsp|asp|sh)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Autoriser seulement les images (Apache 2.2 et 2.4)
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# Types MIME pour les images
+<IfModule mod_mime.c>
+    AddType image/jpeg .jpg .jpeg
+    AddType image/png .png
+    AddType image/gif .gif
+    AddType image/webp .webp
+</IfModule>

@@ -1,0 +1,12 @@
+# Pas de listing des dossiers
+Options -Indexes
+
+# Fichiers sensibles : jamais accessibles depuis le web
+<FilesMatch "^(config\.php|config\.example\.php|.*\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>

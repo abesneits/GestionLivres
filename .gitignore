@@ -1,0 +1,13 @@
+# Configuration locale contenant des identifiants sensibles
+config.php
+
+# Journaux applicatifs
+logs/*.log
+
+# Fichiers uploadés par les utilisateurs (contenu dynamique, pas du code)
+uploads/*
+!uploads/.htaccess
+
+# Divers
+.DS_Store
+Thumbs.db
