@@ -944,6 +944,22 @@ textarea.error {
     -webkit-box-orient: vertical;
 }
 
+.book-card-serie {
+    font-size: 0.85em;
+    color: #667eea;
+    margin: 2px 0 4px;
+}
+
+.book-card-serie a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.book-card-serie a:hover {
+    text-decoration: underline;
+}
+
 .book-card-author {
     color: #666;
     font-size: 0.9em;

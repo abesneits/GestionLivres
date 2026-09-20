@@ -19,6 +19,7 @@ $perPage = in_array($perPageRequested, $perPageOptions, true) ? $perPageRequeste
 $filtreActif = $criteres['search'] !== ''
     || $criteres['support'] !== ''
     || $criteres['statut'] !== ''
+    || $criteres['serie'] !== ''
     || !empty($criteres['tags'])
     || $criteres['date_from'] !== ''
     || $criteres['date_to'] !== ''
@@ -51,6 +52,9 @@ function buildFilterSummary($criteres, $filtreActif) {
     }
     if ($criteres['statut'] !== '') {
         $parts[] = 'Statut : ' . $criteres['statut'];
+    }
+    if ($criteres['serie'] !== '') {
+        $parts[] = 'Série : ' . $criteres['serie'];
     }
     if (!empty($criteres['tags'])) {
         $glue = $criteres['tags_mode'] === 'or' ? ' ou ' : ' et ';
@@ -147,6 +151,7 @@ if (in_array($format, $formatsValides, true)) {
         'titre_desc' => 'Titre Z-A',
         'date_desc' => 'Plus récents',
         'date_asc' => 'Plus anciens',
+        'serie_asc' => 'Série puis tome',
     ];
 
     $descriptionParts = buildFilterSummary($criteres, $filtreActif);
@@ -248,12 +253,22 @@ renderHead('Export - Ma Collection');
                         </select>
                     </div>
                     <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>Série</label>
+                        <select name="serie">
+                            <option value="">Toutes</option>
+                            <?php foreach ($bookManager->getAllSeries() as $nomSerie => $nbSerie): ?>
+                                <option value="<?= h($nomSerie) ?>" <?= $criteres['serie'] === $nomSerie ? 'selected' : '' ?>><?= h($nomSerie) ?> (<?= (int)$nbSerie ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:150px;">
                         <label>Trier par</label>
                         <select name="sort">
                             <option value="titre_asc" <?= $criteres['sort'] === 'titre_asc' ? 'selected' : '' ?>>Titre A-Z</option>
                             <option value="titre_desc" <?= $criteres['sort'] === 'titre_desc' ? 'selected' : '' ?>>Titre Z-A</option>
                             <option value="date_desc" <?= $criteres['sort'] === 'date_desc' ? 'selected' : '' ?>>Plus récents</option>
                             <option value="date_asc" <?= $criteres['sort'] === 'date_asc' ? 'selected' : '' ?>>Plus anciens</option>
+                            <option value="serie_asc" <?= $criteres['sort'] === 'serie_asc' ? 'selected' : '' ?>>Série puis tome</option>
                         </select>
                     </div>
                     <div class="form-group" style="flex:1; min-width:150px;">

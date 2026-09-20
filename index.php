@@ -36,7 +36,9 @@ if ($_POST) {
     $couverture_perso,
     $supprimer_couverture,
     $_POST['titre'] ?? null,
-    $_POST['auteur'] ?? null
+    $_POST['auteur'] ?? null,
+    $_POST['serie'] ?? null,
+    $_POST['tome'] ?? null
 );
             
             redirectWithMessage(
@@ -79,6 +81,7 @@ $search = $params['search'] ?? '';
 $filter = $params['filter'] ?? '';
 $tag = $params['tag'] ?? '';
 $statut = $params['statut'] ?? '';
+$serie = $params['serie'] ?? '';
 $view = $params['view'] ?? 'grid';
 $page = $params['page'] ?? 1;
 
@@ -86,8 +89,9 @@ $page = $params['page'] ?? 1;
 $totalBooks = $bookManager->countBooks(
     $filter ?: null, 
     $search ?: null, 
-    $tag ?: null, 
-    $statut ?: null
+    $tag ?: null,
+    $statut ?: null,
+    $serie ?: null
 );
 
 // Calculer les informations de pagination
@@ -98,12 +102,15 @@ $books = $bookManager->getAllBooks(
     $filter ?: null, 
     $search ?: null, 
     $tag ?: null, 
-    $statut ?: null, 
-    $page
+    $statut ?: null,
+    $page,
+    null,
+    $serie ?: null
 );
 
 $stats = $bookManager->getStats();
 $allTags = $bookManager->getAllTags();
+$allSeries = $bookManager->getAllSeries();
 
 // Livre à éditer (modal)
 $editBook = null;
@@ -174,11 +181,24 @@ renderHead('Ajouter un livre - Ma Collection');
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if (!empty($allSeries)): ?>
+                <div class="search-group">
+                    <label>Série</label>
+                    <select name="serie">
+                        <option value="">Toutes les séries</option>
+                        <?php foreach ($allSeries as $nomSerie => $nbSerie): ?>
+                            <option value="<?= h($nomSerie) ?>" <?= $serie === $nomSerie ? 'selected' : '' ?>>
+                                <?= h($nomSerie) ?> (<?= (int)$nbSerie ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
                 <input type="hidden" name="view" value="<?= h($view) ?>">
                 <button type="submit" class="btn-search">Filtrer</button>
             </form>
             
-            <?php if ($search || $filter || $tag || $statut): ?>
+            <?php if ($search || $filter || $tag || $statut || $serie): ?>
                 <div style="margin-top: 10px;">
                     <a href="?" class="btn-secondary" style="font-size: 0.9em;">Réinitialiser les filtres</a>
                 </div>
@@ -198,6 +218,7 @@ renderHead('Ajouter un livre - Ma Collection');
                     'search' => $search,
                     'support' => $filter,
                     'statut' => $statut,
+                    'serie' => $serie,
                     'tags' => $tag ? [$tag] : [],
                 ]))) ?>" class="btn-export">📤 Exporter</a>
             </div>
@@ -207,7 +228,7 @@ renderHead('Ajouter un livre - Ma Collection');
         <div class="results-header">
             <h2>
                 Résultats 
-                <?php if ($search || $filter || $tag || $statut): ?>
+                <?php if ($search || $filter || $tag || $statut || $serie): ?>
                     filtrés 
                 <?php endif; ?>
                 (<?= number_format($totalBooks) ?> livre<?= $totalBooks > 1 ? 's' : '' ?>)
@@ -224,7 +245,7 @@ renderHead('Ajouter un livre - Ma Collection');
         <?php if (empty($books)): ?>
             <div class="empty-message">
                 <p>Aucun livre trouvé avec ces critères.</p>
-                <?php if ($search || $filter || $tag || $statut): ?>
+                <?php if ($search || $filter || $tag || $statut || $serie): ?>
                     <p><a href="?" style="color: #007bff;">Réinitialiser les filtres</a></p>
                 <?php else: ?>
                     <p><a href="ajouter.php" style="color: #007bff;">Ajouter votre premier livre</a></p>
@@ -247,6 +268,11 @@ renderHead('Ajouter un livre - Ma Collection');
                             <div class="book-card-info">
                                 <h3 class="book-card-title"><?= h($book['titre']) ?></h3>
                                 <div class="book-card-author">par <?= h($book['auteur']) ?></div>
+                                <?php if (!empty($book['serie'])): ?>
+                                    <div class="book-card-serie">
+                                        📖 <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="book-card-meta">
                                     <span class="book-card-support <?= getSupportClass($book['support']) ?>">
                                         <?= h($book['support']) ?>
@@ -308,7 +334,12 @@ renderHead('Ajouter un livre - Ma Collection');
                                          class="cover-image"
                                          onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;>📚</div>';">
                                 </td>
-                                <td><strong><?= h($book['titre']) ?></strong></td>
+                                <td>
+                                    <strong><?= h($book['titre']) ?></strong>
+                                    <?php if (!empty($book['serie'])): ?>
+                                        <br><small class="book-card-serie">📖 <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= h($book['auteur']) ?></td>
                                 <td>
                                     <span class="<?= getSupportClass($book['support']) ?>">
@@ -372,9 +403,37 @@ renderHead('Ajouter un livre - Ma Collection');
     <input type="text" 
            id="auteur" 
            name="auteur" 
-           value="<?= h($editBook['auteur']) ?>" 
+           value="<?= h($editBook['auteur']) ?>"
            required
            maxlength="255">
+</div>
+
+<div class="form-group">
+    <label for="serie">Série :</label>
+    <input type="text"
+           id="serie"
+           name="serie"
+           value="<?= h($editBook['serie'] ?? '') ?>"
+           maxlength="255"
+           list="liste-series"
+           placeholder="Ex : Cycle de Fondation, One Piece...">
+    <datalist id="liste-series">
+        <?php foreach (array_keys($allSeries) as $nomSerie): ?>
+            <option value="<?= h($nomSerie) ?>">
+        <?php endforeach; ?>
+    </datalist>
+</div>
+
+<div class="form-group">
+    <label for="tome">Numéro de tome :</label>
+    <input type="number"
+           id="tome"
+           name="tome"
+           value="<?= h($editBook['tome'] ?? '') ?>"
+           min="0"
+           max="999999"
+           step="1"
+           placeholder="Laisser vide si hors série">
 </div>
 
                     <div class="form-group">

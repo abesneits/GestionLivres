@@ -324,12 +324,22 @@ renderHead('Outils - Ma Collection');
                             </select>
                         </div>
                         <div class="form-group" style="flex:1; min-width:150px;">
+                            <label>Série</label>
+                            <select name="serie">
+                                <option value="">Toutes</option>
+                                <?php foreach ($bookManager->getAllSeries() as $nomSerie => $nbSerie): ?>
+                                    <option value="<?= h($nomSerie) ?>" <?= $criteres['serie'] === $nomSerie ? 'selected' : '' ?>><?= h($nomSerie) ?> (<?= (int)$nbSerie ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:150px;">
                             <label>Trier par</label>
                             <select name="sort">
                                 <option value="titre_asc" <?= $criteres['sort'] === 'titre_asc' ? 'selected' : '' ?>>Titre A-Z</option>
                                 <option value="titre_desc" <?= $criteres['sort'] === 'titre_desc' ? 'selected' : '' ?>>Titre Z-A</option>
                                 <option value="date_desc" <?= $criteres['sort'] === 'date_desc' ? 'selected' : '' ?>>Plus récents</option>
                                 <option value="date_asc" <?= $criteres['sort'] === 'date_asc' ? 'selected' : '' ?>>Plus anciens</option>
+                                <option value="serie_asc" <?= $criteres['sort'] === 'serie_asc' ? 'selected' : '' ?>>Série puis tome</option>
                             </select>
                         </div>
                     </div>

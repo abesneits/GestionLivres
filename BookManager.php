@@ -49,7 +49,9 @@ class BookManager {
             'description' => "ALTER TABLE livres ADD COLUMN description TEXT AFTER couverture",
             'note_personnelle' => "ALTER TABLE livres ADD COLUMN note_personnelle TEXT AFTER description",
             'tags' => "ALTER TABLE livres ADD COLUMN tags VARCHAR(500) AFTER note_personnelle",
-            'statut' => "ALTER TABLE livres ADD COLUMN statut ENUM('À lire', 'En cours', 'Lu', 'Abandonné') DEFAULT 'À lire' AFTER tags"
+            'statut' => "ALTER TABLE livres ADD COLUMN statut ENUM('À lire', 'En cours', 'Lu', 'Abandonné') DEFAULT 'À lire' AFTER tags",
+            'serie' => "ALTER TABLE livres ADD COLUMN serie VARCHAR(255) NULL AFTER auteur",
+            'tome' => "ALTER TABLE livres ADD COLUMN tome INT NULL AFTER serie"
         ];
         
         foreach ($newColumns as $columnName => $alterSql) {
@@ -972,8 +974,8 @@ public function updateBookOrder($listeId, $orderedBookIds) {
      */
     public function addBook($bookInfo) {
         try {
-            $sql = "INSERT INTO livres (isbn, titre, support, auteur, couverture, description, date_publication, statut, tags)
-                    VALUES (:isbn, :titre, :support, :auteur, :couverture, :description, :date_publication, :statut, :tags)";
+            $sql = "INSERT INTO livres (isbn, titre, support, auteur, serie, tome, couverture, description, date_publication, statut, tags)
+                    VALUES (:isbn, :titre, :support, :auteur, :serie, :tome, :couverture, :description, :date_publication, :statut, :tags)";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
@@ -981,6 +983,8 @@ public function updateBookOrder($listeId, $orderedBookIds) {
                 ':titre' => $bookInfo['titre'],
                 ':support' => $bookInfo['support'],
                 ':auteur' => $bookInfo['auteur'],
+                ':serie' => $this->normalizeSerie($bookInfo['serie'] ?? null),
+                ':tome' => $this->normalizeTome($bookInfo['tome'] ?? null),
                 ':couverture' => $bookInfo['couverture'],
                 ':description' => $bookInfo['description'],
                 ':date_publication' => $bookInfo['date_publication'],
@@ -1000,12 +1004,17 @@ public function updateBookOrder($listeId, $orderedBookIds) {
     /**
      * Récupérer tous les livres avec pagination
      */
-    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null) {
+    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null) {
         $limit = $limit ?? $this->itemsPerPage;
         $offset = ($page - 1) * $limit;
         
         $sql = "SELECT * FROM livres WHERE 1=1";
         $params = [];
+
+        if ($serie) {
+            $sql .= " AND serie = :serie";
+            $params[':serie'] = $serie;
+        }
         
         if ($support) {
             $sql .= " AND support = :support";
@@ -1013,7 +1022,7 @@ public function updateBookOrder($listeId, $orderedBookIds) {
         }
         
         if ($search) {
-            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search)";
+            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
         }
         
@@ -1027,7 +1036,10 @@ public function updateBookOrder($listeId, $orderedBookIds) {
             $params[':statut'] = $statut;
         }
         
-        $sql .= " ORDER BY titre ASC LIMIT :limit OFFSET :offset";
+        // Dans une série filtrée, on lit les tomes dans l'ordre
+        $sql .= $serie
+            ? " ORDER BY tome IS NULL, tome ASC, titre ASC LIMIT :limit OFFSET :offset"
+            : " ORDER BY titre ASC LIMIT :limit OFFSET :offset";
         
         $stmt = $this->pdo->prepare($sql);
         
@@ -1046,9 +1058,14 @@ public function updateBookOrder($listeId, $orderedBookIds) {
     /**
      * Compter le nombre total de livres (pour pagination)
      */
-    public function countBooks($support = null, $search = null, $tag = null, $statut = null) {
+    public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null) {
         $sql = "SELECT COUNT(*) FROM livres WHERE 1=1";
         $params = [];
+
+        if ($serie) {
+            $sql .= " AND serie = :serie";
+            $params[':serie'] = $serie;
+        }
         
         if ($support) {
             $sql .= " AND support = :support";
@@ -1056,7 +1073,7 @@ public function updateBookOrder($listeId, $orderedBookIds) {
         }
         
         if ($search) {
-            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search)";
+            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
         }
         
@@ -1100,7 +1117,7 @@ public function updateBookOrder($listeId, $orderedBookIds) {
     /**
      * Mettre à jour les notes, tags et support d'un livre
      */
-    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null) {
+    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null, $serie = null, $tome = null) {
         $book = $this->getBookById($id);
         if (!$book) {
             throw new Exception("Livre non trouvé");
@@ -1175,6 +1192,16 @@ public function updateBookOrder($listeId, $orderedBookIds) {
         if ($auteur !== null) {
             $sql .= ", auteur = :auteur";
             $params[':auteur'] = $auteur;
+        }
+
+        // Série et tome : null = ne pas toucher, chaîne vide = effacer
+        if ($serie !== null) {
+            $sql .= ", serie = :serie";
+            $params[':serie'] = $this->normalizeSerie($serie);
+        }
+        if ($tome !== null) {
+            $sql .= ", tome = :tome";
+            $params[':tome'] = $this->normalizeTome($tome);
         }
         
         $sql .= " WHERE id = :id";
@@ -2044,6 +2071,39 @@ public function updateBookOrder($listeId, $orderedBookIds) {
     }
 
     /**
+     * Nettoie un nom de série : vide => NULL, sinon tronqué à 255 caractères.
+     */
+    private function normalizeSerie($serie) {
+        $serie = trim((string)$serie);
+        return $serie === '' ? null : mb_substr($serie, 0, 255);
+    }
+
+    /**
+     * Nettoie un numéro de tome : vide => NULL, sinon entier positif (jusqu'à 6 chiffres).
+     */
+    private function normalizeTome($tome) {
+        $tome = trim((string)$tome);
+        if ($tome === '') {
+            return null;
+        }
+        if (!ctype_digit($tome) || strlen($tome) > 6) {
+            throw new Exception("Le numéro de tome doit être un entier positif (6 chiffres maximum).");
+        }
+        return (int)$tome;
+    }
+
+    /**
+     * Liste des séries de la collection avec leur nombre de livres,
+     * triée par nom : ['Fondation' => 3, 'One Piece' => 12, ...].
+     */
+    public function getAllSeries() {
+        $stmt = $this->pdo->query("SELECT serie, COUNT(*) AS nb FROM livres
+                                   WHERE serie IS NOT NULL AND serie <> ''
+                                   GROUP BY serie ORDER BY serie ASC");
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    /**
      * Crée les index recommandés sur les colonnes fréquemment filtrées, de façon idempotente.
      */
     public function createIndexes() {
@@ -2052,6 +2112,8 @@ public function updateBookOrder($listeId, $orderedBookIds) {
                 'idx_support' => "CREATE INDEX idx_support ON livres(support)",
                 'idx_statut' => "CREATE INDEX idx_statut ON livres(statut)",
                 'idx_date_ajout' => "CREATE INDEX idx_date_ajout ON livres(date_ajout)",
+                // Index sur un préfixe : évite la limite de longueur de clé des anciens MySQL en utf8mb4
+                'idx_serie' => "CREATE INDEX idx_serie ON livres(serie(100))",
             ],
             'listes_lecture' => [
                 'idx_date_creation' => "CREATE INDEX idx_date_creation ON listes_lecture(date_creation)",
@@ -2318,7 +2380,7 @@ public function updateBookOrder($listeId, $orderedBookIds) {
         $params = [];
 
         if (!empty($criteres['search'])) {
-            $conditions[] = "(titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search)";
+            $conditions[] = "(titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $criteres['search'] . '%';
         }
 
@@ -2330,6 +2392,11 @@ public function updateBookOrder($listeId, $orderedBookIds) {
         if (!empty($criteres['statut'])) {
             $conditions[] = "statut = :statut";
             $params[':statut'] = $criteres['statut'];
+        }
+
+        if (!empty($criteres['serie'])) {
+            $conditions[] = "serie = :serie";
+            $params[':serie'] = $criteres['serie'];
         }
 
         if (!empty($criteres['date_from'])) {
@@ -2381,6 +2448,7 @@ public function updateBookOrder($listeId, $orderedBookIds) {
             'titre_desc' => 'titre DESC',
             'date_desc' => 'date_ajout DESC',
             'date_asc' => 'date_ajout ASC',
+            'serie_asc' => 'serie IS NULL, serie ASC, tome IS NULL, tome ASC, titre ASC',
         ];
         return $map[$sort] ?? 'titre ASC';
     }

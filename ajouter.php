@@ -19,6 +19,8 @@ if (isset($_POST['step']) && $_POST['step'] == '2') {
         'isbn' => $_POST['isbn'] ?? '',
         'titre' => $_POST['titre'] ?? '',
         'auteur' => $_POST['auteur'] ?? '',
+        'serie' => $_POST['serie'] ?? '',
+        'tome' => $_POST['tome'] ?? '',
         'support' => $_POST['support'] ?? 'Livre',
         'description' => $_POST['description'] ?? '',
         'date_publication' => $_POST['date_publication'] ?? '',
@@ -158,6 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'isbn' => $_POST['isbn'],
                     'titre' => $_POST['titre'],
                     'auteur' => $_POST['auteur'],
+                    'serie' => $_POST['serie'] ?? '',
+                    'tome' => $_POST['tome'] ?? '',
                     'support' => $_POST['support'],
                     'description' => $_POST['description'],
                     'date_publication' => $_POST['date_publication'],
@@ -199,6 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'isbn' => str_starts_with($_POST['isbn'], 'MANUAL_') ? '' : $_POST['isbn'],
                         'titre' => $_POST['titre'],
                         'auteur' => $_POST['auteur'],
+                        'serie' => $_POST['serie'] ?? '',
+                        'tome' => $_POST['tome'] ?? '',
                         'support' => $_POST['support'],
                         'description' => $_POST['description'],
                         'date_publication' => $_POST['date_publication'],
@@ -239,6 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'isbn' => $_POST['isbn'],
                         'titre' => $_POST['titre'],
                         'auteur' => $_POST['auteur'],
+                        'serie' => $_POST['serie'] ?? '',
+                        'tome' => $_POST['tome'] ?? '',
                         'support' => $_POST['support'],
                         'description' => $_POST['description'],
                         'date_publication' => $_POST['date_publication'],
@@ -400,6 +408,34 @@ renderHead('Ajouter un livre - Ma Collection');
                                            required
                                            maxlength="255"
                                            placeholder="Nom de l'auteur">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="serie">Série :</label>
+                                    <input type="text"
+                                           id="serie"
+                                           name="serie"
+                                           value="<?= h($bookData['serie'] ?? '') ?>"
+                                           maxlength="255"
+                                           list="liste-series"
+                                           placeholder="Ex : Cycle de Fondation, One Piece... (facultatif)">
+                                    <datalist id="liste-series">
+                                        <?php foreach (array_keys($bookManager->getAllSeries()) as $nomSerie): ?>
+                                            <option value="<?= h($nomSerie) ?>">
+                                        <?php endforeach; ?>
+                                    </datalist>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tome">Numéro de tome :</label>
+                                    <input type="number"
+                                           id="tome"
+                                           name="tome"
+                                           value="<?= h($bookData['tome'] ?? '') ?>"
+                                           min="0"
+                                           max="999999"
+                                           step="1"
+                                           placeholder="Laisser vide si hors série">
                                 </div>
                                 
                                 <div class="form-group">

@@ -294,6 +294,7 @@ function sanitizeSearchParams($params, $validSupports = ['Livre', 'Bande dessin�
                 $clean[$key] = max(1, intval($value));
                 break;
             case 'tag':
+            case 'serie':
                 $clean[$key] = trim(strip_tags($value));
                 break;
             default:
@@ -321,6 +322,8 @@ function sanitizeAdvancedSearchParams($params, $validSupports = ['Livre', 'Bande
     $clean['statut'] = in_array($params['statut'] ?? '', ['À lire', 'En cours', 'Lu', 'Abandonné'])
         ? $params['statut'] : '';
 
+    $clean['serie'] = trim(strip_tags($params['serie'] ?? ''));
+
     $clean['tags'] = [];
     if (!empty($params['tags']) && is_array($params['tags'])) {
         foreach ($params['tags'] as $tag) {
@@ -342,7 +345,7 @@ function sanitizeAdvancedSearchParams($params, $validSupports = ['Livre', 'Bande
     $clean['sans_couverture'] = !empty($params['sans_couverture']);
     $clean['sans_note'] = !empty($params['sans_note']);
 
-    $clean['sort'] = in_array($params['sort'] ?? '', ['titre_asc', 'titre_desc', 'date_desc', 'date_asc'])
+    $clean['sort'] = in_array($params['sort'] ?? '', ['titre_asc', 'titre_desc', 'date_desc', 'date_asc', 'serie_asc'])
         ? $params['sort'] : 'titre_asc';
 
     $clean['page'] = max(1, intval($params['page'] ?? 1));

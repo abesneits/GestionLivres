@@ -33,6 +33,8 @@ function exportCSV($meta, $books, $filename) {
     fputcsv($output, [
         'Titre',
         'Auteur',
+        'Série',
+        'Tome',
         'ISBN',
         'Éditeur',
         'Date de publication',
@@ -49,6 +51,8 @@ function exportCSV($meta, $books, $filename) {
         fputcsv($output, [
             $book['titre'],
             $book['auteur'],
+            $book['serie'] ?? '',
+            $book['tome'] ?? '',
             $book['isbn'] ?? '',
             $book['editeur'] ?? '',
             $book['date_publication'] ?? '',
@@ -103,6 +107,8 @@ function exportExcel($meta, $books, $filename) {
     echo '<tr>';
     echo '<th>Titre</th>';
     echo '<th>Auteur</th>';
+    echo '<th>Série</th>';
+    echo '<th>Tome</th>';
     echo '<th>ISBN</th>';
     echo '<th>Éditeur</th>';
     echo '<th>Date publication</th>';
@@ -119,6 +125,8 @@ function exportExcel($meta, $books, $filename) {
         echo '<tr>';
         echo '<td>' . htmlspecialchars($book['titre']) . '</td>';
         echo '<td>' . htmlspecialchars($book['auteur']) . '</td>';
+        echo '<td>' . htmlspecialchars($book['serie'] ?? '') . '</td>';
+        echo '<td>' . htmlspecialchars((string)($book['tome'] ?? '')) . '</td>';
         echo '<td>' . htmlspecialchars($book['isbn'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['editeur'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['date_publication'] ?? '') . '</td>';
@@ -155,6 +163,8 @@ function exportJSON($meta, $books, $filename) {
             return [
                 'titre' => $book['titre'],
                 'auteur' => $book['auteur'],
+                'serie' => $book['serie'] ?? null,
+                'tome' => isset($book['tome']) ? (int)$book['tome'] : null,
                 'isbn' => $book['isbn'] ?? null,
                 'editeur' => $book['editeur'] ?? null,
                 'date_publication' => $book['date_publication'] ?? null,
@@ -196,6 +206,9 @@ function exportTXT($meta, $books, $filename) {
         echo "📚 Livre #" . $counter . "\n";
         echo "   Titre    : " . $book['titre'] . "\n";
         echo "   Auteur   : " . $book['auteur'] . "\n";
+        if (!empty($book['serie'])) {
+            echo "   Série    : " . $book['serie'] . (isset($book['tome']) ? ' (tome ' . $book['tome'] . ')' : '') . "\n";
+        }
 
         if (!empty($book['isbn'])) {
             echo "   ISBN     : " . $book['isbn'] . "\n";
@@ -320,6 +333,9 @@ function exportHTML($meta, $books, $filename) {
         echo '<div class="book">';
         echo '<div class="book-title">' . $counter . '. ' . htmlspecialchars($book['titre']) . '</div>';
         echo '<div class="book-author">par ' . htmlspecialchars($book['auteur']) . '</div>';
+        if (!empty($book['serie'])) {
+            echo '<div class="book-author">Série : ' . htmlspecialchars($book['serie']) . (isset($book['tome']) ? ' (tome ' . (int)$book['tome'] . ')' : '') . '</div>';
+        }
 
         echo '<div class="book-info">';
         echo '<span class="badge badge-support">' . htmlspecialchars($book['support']) . '</span>';

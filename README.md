@@ -8,6 +8,7 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 - **Ajout manuel** et envoi de couvertures personnalisées
 - **Listes de lecture** réordonnables par glisser-déposer
 - **Fiches auteurs** avec biographie issue de Wikipédia, détection et fusion des doublons
+- **Séries et tomes** : rattachez un livre à une série (« Cycle de Fondation », « One Piece »…) avec son numéro de tome, puis filtrez et triez par série
 - **Tags**, **statuts de lecture** (À lire, En cours, Lu, Abandonné), notes personnelles
 - **Statistiques** détaillées de la collection
 - **Recherche avancée** (texte, support, statut, tags ET/OU, dates, sans couverture…)
@@ -18,9 +19,13 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 
 Les livres affichés ci-dessous sont des exemples.
 
-**Ma collection** : recherche, filtres par support, statut et tag, affichage en grille ou en tableau.
+**Ma collection** : recherche, filtres par support, statut, tag et série, affichage en grille ou en tableau.
 
 ![Ma collection](docs/02-collection.png)
+
+**Édition d'un livre**, avec sa série et son numéro de tome :
+
+![Édition d'un livre](docs/07-edition-serie.png)
 
 **Listes de lecture** et **statistiques** :
 
@@ -67,7 +72,16 @@ php -r "echo password_hash('VotreMotDePasse', PASSWORD_BCRYPT, ['cost' => 12]);"
 php -r "echo bin2hex(random_bytes(32));"
 ```
 
-Les tables sont créées automatiquement au premier chargement d'une page.
+Pour la base de données, deux possibilités :
+
+- **Laisser l'application créer les tables** : elles sont créées (et mises à jour lors des évolutions) au premier chargement d'une page.
+- **Les créer vous-même** avec le fichier [`schema.sql`](schema.sql), qui décrit tout le modèle de données :
+
+  ```bash
+  mysql -u UTILISATEUR -p NOM_DE_LA_BASE < schema.sql
+  ```
+
+  La base doit déjà exister. Le fichier est rejouable sans danger.
 
 ### Essayer en local
 
