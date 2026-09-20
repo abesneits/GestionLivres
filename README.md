@@ -103,6 +103,36 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 - Utilisez HTTPS. Les sessions expirent après 1 h d'inactivité, 5 échecs de connexion bloquent l'accès 5 minutes.
 - Application conçue pour **un seul utilisateur** (un mot de passe unique).
 
+## Structure du code
+
+Le projet reste volontairement simple (pas de framework, pas de Composer). L'accès aux données est séparé de l'affichage ; les pages, elles, regroupent encore traitement des formulaires et HTML (ce n'est donc pas un MVC strict).
+
+```
+index.php, ajouter.php, listes.php, …   Pages : traitement des formulaires (POST) + HTML
+includes/                               Démarrage (bootstrap), authentification, menu, fonctions utilitaires et d'export
+BookManager.php                         Point d'entrée unique de la couche de données (façade)
+src/                                    Classes qui contiennent le SQL, une par thème
+install/                                Assistant d'installation (à supprimer après usage)
+```
+
+Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la connexion et crée l'objet `$bookManager`. Les pages appellent ensuite `$bookManager->uneMethode()` sans jamais écrire de SQL.
+
+`BookManager` ne contient aucune logique : il crée une connexion PDO partagée et délègue chaque appel à la classe du dossier `src/` qui en est responsable :
+
+| Classe | Responsabilité |
+|---|---|
+| `LivreRepository` | livres : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures |
+| `ListeRepository` | listes de lecture et ordre des livres |
+| `AuteurRepository` | biographies (Wikipédia / Wikidata), photos, regroupement par auteur, doublons et fusion |
+| `TagRepository` | tags et catalogue de tags |
+| `SupportRepository` | types de support (Livre, Bande dessinée, Manga…) |
+| `IsbnLookup` | recherche par ISBN : Google Books, Open Library, BnF |
+| `Stats` | statistiques de la collection |
+| `Schema` | création et mise à jour automatiques des tables et des index |
+| `Maintenance` | sauvegarde et restauration JSON, optimisation, diagnostic de la base et du dossier `uploads/` |
+
+Pour ajouter une fonctionnalité qui touche la base : écrivez la méthode dans la classe de `src/` concernée, puis ajoutez une méthode d'une ligne dans `BookManager` qui l'appelle. Pour faire évoluer le schéma, complétez les migrations de `src/Schema.php` : elles sont rejouables et s'exécutent au chargement des pages, sans script de migration à lancer.
+
 ## Licence
 
 [MIT](LICENSE)
