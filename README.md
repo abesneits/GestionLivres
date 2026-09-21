@@ -103,6 +103,13 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 - Utilisez HTTPS. Les sessions expirent après 1 h d'inactivité, 5 échecs de connexion bloquent l'accès 5 minutes.
 - Application conçue pour **un seul utilisateur** (un mot de passe unique).
 
+## Documentation
+
+- [Cas d'usage et besoins couverts](docs/cas-d-usage.md) : à quoi sert l'application, ce qu'elle fait et ce qu'elle ne fait pas
+- [Évolutions envisagées](docs/evolutions.md) : ce qui est prévu, écarté, et pourquoi
+- [Architecture](docs/architecture.md) : fonctionnement du code, à lire avant de le modifier
+- [Modèle de données](schema.sql) : les tables de la base
+
 ## Structure du code
 
 Le projet reste volontairement simple (pas de framework, pas de Composer). L'accès aux données est séparé de l'affichage ; les pages, elles, regroupent encore traitement des formulaires et HTML (ce n'est donc pas un MVC strict).

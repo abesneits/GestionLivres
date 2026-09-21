@@ -9,9 +9,9 @@
 --         mysql -u UTILISATEUR -p NOM_DE_LA_BASE < schema.sql
 --
 -- Il n'est PAS obligatoire : l'application crée et met à jour elle-même ces
--- tables au chargement des pages (BookManager::ensureSchema()). Les deux
--- doivent rester synchronisés : toute nouvelle colonne se déclare dans
--- BookManager.php ET dans ce fichier.
+-- tables au chargement des pages (BookManager::ensureSchema(), implémenté dans
+-- src/Schema.php). Les deux doivent rester synchronisés : toute nouvelle
+-- colonne se déclare dans src/Schema.php ET dans ce fichier.
 --
 -- Le script est rejouable sans danger (CREATE TABLE IF NOT EXISTS).
 -- Les tables sont en utf8 car l'application se connecte avec charset=utf8.
