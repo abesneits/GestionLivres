@@ -43,7 +43,7 @@ Le modèle complet est dans [`schema.sql`](../schema.sql).
 - **Pas de scan de code-barres** : l'ISBN se tape ou se colle.
 - **Données récupérées limitées** : pas d'éditeur, de langue, de nombre de pages, de collection ni de format (poche, grand format). Les statistiques ne peuvent donc pas s'appuyer dessus.
 - **Pas de notion d'« à acheter » ou d'« emprunté »** : la collection décrit ce que l'on possède ou a possédé, pas une liste de souhaits.
-- **Pas d'application mobile ni de mode hors connexion** : l'accès depuis un téléphone se fait par le navigateur, et il faut une connexion. Pour consulter une liste sans réseau, il faut l'exporter (HTML ou CSV) avant.
+- **Pas d'application mobile ni de mode hors connexion** : l'accès depuis un téléphone se fait par le navigateur (le site peut être ajouté à l'écran d'accueil), et il faut une connexion. Pour consulter une liste sans réseau, il faut l'exporter (HTML ou CSV) avant.
 - **Un seul utilisateur** et un seul mot de passe.
 - **MySQL / MariaDB uniquement** : le code utilise des fonctions propres à ces serveurs (voir [architecture.md](architecture.md)).
 - **Dépendance à des services tiers** : si Google Books, Open Library ou la BnF sont indisponibles ou ne connaissent pas un ISBN, l'ajout automatique échoue. La BnF ne fournit pas de couverture.

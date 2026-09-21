@@ -11,6 +11,7 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 | Notion de série | Série et numéro de tome par livre, filtre et tri par série. |
 | Modèle de données lisible | [`schema.sql`](../schema.sql) décrit les tables (l'application continue de les créer et de les mettre à jour seule). |
 | Couche de données découpée | `BookManager` délègue à des classes thématiques dans `src/` (voir [architecture.md](architecture.md)). |
+| Manifeste web | `site.webmanifest` complet (nom, langue, URL de démarrage, couleurs, icônes) et chemins relatifs, y compris pour les icônes de `includes/head.php` : le site peut donc être installé dans un sous-dossier et ajouté à l'écran d'accueil d'un téléphone (selon les navigateurs, HTTPS est exigé). Le fonctionnement hors connexion reste à faire (ci-dessous). |
 
 ## Données et recherche
 
@@ -32,7 +33,6 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 
 | Évolution | Effort | Notes |
 |---|---|---|
-| **Compléter le manifeste web** (`site.webmanifest`) | Faible | Il est présent mais incomplet (nom générique, pas d'URL de démarrage, chemins absolus qui supposent une installation à la racine du domaine). À corriger pour que le site puisse s'installer proprement comme une application. |
 | **Mode hors connexion** (service worker) | Élevé | Permettrait de consulter la collection sans réseau. En attendant, l'export HTML ou CSV d'une liste répond au besoin. |
 | **Export optimisé pour le mobile** | Faible | Version HTML compacte, lisible sur petit écran, pensée pour être emportée en librairie. |
 | **Application mobile native** | Non prévu | Hors du périmètre d'un projet PHP simple. |
