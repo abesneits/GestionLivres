@@ -108,6 +108,9 @@ renderHead('Ajouter un livre - Ma Collection');
                                     <span class="<?= getSupportClass($book['support']) ?>">
                                         <?= h($book['support']) ?>
                                     </span>
+                                    <span class="<?= getTypeLivreClass($book['type_livre'] ?? 'Papier') ?>">
+                                        <?= h($book['type_livre'] ?? 'Papier') ?>
+                                    </span>
                                 </td>
                                 <td class="status-cell">
                                     <span class="book-card-statut <?= getStatusClass($book['statut'] ?? 'À lire') ?>">

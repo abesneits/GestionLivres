@@ -171,6 +171,43 @@ renderHead('Statistiques - Ma Collection');
                 </div>
             </div>
 
+            <!-- Papier vs Numérique -->
+            <div class="stats-section">
+                <h3>💾 Papier vs Numérique</h3>
+                <div class="support-stats">
+                    <div class="support-item">
+                        <div class="support-icon">📕</div>
+                        <div class="support-info">
+                            <div class="support-name">Papier</div>
+                            <div class="support-count"><?= number_format($stats['papier']) ?></div>
+                            <div class="support-percent">
+                                <?= $stats['total'] > 0 ? round(($stats['papier'] / $stats['total']) * 100) : 0 ?>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="support-item">
+                        <div class="support-icon">💾</div>
+                        <div class="support-info">
+                            <div class="support-name">Numérique</div>
+                            <div class="support-count"><?= number_format($stats['numerique']) ?></div>
+                            <div class="support-percent">
+                                <?= $stats['total'] > 0 ? round(($stats['numerique'] / $stats['total']) * 100) : 0 ?>%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php if (!empty($formatStats)): ?>
+                    <div class="tags-cloud" style="margin-top:20px;">
+                        <?php foreach ($formatStats as $formatNom => $formatCount): ?>
+                            <div class="tag-item">
+                                <span class="tag-name"><?= h($formatNom) ?></span>
+                                <span class="tag-count">(<?= $formatCount ?>)</span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
             <!-- Ajouts mensuels -->
             <div class="stats-section">
                 <h3>📈 Évolution des ajouts (12 derniers mois)</h3>

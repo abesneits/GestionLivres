@@ -29,6 +29,7 @@ renderHead('Outils - Ma Collection');
             <a href="outils.php?section=edition" class="outils-tab <?= $section === 'edition' ? 'active' : '' ?>">✏️ Édition groupée</a>
             <a href="outils.php?section=tags" class="outils-tab <?= $section === 'tags' ? 'active' : '' ?>">🏷️ Tags</a>
             <a href="outils.php?section=supports" class="outils-tab <?= $section === 'supports' ? 'active' : '' ?>">📦 Supports</a>
+            <a href="outils.php?section=formats" class="outils-tab <?= $section === 'formats' ? 'active' : '' ?>">💾 Formats numériques</a>
         </div>
 
         <?php if ($section === 'bdd'): ?>
@@ -156,6 +157,25 @@ renderHead('Outils - Ma Collection');
                             </select>
                         </div>
                         <div class="form-group" style="flex:1; min-width:150px;">
+                            <label>Type</label>
+                            <select name="type_livre">
+                                <option value="">Tous</option>
+                                <option value="Papier" <?= $criteres['type_livre'] === 'Papier' ? 'selected' : '' ?>>Papier</option>
+                                <option value="Numérique" <?= $criteres['type_livre'] === 'Numérique' ? 'selected' : '' ?>>Numérique</option>
+                            </select>
+                        </div>
+                        <?php if (!empty($formatTypes)): ?>
+                        <div class="form-group" style="flex:1; min-width:150px;">
+                            <label>Format numérique</label>
+                            <select name="format_numerique">
+                                <option value="">Tous</option>
+                                <?php foreach (array_keys($formatTypes) as $f): ?>
+                                    <option value="<?= h($f) ?>" <?= $criteres['format_numerique'] === $f ? 'selected' : '' ?>><?= h($f) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                        <div class="form-group" style="flex:1; min-width:150px;">
                             <label>Statut</label>
                             <select name="statut">
                                 <option value="">Tous</option>
@@ -266,6 +286,7 @@ renderHead('Outils - Ma Collection');
                                     <div class="book-item-author"><?= h($book['auteur']) ?></div>
                                     <div class="book-item-meta">
                                         <span class="badge-small"><?= h($book['support']) ?></span>
+                                        <span class="badge-small"><?= h($book['type_livre'] ?? 'Papier') ?></span>
                                         <span class="badge-small"><?= h($book['statut'] ?? 'À lire') ?></span>
                                     </div>
                                 </div>
@@ -464,6 +485,67 @@ renderHead('Outils - Ma Collection');
                                         <input type="text" name="new_support_name" placeholder="Nouveau nom" required style="width:auto;">
                                         <button type="submit" class="btn-secondary btn-small">Renommer</button>
                                     </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+        <?php elseif ($section === 'formats'): ?>
+
+            <div class="search-section">
+                <h3>Ajouter un nouveau format numérique</h3>
+                <p style="color:#666; margin-bottom: 15px;">Par exemple « Mobi » avec l'extension « mobi ». Il apparaîtra ensuite dans le formulaire d'ajout et d'édition des livres numériques.</p>
+                <form method="POST" style="display:flex; gap:10px; align-items:flex-end;">
+                    <input type="hidden" name="action" value="add_format">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Nom du format</label>
+                        <input type="text" name="nom" required style="width:auto;" placeholder="Ex : Mobi">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Extension de fichier</label>
+                        <input type="text" name="extension" required style="width:auto;" placeholder="Ex : mobi">
+                    </div>
+                    <button type="submit" class="btn-primary">Ajouter</button>
+                </form>
+            </div>
+
+            <div class="search-section">
+                <h3>Formats existants</h3>
+                <table class="tags-table">
+                    <thead>
+                        <tr>
+                            <th>Format</th>
+                            <th>Livres</th>
+                            <th>Renommer</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($formatTypes as $nom => $count): ?>
+                            <tr>
+                                <td><span class="badge-small"><?= h($nom) ?></span></td>
+                                <td><?= $count ?></td>
+                                <td>
+                                    <form method="POST" style="display:flex; gap:5px;" onsubmit="return confirm('Renommer le format « <?= h(addslashes($nom)) ?> » partout où il apparaît ?');">
+                                        <input type="hidden" name="action" value="rename_format">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="old_format" value="<?= h($nom) ?>">
+                                        <input type="text" name="new_format_name" placeholder="Nouveau nom" required style="width:auto;">
+                                        <button type="submit" class="btn-secondary btn-small">Renommer</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <?php if ($count === 0): ?>
+                                        <form method="POST" onsubmit="return confirm('Supprimer le format « <?= h(addslashes($nom)) ?> » du catalogue ?');">
+                                            <input type="hidden" name="action" value="delete_format">
+                                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                            <input type="hidden" name="nom" value="<?= h($nom) ?>">
+                                            <button type="submit" class="btn-danger btn-small">Supprimer</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

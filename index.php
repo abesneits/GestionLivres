@@ -25,7 +25,9 @@ if ($_POST) {
         try {
             $couverture_perso = isset($_FILES['couverture_perso']) ? $_FILES['couverture_perso'] : null;
             $supprimer_couverture = isset($_POST['supprimer_couverture']) && $_POST['supprimer_couverture'] === '1';
-            
+            $fichier_numerique_perso = isset($_FILES['fichier_numerique_perso']) ? $_FILES['fichier_numerique_perso'] : null;
+            $supprimer_fichier_numerique = isset($_POST['supprimer_fichier_numerique']) && $_POST['supprimer_fichier_numerique'] === '1';
+
             $bookManager->updateBookNotes(
     $_POST['book_id'],
     $_POST['note_personnelle'],
@@ -38,7 +40,11 @@ if ($_POST) {
     $_POST['titre'] ?? null,
     $_POST['auteur'] ?? null,
     $_POST['serie'] ?? null,
-    $_POST['tome'] ?? null
+    $_POST['tome'] ?? null,
+    $_POST['type_livre'] ?? null,
+    $_POST['format_numerique'] ?? null,
+    $fichier_numerique_perso,
+    $supprimer_fichier_numerique
 );
             
             redirectWithMessage(
@@ -79,6 +85,7 @@ if ($_POST) {
 $params = sanitizeSearchParams($_GET, array_keys($bookManager->getSupportTypesWithCounts()));
 $search = $params['search'] ?? '';
 $filter = $params['filter'] ?? '';
+$type = $params['type'] ?? '';
 $tag = $params['tag'] ?? '';
 $statut = $params['statut'] ?? '';
 $serie = $params['serie'] ?? '';
@@ -87,11 +94,12 @@ $page = $params['page'] ?? 1;
 
 // Récupérer le nombre total de livres pour la pagination
 $totalBooks = $bookManager->countBooks(
-    $filter ?: null, 
-    $search ?: null, 
+    $filter ?: null,
+    $search ?: null,
     $tag ?: null,
     $statut ?: null,
-    $serie ?: null
+    $serie ?: null,
+    $type ?: null
 );
 
 // Calculer les informations de pagination
@@ -99,18 +107,21 @@ $paginationInfo = $bookManager->getPaginationInfo($totalBooks, $page);
 
 // Récupérer les livres pour la page courante
 $books = $bookManager->getAllBooks(
-    $filter ?: null, 
-    $search ?: null, 
-    $tag ?: null, 
+    $filter ?: null,
+    $search ?: null,
+    $tag ?: null,
     $statut ?: null,
     $page,
     null,
-    $serie ?: null
+    $serie ?: null,
+    $type ?: null
 );
 
 $stats = $bookManager->getStats();
 $allTags = $bookManager->getAllTags();
 $allSeries = $bookManager->getAllSeries();
+$allFormatsNumeriques = $bookManager->getFormatsNumeriquesWithCounts();
+$allExtensionsNumeriques = $bookManager->getAllExtensionsNumeriques();
 
 // Livre à éditer (modal)
 $editBook = null;

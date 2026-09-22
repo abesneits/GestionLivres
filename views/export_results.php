@@ -29,6 +29,7 @@
                         <div class="book-item-author"><?= h($book['auteur']) ?></div>
                         <div class="book-item-meta">
                             <span class="badge-small"><?= h($book['support']) ?></span>
+                            <span class="badge-small"><?= h($book['type_livre'] ?? 'Papier') ?></span>
                             <span class="badge-small"><?= h($book['statut'] ?? 'À lire') ?></span>
                         </div>
                     </div>

@@ -11,13 +11,15 @@ class Schema {
     private $listes;
     private $auteurs;
     private $tags;
+    private $formats;
 
-    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags) {
+    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags, FormatNumeriqueRepository $formats) {
         $this->pdo = $pdo;
         $this->supports = $supports;
         $this->listes = $listes;
         $this->auteurs = $auteurs;
         $this->tags = $tags;
+        $this->formats = $formats;
     }
 
     /**
@@ -31,6 +33,7 @@ class Schema {
         $this->createIndexes();
         $this->auteurs->createIgnoredDuplicatesTable();
         $this->tags->createTagsCatalogTable();
+        $this->formats->createFormatsCatalogTable();
     }
 
     /**
@@ -66,7 +69,12 @@ class Schema {
             'tags' => "ALTER TABLE livres ADD COLUMN tags VARCHAR(500) AFTER note_personnelle",
             'statut' => "ALTER TABLE livres ADD COLUMN statut ENUM('À lire', 'En cours', 'Lu', 'Abandonné') DEFAULT 'À lire' AFTER tags",
             'serie' => "ALTER TABLE livres ADD COLUMN serie VARCHAR(255) NULL AFTER auteur",
-            'tome' => "ALTER TABLE livres ADD COLUMN tome INT NULL AFTER serie"
+            'tome' => "ALTER TABLE livres ADD COLUMN tome INT NULL AFTER serie",
+            // Papier/Numérique : DEFAULT 'Papier' fait que MySQL affecte automatiquement
+            // cette valeur à tous les livres existants dès l'ajout de la colonne.
+            'type_livre' => "ALTER TABLE livres ADD COLUMN type_livre ENUM('Papier', 'Numérique') NOT NULL DEFAULT 'Papier' AFTER support",
+            'format_numerique' => "ALTER TABLE livres ADD COLUMN format_numerique VARCHAR(50) NULL AFTER type_livre",
+            'fichier_numerique' => "ALTER TABLE livres ADD COLUMN fichier_numerique VARCHAR(500) NULL AFTER format_numerique"
         ];
         
         foreach ($newColumns as $columnName => $alterSql) {
@@ -117,6 +125,7 @@ class Schema {
         $indexes = [
             'livres' => [
                 'idx_support' => "CREATE INDEX idx_support ON livres(support)",
+                'idx_type_livre' => "CREATE INDEX idx_type_livre ON livres(type_livre)",
                 'idx_statut' => "CREATE INDEX idx_statut ON livres(statut)",
                 'idx_date_ajout' => "CREATE INDEX idx_date_ajout ON livres(date_ajout)",
                 // Index sur un préfixe : évite la limite de longueur de clé des anciens MySQL en utf8mb4

@@ -21,6 +21,7 @@ L'objectif est de répondre à quelques questions simples :
 | **Retrouver un livre** | Recherche par titre, auteur, ISBN ou série ; filtres par support, statut, tag et série ; pagination. | Ma collection |
 | **Éviter les doublons** | L'ISBN est unique : ajouter deux fois le même livre est refusé avec un message clair. | Ajouter |
 | **Suivre mes lectures** | Statuts (À lire, En cours, Lu, Abandonné), note personnelle, tags libres. | Ma collection |
+| **Cataloguer mes livres numériques** | Distinction papier / numérique par livre, format libre et extensible (PDF, Epub, ...), envoi du fichier et téléchargement protégé par mot de passe. | Ajouter, Ma collection, Outils |
 | **Suivre une série** | Rattachement d'un livre à une série avec son numéro de tome ; filtre par série et tri par série puis par tome. | Ma collection, Édition |
 | **Préparer des lectures** | Listes de lecture nommées, dont l'ordre se change par glisser-déposer. | Listes |
 | **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; détection et fusion des doublons dus à la casse ou aux accents (« victor hugo » / « Victor Hugo »). | Auteurs |
@@ -33,7 +34,7 @@ L'objectif est de répondre à quelques questions simples :
 
 ## Données conservées pour chaque livre
 
-ISBN (ou identifiant temporaire), titre, support, auteur(s), série, numéro de tome, couverture, description, date de publication, statut, tags, note personnelle, date d'ajout.
+ISBN (ou identifiant temporaire), titre, support, type (papier/numérique), format numérique et fichier envoyé le cas échéant, auteur(s), série, numéro de tome, couverture, description, date de publication, statut, tags, note personnelle, date d'ajout.
 
 Le modèle complet est dans [`schema.sql`](../schema.sql).
 
@@ -47,4 +48,4 @@ Le modèle complet est dans [`schema.sql`](../schema.sql).
 - **Un seul utilisateur** et un seul mot de passe.
 - **MySQL / MariaDB uniquement** : le code utilise des fonctions propres à ces serveurs (voir [architecture.md](architecture.md)).
 - **Dépendance à des services tiers** : si Google Books, Open Library ou la BnF sont indisponibles ou ne connaissent pas un ISBN, l'ajout automatique échoue. La BnF ne fournit pas de couverture.
-- **La sauvegarde JSON ne contient pas les fichiers** du dossier `uploads/` (couvertures et photos d'auteurs envoyées) ni le catalogue de tags : ces éléments doivent être copiés séparément.
+- **La sauvegarde JSON ne contient pas les fichiers** du dossier `uploads/` (couvertures, photos d'auteurs, fichiers numériques envoyés) ni les catalogues de tags et de formats numériques : ces éléments doivent être copiés séparément.

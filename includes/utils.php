@@ -144,6 +144,13 @@ function getSupportClass($support) {
 }
 
 /**
+ * Générer une classe CSS pour le type (papier/numérique)
+ */
+function getTypeLivreClass($type) {
+    return $type === 'Numérique' ? 'type-numerique' : 'type-papier';
+}
+
+/**
  * Sécuriser et afficher les tags
  */
 function displayTags($tags, $maxDisplay = null) {
@@ -284,6 +291,9 @@ function sanitizeSearchParams($params, $validSupports = ['Livre', 'Bande dessin�
             case 'filter':
                 $clean[$key] = in_array($value, $validSupports, true) ? $value : '';
                 break;
+            case 'type':
+                $clean[$key] = in_array($value, ['Papier', 'Numérique'], true) ? $value : '';
+                break;
             case 'statut':
                 $clean[$key] = in_array($value, ['À lire', 'En cours', 'Lu', 'Abandonné']) ? $value : '';
                 break;
@@ -311,13 +321,19 @@ function sanitizeSearchParams($params, $validSupports = ['Livre', 'Bande dessin�
  * stricte sur les valeurs contraintes (support, statut, tri, mode ET/OU),
  * validation réelle des dates, cast booléen sur les cases à cocher.
  */
-function sanitizeAdvancedSearchParams($params, $validSupports = ['Livre', 'Bande dessinée', 'Manga']) {
+function sanitizeAdvancedSearchParams($params, $validSupports = ['Livre', 'Bande dessinée', 'Manga'], $validFormats = []) {
     $clean = [];
 
     $clean['search'] = trim(strip_tags($params['search'] ?? ''));
 
     $clean['support'] = in_array($params['support'] ?? '', $validSupports, true)
         ? $params['support'] : '';
+
+    $clean['type_livre'] = in_array($params['type_livre'] ?? '', ['Papier', 'Numérique'], true)
+        ? $params['type_livre'] : '';
+
+    $clean['format_numerique'] = in_array($params['format_numerique'] ?? '', $validFormats, true)
+        ? $params['format_numerique'] : '';
 
     $clean['statut'] = in_array($params['statut'] ?? '', ['À lire', 'En cours', 'Lu', 'Abandonné'])
         ? $params['statut'] : '';

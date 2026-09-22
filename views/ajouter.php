@@ -165,7 +165,15 @@ renderHead('Ajouter un livre - Ma Collection');
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                
+
+                                <div class="form-group">
+                                    <label for="type_livre">Type :</label>
+                                    <select id="type_livre" name="type_livre">
+                                        <option value="Papier" <?= ($bookData['type_livre'] ?? 'Papier') === 'Papier' ? 'selected' : '' ?>>Papier</option>
+                                        <option value="Numérique" <?= ($bookData['type_livre'] ?? '') === 'Numérique' ? 'selected' : '' ?>>Numérique</option>
+                                    </select>
+                                </div>
+
                                 <div class="form-group">
                                     <label for="statut">Statut de lecture :</label>
                                     <select id="statut" name="statut">
@@ -224,9 +232,34 @@ renderHead('Ajouter un livre - Ma Collection');
                                                id="custom_cover_url" 
                                                placeholder="URL d'une couverture en ligne..." 
                                                class="cover-url-input">
-                                        <button type="button" 
-                                                class="btn-secondary" 
+                                        <button type="button"
+                                                class="btn-secondary"
                                                 onclick="updateCoverFromURL()">Charger depuis URL</button>
+                                    </div>
+                                </div>
+
+                                <div class="cover-section" id="numeriqueSection" style="<?= ($bookData['type_livre'] ?? '') === 'Numérique' ? '' : 'display:none;' ?>">
+                                    <label>Fichier numérique :</label>
+
+                                    <div class="form-group">
+                                        <label for="format_numerique">Format :</label>
+                                        <select id="format_numerique" name="format_numerique">
+                                            <?php foreach (array_keys($allFormatsNumeriques) as $formatOption): ?>
+                                                <option value="<?= h($formatOption) ?>" <?= ($bookData['format_numerique'] ?? '') === $formatOption ? 'selected' : '' ?>><?= h($formatOption) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="cover-actions">
+                                        <label for="fichier_numerique" class="upload-label">
+                                            Choisir le fichier (<?= h(implode(', ', array_map(function ($e) { return '.' . $e; }, $allExtensionsNumeriques))) ?>)
+                                        </label>
+                                        <input type="file"
+                                               id="fichier_numerique"
+                                               name="fichier_numerique"
+                                               accept="<?= h(implode(',', array_map(function ($e) { return '.' . $e; }, $allExtensionsNumeriques))) ?>"
+                                               class="file-input-hidden">
+                                        <small id="fichierNumeriqueNom"></small>
                                     </div>
                                 </div>
                             </div>
@@ -295,7 +328,24 @@ renderHead('Ajouter un livre - Ma Collection');
         function backToSearch() {
             window.location.href = 'ajouter.php';
         }
-        
+
+        // Afficher/masquer la section fichier numérique selon le type choisi
+        function toggleNumeriqueSection() {
+            const section = document.getElementById('numeriqueSection');
+            const typeSelect = document.getElementById('type_livre');
+            if (section && typeSelect) {
+                section.style.display = typeSelect.value === 'Numérique' ? '' : 'none';
+            }
+        }
+        document.getElementById('type_livre')?.addEventListener('change', toggleNumeriqueSection);
+
+        document.getElementById('fichier_numerique')?.addEventListener('change', function () {
+            const nomSpan = document.getElementById('fichierNumeriqueNom');
+            if (nomSpan) {
+                nomSpan.textContent = this.files && this.files[0] ? this.files[0].name : '';
+            }
+        });
+
         // Preview du fichier uploadé
         function previewFile(input) {
             if (input.files && input.files[0]) {
@@ -355,6 +405,7 @@ renderHead('Ajouter un livre - Ma Collection');
         
         // Auto-focus approprié
         document.addEventListener('DOMContentLoaded', function() {
+            toggleNumeriqueSection();
             if (currentStep === 1) {
                 const isbnInput = document.getElementById('isbn');
                 if (isbnInput && !isbnInput.value) {

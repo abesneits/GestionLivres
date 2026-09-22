@@ -137,6 +137,9 @@ renderHead('Mes Listes - Ma Collection');
                                         <span class="book-card-support <?= getSupportClass($book['support']) ?>">
                                             <?= h($book['support']) ?>
                                         </span>
+                                        <span class="book-card-support <?= getTypeLivreClass($book['type_livre'] ?? 'Papier') ?>">
+                                            <?= h($book['type_livre'] ?? 'Papier') ?>
+                                        </span>
                                         <span class="book-card-statut <?= getStatusClass($book['statut'] ?? 'À lire') ?>">
                                             <?= h($book['statut'] ?? 'À lire') ?>
                                         </span>
@@ -276,6 +279,7 @@ renderHead('Mes Listes - Ma Collection');
                                 <div class="book-item-author"><?= h($book['auteur']) ?></div>
                                 <div class="book-item-meta">
                                     <span class="badge-small"><?= h($book['support']) ?></span>
+                                    <span class="badge-small"><?= h($book['type_livre'] ?? 'Papier') ?></span>
                                 </div>
                             </div>
                         </label>

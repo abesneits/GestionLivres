@@ -9,6 +9,7 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 - **Listes de lecture** réordonnables par glisser-déposer
 - **Fiches auteurs** avec biographie issue de Wikipédia, détection et fusion des doublons
 - **Séries et tomes** : rattachez un livre à une série (« Cycle de Fondation », « One Piece »…) avec son numéro de tome, puis filtrez et triez par série
+- **Livres numériques** : distinction papier/numérique, formats extensibles (PDF, Epub…), envoi et téléchargement du fichier protégés par mot de passe
 - **Tags**, **statuts de lecture** (À lire, En cours, Lu, Abandonné), notes personnelles
 - **Statistiques** détaillées de la collection
 - **Recherche avancée** (texte, support, statut, tags ET/OU, dates, sans couverture…)
@@ -99,7 +100,7 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 
 - `config.php` contient vos identifiants : il est ignoré par git et bloqué par `.htaccess`. Ne le publiez jamais.
 - **Supprimez `install/`** après l'installation.
-- Sous Nginx (ou si `.htaccess` est désactivé), interdisez l'accès web à `config.php`, `logs/` et l'exécution de PHP dans `uploads/`.
+- Sous Nginx (ou si `.htaccess` est désactivé), interdisez l'accès web à `config.php`, `logs/`, l'exécution de PHP dans `uploads/`, et tout accès direct à `uploads/ebooks/` (les fichiers numériques ne doivent être servis que par `telecharger_ebook.php`, après authentification).
 - Utilisez HTTPS. Les sessions expirent après 1 h d'inactivité, 5 échecs de connexion bloquent l'accès 5 minutes.
 - Application conçue pour **un seul utilisateur** (un mot de passe unique).
 
@@ -134,6 +135,7 @@ Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la c
 | `AuteurRepository` | biographies (Wikipédia / Wikidata), photos, regroupement par auteur, doublons et fusion |
 | `TagRepository` | tags et catalogue de tags |
 | `SupportRepository` | types de support (Livre, Bande dessinée, Manga…) |
+| `FormatNumeriqueRepository` | formats numériques (PDF, Epub…) et leur extension attendue |
 | `IsbnLookup` | recherche par ISBN : Google Books, Open Library, BnF |
 | `Stats` | statistiques de la collection |
 | `Schema` | création et mise à jour automatiques des tables et des index |

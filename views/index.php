@@ -21,63 +21,75 @@ renderHead('Ajouter un livre - Ma Collection');
         <!-- Recherche et filtres améliorés -->
         <div class="search-section">
             <h3>Rechercher et Filtrer</h3>
-            <form method="GET" class="search-row" id="searchForm">
-                <div class="search-group">
-                    <label>Recherche</label>
-                    <input type="text" 
-                           name="search" 
-                           value="<?= h($search) ?>" 
-                           placeholder="Titre, auteur, ISBN..."
-                           maxlength="100">
+            <form method="GET" class="search-form-index" id="searchForm">
+                <div class="search-main-row">
+                    <div class="search-group">
+                        <label>Recherche</label>
+                        <input type="text"
+                               name="search"
+                               value="<?= h($search) ?>"
+                               placeholder="Titre, auteur, ISBN..."
+                               maxlength="100">
+                    </div>
                 </div>
-                <div class="search-group">
-                    <label>Support</label>
-                    <select name="filter">
-                        <option value="">Tous</option>
-                        <?php foreach (array_keys($bookManager->getSupportTypesWithCounts()) as $supportOption): ?>
-                            <option value="<?= h($supportOption) ?>" <?= $filter === $supportOption ? 'selected' : '' ?>><?= h($supportOption) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="filters-grid">
+                    <div class="search-group">
+                        <label>Support</label>
+                        <select name="filter">
+                            <option value="">Tous</option>
+                            <?php foreach (array_keys($bookManager->getSupportTypesWithCounts()) as $supportOption): ?>
+                                <option value="<?= h($supportOption) ?>" <?= $filter === $supportOption ? 'selected' : '' ?>><?= h($supportOption) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label>Type</label>
+                        <select name="type">
+                            <option value="">Tous</option>
+                            <option value="Papier" <?= $type === 'Papier' ? 'selected' : '' ?>>Papier</option>
+                            <option value="Numérique" <?= $type === 'Numérique' ? 'selected' : '' ?>>Numérique</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label>Statut</label>
+                        <select name="statut">
+                            <option value="">Tous</option>
+                            <option value="À lire" <?= $statut === 'À lire' ? 'selected' : '' ?>>À lire</option>
+                            <option value="En cours" <?= $statut === 'En cours' ? 'selected' : '' ?>>En cours</option>
+                            <option value="Lu" <?= $statut === 'Lu' ? 'selected' : '' ?>>Lu</option>
+                            <option value="Abandonné" <?= $statut === 'Abandonné' ? 'selected' : '' ?>>Abandonné</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label>Tag</label>
+                        <select name="tag">
+                            <option value="">Tous les tags</option>
+                            <?php foreach ($allTags as $tagOption): ?>
+                                <option value="<?= h($tagOption) ?>" <?= $tag === $tagOption ? 'selected' : '' ?>>
+                                    <?= h($tagOption) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php if (!empty($allSeries)): ?>
+                    <div class="search-group">
+                        <label>Série</label>
+                        <select name="serie">
+                            <option value="">Toutes les séries</option>
+                            <?php foreach ($allSeries as $nomSerie => $nbSerie): ?>
+                                <option value="<?= h($nomSerie) ?>" <?= $serie === $nomSerie ? 'selected' : '' ?>>
+                                    <?= h($nomSerie) ?> (<?= (int)$nbSerie ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <div class="search-group">
-                    <label>Statut</label>
-                    <select name="statut">
-                        <option value="">Tous</option>
-                        <option value="À lire" <?= $statut === 'À lire' ? 'selected' : '' ?>>À lire</option>
-                        <option value="En cours" <?= $statut === 'En cours' ? 'selected' : '' ?>>En cours</option>
-                        <option value="Lu" <?= $statut === 'Lu' ? 'selected' : '' ?>>Lu</option>
-                        <option value="Abandonné" <?= $statut === 'Abandonné' ? 'selected' : '' ?>>Abandonné</option>
-                    </select>
-                </div>
-                <div class="search-group">
-                    <label>Tag</label>
-                    <select name="tag">
-                        <option value="">Tous les tags</option>
-                        <?php foreach ($allTags as $tagOption): ?>
-                            <option value="<?= h($tagOption) ?>" <?= $tag === $tagOption ? 'selected' : '' ?>>
-                                <?= h($tagOption) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php if (!empty($allSeries)): ?>
-                <div class="search-group">
-                    <label>Série</label>
-                    <select name="serie">
-                        <option value="">Toutes les séries</option>
-                        <?php foreach ($allSeries as $nomSerie => $nbSerie): ?>
-                            <option value="<?= h($nomSerie) ?>" <?= $serie === $nomSerie ? 'selected' : '' ?>>
-                                <?= h($nomSerie) ?> (<?= (int)$nbSerie ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php endif; ?>
                 <input type="hidden" name="view" value="<?= h($view) ?>">
                 <button type="submit" class="btn-search">Filtrer</button>
             </form>
             
-            <?php if ($search || $filter || $tag || $statut || $serie): ?>
+            <?php if ($search || $filter || $type || $tag || $statut || $serie): ?>
                 <div style="margin-top: 10px;">
                     <a href="?" class="btn-secondary" style="font-size: 0.9em;">Réinitialiser les filtres</a>
                 </div>
@@ -106,8 +118,8 @@ renderHead('Ajouter un livre - Ma Collection');
         <!-- Informations sur les résultats -->
         <div class="results-header">
             <h2>
-                Résultats 
-                <?php if ($search || $filter || $tag || $statut || $serie): ?>
+                Résultats
+                <?php if ($search || $filter || $type || $tag || $statut || $serie): ?>
                     filtrés 
                 <?php endif; ?>
                 (<?= number_format($totalBooks) ?> livre<?= $totalBooks > 1 ? 's' : '' ?>)
@@ -124,7 +136,7 @@ renderHead('Ajouter un livre - Ma Collection');
         <?php if (empty($books)): ?>
             <div class="empty-message">
                 <p>Aucun livre trouvé avec ces critères.</p>
-                <?php if ($search || $filter || $tag || $statut || $serie): ?>
+                <?php if ($search || $filter || $type || $tag || $statut || $serie): ?>
                     <p><a href="?" style="color: #007bff;">Réinitialiser les filtres</a></p>
                 <?php else: ?>
                     <p><a href="ajouter.php" style="color: #007bff;">Ajouter votre premier livre</a></p>
@@ -156,6 +168,12 @@ renderHead('Ajouter un livre - Ma Collection');
                                     <span class="book-card-support <?= getSupportClass($book['support']) ?>">
                                         <?= h($book['support']) ?>
                                     </span>
+                                    <span class="book-card-support <?= getTypeLivreClass($book['type_livre'] ?? 'Papier') ?>">
+                                        <?= h($book['type_livre'] ?? 'Papier') ?>
+                                    </span>
+                                    <?php if (!empty($book['format_numerique'])): ?>
+                                        <span class="badge-small"><?= h($book['format_numerique']) ?></span>
+                                    <?php endif; ?>
                                     <span class="book-card-statut <?= getStatusClass($book['statut'] ?? 'À lire') ?>">
                                         <?= h($book['statut'] ?? 'À lire') ?>
                                     </span>
@@ -177,6 +195,9 @@ renderHead('Ajouter un livre - Ma Collection');
                         
                         <div class="book-card-actions">
                             <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit">Éditer</a>
+                            <?php if (!empty($book['fichier_numerique'])): ?>
+                                <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique">⬇️</a>
+                            <?php endif; ?>
                             <form method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce livre ?');">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
@@ -197,6 +218,7 @@ renderHead('Ajouter un livre - Ma Collection');
                             <th>Titre</th>
                             <th>Auteur</th>
                             <th>Support</th>
+                            <th>Type</th>
                             <th>Statut</th>
                             <th>Tags</th>
                             <th>Ajouté le</th>
@@ -226,6 +248,14 @@ renderHead('Ajouter un livre - Ma Collection');
                                     </span>
                                 </td>
                                 <td>
+                                    <span class="<?= getTypeLivreClass($book['type_livre'] ?? 'Papier') ?>">
+                                        <?= h($book['type_livre'] ?? 'Papier') ?>
+                                    </span>
+                                    <?php if (!empty($book['format_numerique'])): ?>
+                                        <span class="badge-small"><?= h($book['format_numerique']) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <span class="book-card-statut <?= getStatusClass($book['statut'] ?? 'À lire') ?>">
                                         <?= h($book['statut'] ?? 'À lire') ?>
                                     </span>
@@ -236,6 +266,9 @@ renderHead('Ajouter un livre - Ma Collection');
                                 <td><?= formatDate($book['date_ajout']) ?></td>
                                 <td>
                                     <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit">✏️</a>
+                                    <?php if (!empty($book['fichier_numerique'])): ?>
+                                        <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique">⬇️</a>
+                                    <?php endif; ?>
                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce livre ?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
@@ -324,7 +357,46 @@ renderHead('Ajouter un livre - Ma Collection');
                         </select>
                         <small>Vous pouvez modifier le type de support si la détection automatique était incorrecte</small>
                     </div>
-                    
+
+                    <div class="form-group">
+                        <label for="type_livre">Type :</label>
+                        <select id="type_livre" name="type_livre" required>
+                            <option value="Papier" <?= ($editBook['type_livre'] ?? 'Papier') === 'Papier' ? 'selected' : '' ?>>Papier</option>
+                            <option value="Numérique" <?= ($editBook['type_livre'] ?? '') === 'Numérique' ? 'selected' : '' ?>>Numérique</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="numeriqueSection" style="<?= ($editBook['type_livre'] ?? '') === 'Numérique' ? '' : 'display:none;' ?>">
+                        <label for="format_numerique">Format numérique :</label>
+                        <select id="format_numerique" name="format_numerique">
+                            <?php foreach (array_keys($allFormatsNumeriques) as $formatOption): ?>
+                                <option value="<?= h($formatOption) ?>" <?= ($editBook['format_numerique'] ?? '') === $formatOption ? 'selected' : '' ?>><?= h($formatOption) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <?php if (!empty($editBook['fichier_numerique'])): ?>
+                            <div class="current-cover">
+                                <small>Fichier actuel : <a href="<?= h('telecharger_ebook.php?id=' . $editBook['id']) ?>">Télécharger</a></small>
+                            </div>
+                        <?php endif; ?>
+
+                        <label for="fichier_numerique_perso" class="upload-label">Remplacer le fichier :</label>
+                        <input type="file"
+                               id="fichier_numerique_perso"
+                               name="fichier_numerique_perso"
+                               accept="<?= h(implode(',', array_map(function ($e) { return '.' . $e; }, $allExtensionsNumeriques))) ?>">
+                        <small>Formats acceptés : <?= h(implode(', ', array_map(function ($e) { return '.' . $e; }, $allExtensionsNumeriques))) ?> (max 100MB)</small>
+
+                        <?php if (!empty($editBook['fichier_numerique'])): ?>
+                            <div class="form-check">
+                                <label>
+                                    <input type="checkbox" name="supprimer_fichier_numerique" value="1">
+                                    Supprimer le fichier numérique actuel
+                                </label>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
                     <div class="form-group">
                         <label for="statut">Statut de lecture :</label>
                         <select id="statut" name="statut" required>
@@ -404,6 +476,17 @@ renderHead('Ajouter un livre - Ma Collection');
         function closeModal() {
             window.location.href = <?= json_encode(buildUrl([], ['edit'])) ?>;
         }
+
+        // Afficher/masquer la section fichier numérique selon le type choisi
+        function toggleNumeriqueSection() {
+            const section = document.getElementById('numeriqueSection');
+            const typeSelect = document.getElementById('type_livre');
+            if (section && typeSelect) {
+                section.style.display = typeSelect.value === 'Numérique' ? '' : 'none';
+            }
+        }
+        document.getElementById('type_livre')?.addEventListener('change', toggleNumeriqueSection);
+        toggleNumeriqueSection();
 
         // Widget de saisie de tags dans la modale d'édition
         (function() {

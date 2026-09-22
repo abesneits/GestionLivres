@@ -21,13 +21,44 @@ class Stats {
         $livres = ($this->compterLivres)('Livre');
         $bd = ($this->compterLivres)('Bande dessinée');
         $manga = ($this->compterLivres)('Manga');
+        $repartitionType = $this->getTypeLivreCounts();
 
         return [
             'total' => $total,
             'livres' => $livres,
             'bd' => $bd,
-            'manga' => $manga
+            'manga' => $manga,
+            'papier' => $repartitionType['papier'],
+            'numerique' => $repartitionType['numerique']
         ];
+    }
+
+    /**
+     * Compte les livres papier/numérique en une requête directe (comme le
+     * comptage par statut dans getDetailedStats()).
+     */
+    private function getTypeLivreCounts() {
+        $stmt = $this->pdo->query("SELECT type_livre, COUNT(*) as count FROM livres GROUP BY type_livre");
+        $counts = ['papier' => 0, 'numerique' => 0];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if ($row['type_livre'] === 'Numérique') {
+                $counts['numerique'] = (int)$row['count'];
+            } else {
+                $counts['papier'] += (int)$row['count'];
+            }
+        }
+        return $counts;
+    }
+
+    /**
+     * Répartition des livres numériques par format (PDF, Epub, ...), pour la page Stats.
+     */
+    public function getFormatNumeriqueStats() {
+        $sql = "SELECT format_numerique, COUNT(*) as count FROM livres
+                WHERE type_livre = 'Numérique' AND format_numerique IS NOT NULL AND format_numerique != ''
+                GROUP BY format_numerique ORDER BY count DESC";
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     /**
@@ -39,6 +70,7 @@ class Stats {
         $livres = ($this->compterLivres)('Livre');
         $bd = ($this->compterLivres)('Bande dessinée');
         $manga = ($this->compterLivres)('Manga');
+        $repartitionType = $this->getTypeLivreCounts();
 
         // Requête SQL directe
         $sql = "SELECT statut, COUNT(*) as count FROM livres GROUP BY statut";
@@ -74,6 +106,8 @@ class Stats {
             'livres' => $livres,
             'bd' => $bd,
             'manga' => $manga,
+            'papier' => $repartitionType['papier'],
+            'numerique' => $repartitionType['numerique'],
             'lu' => $lu,
             'a_lire' => $a_lire,
             'en_cours' => $en_cours,

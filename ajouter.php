@@ -22,6 +22,8 @@ if (isset($_POST['step']) && $_POST['step'] == '2') {
         'serie' => $_POST['serie'] ?? '',
         'tome' => $_POST['tome'] ?? '',
         'support' => $_POST['support'] ?? 'Livre',
+        'type_livre' => $_POST['type_livre'] ?? 'Papier',
+        'format_numerique' => $_POST['format_numerique'] ?? '',
         'description' => $_POST['description'] ?? '',
         'date_publication' => $_POST['date_publication'] ?? '',
         'couverture' => $_POST['couverture_url'] ?? null,
@@ -163,6 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'serie' => $_POST['serie'] ?? '',
                     'tome' => $_POST['tome'] ?? '',
                     'support' => $_POST['support'],
+                    'type_livre' => $_POST['type_livre'] ?? 'Papier',
+                    'format_numerique' => $_POST['format_numerique'] ?? '',
                     'description' => $_POST['description'],
                     'date_publication' => $_POST['date_publication'],
                     'couverture' => $_POST['couverture_url'] ?? null,
@@ -174,6 +178,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     // Gestion de l'upload de fichier
                     $couverture_finale = $_POST['couverture_url'] ?? null;
+
+                    // Gestion de l'upload du fichier numérique (ebook)
+                    $type_livre = ($_POST['type_livre'] ?? 'Papier') === 'Numérique' ? 'Numérique' : 'Papier';
+                    $format_numerique = $type_livre === 'Numérique' ? ($_POST['format_numerique'] ?? '') : '';
+                    $fichier_numerique_final = null;
+
+                    if ($type_livre === 'Numérique' && isset($_FILES['fichier_numerique']) && $_FILES['fichier_numerique']['error'] === UPLOAD_ERR_OK) {
+                        $fichier_numerique_final = $bookManager->uploadFichierNumerique($_FILES['fichier_numerique'], $format_numerique);
+                    }
 
                     if (isset($_FILES['couverture_fichier']) && $_FILES['couverture_fichier']['error'] === UPLOAD_ERR_OK) {
                         // Créer le dossier uploads s'il n'existe pas
@@ -206,6 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'serie' => $_POST['serie'] ?? '',
                         'tome' => $_POST['tome'] ?? '',
                         'support' => $_POST['support'],
+                        'type_livre' => $type_livre,
+                        'format_numerique' => $format_numerique,
+                        'fichier_numerique' => $fichier_numerique_final,
                         'description' => $_POST['description'],
                         'date_publication' => $_POST['date_publication'],
                         'couverture' => $couverture_finale,
@@ -224,6 +240,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $successMessage = "Livre ajouté avec succès : <strong>" . h($finalBookData['titre']) . "</strong>";
                         if ($finalBookData['couverture']) {
                             $successMessage .= "<br>Couverture incluse";
+                        }
+                        if ($finalBookData['fichier_numerique']) {
+                            $successMessage .= "<br>Fichier numérique (" . h($finalBookData['format_numerique']) . ") inclus";
                         }
 
                         // Redirection avec message flash
@@ -248,6 +267,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'serie' => $_POST['serie'] ?? '',
                         'tome' => $_POST['tome'] ?? '',
                         'support' => $_POST['support'],
+                        'type_livre' => $_POST['type_livre'] ?? 'Papier',
+                        'format_numerique' => $_POST['format_numerique'] ?? '',
                         'description' => $_POST['description'],
                         'date_publication' => $_POST['date_publication'],
                         'couverture' => $_POST['couverture_url'] ?? null,
@@ -276,6 +297,15 @@ try {
     $allTags = $bookManager->getAllTags();
 } catch (Exception $e) {
     $allTags = [];
+}
+
+// Formats numériques disponibles (pour le champ Type = Numérique)
+try {
+    $allFormatsNumeriques = $bookManager->getFormatsNumeriquesWithCounts();
+    $allExtensionsNumeriques = $bookManager->getAllExtensionsNumeriques();
+} catch (Exception $e) {
+    $allFormatsNumeriques = [];
+    $allExtensionsNumeriques = [];
 }
 
 require 'views/ajouter.php';

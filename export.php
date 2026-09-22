@@ -8,7 +8,8 @@ require_once 'includes/bootstrap.php';
 require_once 'includes/export_functions.php';
 
 $supportTypes = $bookManager->getSupportTypesWithCounts();
-$criteres = sanitizeAdvancedSearchParams($_GET, array_keys($supportTypes));
+$formatTypes = $bookManager->getFormatsNumeriquesWithCounts();
+$criteres = sanitizeAdvancedSearchParams($_GET, array_keys($supportTypes), array_keys($formatTypes));
 $formatsValides = ['csv', 'excel', 'json', 'html', 'txt'];
 $format = $_GET['format'] ?? '';
 
@@ -18,6 +19,8 @@ $perPage = in_array($perPageRequested, $perPageOptions, true) ? $perPageRequeste
 
 $filtreActif = $criteres['search'] !== ''
     || $criteres['support'] !== ''
+    || $criteres['type_livre'] !== ''
+    || $criteres['format_numerique'] !== ''
     || $criteres['statut'] !== ''
     || $criteres['serie'] !== ''
     || !empty($criteres['tags'])
@@ -49,6 +52,12 @@ function buildFilterSummary($criteres, $filtreActif) {
     }
     if ($criteres['support'] !== '') {
         $parts[] = 'Support : ' . $criteres['support'];
+    }
+    if ($criteres['type_livre'] !== '') {
+        $parts[] = 'Type : ' . $criteres['type_livre'];
+    }
+    if ($criteres['format_numerique'] !== '') {
+        $parts[] = 'Format : ' . $criteres['format_numerique'];
     }
     if ($criteres['statut'] !== '') {
         $parts[] = 'Statut : ' . $criteres['statut'];

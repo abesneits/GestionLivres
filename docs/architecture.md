@@ -42,11 +42,12 @@ Le résultat de `ensureSchema()` est absorbé (`ob_start()` / `ob_end_clean()`) 
 
 | Classe | Responsabilité |
 |---|---|
-| `LivreRepository` | Livres : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures personnalisées. |
+| `LivreRepository` | Livres : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures personnalisées, envoi du fichier numérique. |
 | `ListeRepository` | Listes de lecture (`listes_lecture`, `livres_listes`) : contenu et ordre. |
 | `AuteurRepository` | Auteurs (`auteurs`, `auteurs_doublons_ignores`) : biographies, photos, regroupement, doublons, fusion. |
 | `TagRepository` | Tags (chaîne CSV dans `livres.tags`) et catalogue `tags_catalogue`. |
 | `SupportRepository` | Types de support, stockés dans l'`ENUM` de `livres.support`. |
+| `FormatNumeriqueRepository` | Formats numériques (PDF, Epub, ...) : catalogue extensible `formats_numeriques` (nom + extension attendue), utilisé pour valider les livres numériques. |
 | `IsbnLookup` | Recherche par ISBN auprès de Google Books, Open Library, BnF. N'utilise pas la base. |
 | `Stats` | Statistiques. |
 | `Schema` | Création et migration des tables, index. |
@@ -56,24 +57,31 @@ Les classes de `src/` reçoivent leur connexion (et leurs dépendances) dans le 
 
 ## Le schéma de la base
 
-Le modèle est décrit dans [`schema.sql`](../schema.sql). Il y a 6 tables :
+Le modèle est décrit dans [`schema.sql`](../schema.sql). Il y a 7 tables :
 
 - `livres` : la collection ;
 - `listes_lecture` et `livres_listes` : les listes, en relation plusieurs-à-plusieurs, avec un ordre, et suppression en cascade ;
 - `auteurs` : cache des biographies. **Pas de clé étrangère** vers `livres` : le lien se fait par le nom, car `livres.auteur` est un texte libre qui peut contenir plusieurs noms séparés par des virgules ;
 - `auteurs_doublons_ignores` : mémorise les faux doublons d'auteurs ;
-- `tags_catalogue` : suggestions de tags.
+- `tags_catalogue` : suggestions de tags ;
+- `formats_numeriques` : catalogue des formats numériques (nom + extension), voir ci-dessous.
 
 Le schéma est créé et mis à jour **par l'application elle-même**, dans `src/Schema.php` : des `CREATE TABLE IF NOT EXISTS`, puis des `ALTER TABLE … ADD COLUMN` gardés par une vérification préalable dans `information_schema`. Ces opérations sont rejouables sans effet de bord. `schema.sql` est un second chemin (création à la main) : **les deux doivent rester synchronisés**.
 
 Les valeurs des `ENUM` `support` et `statut` ne sont pas figées : la page Outils permet d'ajouter et de renommer des supports, ce qui réécrit la définition de l'`ENUM` dans la base.
 
+## Papier vs numérique
+
+`livres.type_livre` (`Papier` ou `Numérique`, `Papier` par défaut) est une dimension indépendante de `support` (qui décrit le type de contenu : Livre, BD, Manga) — un livre est l'un ou l'autre, jamais les deux à la fois. Pour un livre numérique, `livres.format_numerique` contient un nom validé contre le catalogue `formats_numeriques` (`FormatNumeriqueRepository`, extensible depuis Outils → « Formats numériques », dans le même esprit que les tags ou les supports mais avec une simple table catalogue plutôt qu'un `ENUM` réécrit), et `livres.fichier_numerique` le chemin du fichier envoyé. Repasser un livre en `Papier` efface toujours `format_numerique` et `fichier_numerique` (et supprime l'ancien fichier) — un invariant à respecter si vous touchez `LivreRepository::updateBookNotes()`.
+
+Les fichiers numériques sont stockés dans `uploads/ebooks/`, qui a son **propre** `.htaccess` interdisant tout accès direct (contrairement aux sous-dossiers `uploads/auteurs/` et `uploads/listes/`, qui n'ont pas le leur et héritent des règles du `.htaccess` parent, lequel n'autorise que les images) : un livre numérique complet est un contenu plus sensible qu'une simple couverture. Le seul accès possible passe par `telecharger_ebook.php`, une page authentifiée comme les autres (elle charge `includes/bootstrap.php`).
+
 ## Deux chemins de recherche
 
 Il existe deux implémentations distinctes, qui ne sont pas interchangeables :
 
-- **Recherche simple** : `sanitizeSearchParams()` puis `getAllBooks()` / `countBooks()`. Un champ texte plus les filtres support, tag, statut, série. Utilisée par `index.php`.
-- **Recherche avancée** : `sanitizeAdvancedSearchParams()` puis `searchBooksAdvanced()` / `countBooksAdvanced()`. Ajoute les tags en ET/OU avec correspondance exacte, les dates, « sans couverture » / « sans note » et le tri. Utilisée par `outils.php` (édition en masse) et `export.php`.
+- **Recherche simple** : `sanitizeSearchParams()` puis `getAllBooks()` / `countBooks()`. Un champ texte plus les filtres support, type (papier/numérique), tag, statut, série. Utilisée par `index.php`.
+- **Recherche avancée** : `sanitizeAdvancedSearchParams()` puis `searchBooksAdvanced()` / `countBooksAdvanced()`. Ajoute le type et le format numérique, les tags en ET/OU avec correspondance exacte, les dates, « sans couverture » / « sans note » et le tri. Utilisée par `outils.php` (édition en masse) et `export.php`.
 
 Les deux fonctions de nettoyage sont dans `includes/utils.php`.
 
@@ -88,7 +96,7 @@ Application à un seul utilisateur : le hash bcrypt du mot de passe et le sel de
 - **CSRF** : chaque formulaire qui modifie des données porte un jeton (`generateCSRFToken()`), vérifié par `validateCSRFToken()` avant l'action.
 - **XSS** : toute donnée saisie est affichée via `h()` (un `htmlspecialchars`).
 - **SQL** : uniquement des requêtes préparées PDO.
-- **Envois de fichiers** : taille (5 Mo), type MIME réel (`finfo`) et extension vérifiés ; noms générés ; le dossier `uploads/` interdit l'exécution de scripts (`.htaccess`).
+- **Envois de fichiers** : taille (5 Mo pour les images, 100 Mo pour les fichiers numériques), type MIME réel (`finfo`) et extension vérifiés (l'extension d'un fichier numérique doit correspondre à celle du format choisi dans `formats_numeriques`) ; noms générés ; le dossier `uploads/` interdit l'exécution de scripts (`.htaccess`).
 - **Sessions** : expiration après 1 h, verrouillage après 5 échecs de connexion.
 - Messages « flash » après une action : `redirectWithMessage()` / `getFlashMessage()`, pour éviter le double envoi d'un formulaire.
 

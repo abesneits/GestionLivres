@@ -8,12 +8,14 @@ class LivreRepository {
     private $pdo;
     private $tags;
     private $supports;
+    private $formats;
     private $itemsPerPage = 20; // Pour la pagination
 
-    public function __construct(PDO $pdo, TagRepository $tags, SupportRepository $supports) {
+    public function __construct(PDO $pdo, TagRepository $tags, SupportRepository $supports, FormatNumeriqueRepository $formats) {
         $this->pdo = $pdo;
         $this->tags = $tags;
         $this->supports = $supports;
+        $this->formats = $formats;
     }
 
     /**
@@ -21,14 +23,23 @@ class LivreRepository {
      */
     public function addBook($bookInfo) {
         try {
-            $sql = "INSERT INTO livres (isbn, titre, support, auteur, serie, tome, couverture, description, date_publication, statut, tags)
-                    VALUES (:isbn, :titre, :support, :auteur, :serie, :tome, :couverture, :description, :date_publication, :statut, :tags)";
+            $type_livre = $bookInfo['type_livre'] ?? 'Papier';
+            $format_numerique = $type_livre === 'Numérique' ? ($bookInfo['format_numerique'] ?? null) : null;
+            if ($format_numerique !== null && $this->formats->getFormatExtension($format_numerique) === null) {
+                throw new Exception("Format numérique invalide.");
+            }
+
+            $sql = "INSERT INTO livres (isbn, titre, support, type_livre, format_numerique, fichier_numerique, auteur, serie, tome, couverture, description, date_publication, statut, tags)
+                    VALUES (:isbn, :titre, :support, :type_livre, :format_numerique, :fichier_numerique, :auteur, :serie, :tome, :couverture, :description, :date_publication, :statut, :tags)";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 ':isbn' => $bookInfo['isbn'],
                 ':titre' => $bookInfo['titre'],
                 ':support' => $bookInfo['support'],
+                ':type_livre' => $type_livre,
+                ':format_numerique' => $format_numerique,
+                ':fichier_numerique' => $bookInfo['fichier_numerique'] ?? null,
                 ':auteur' => $bookInfo['auteur'],
                 ':serie' => $this->normalizeSerie($bookInfo['serie'] ?? null),
                 ':tome' => $this->normalizeTome($bookInfo['tome'] ?? null),
@@ -38,7 +49,7 @@ class LivreRepository {
                 ':statut' => $bookInfo['statut'] ?? 'À lire',
                 ':tags' => $bookInfo['tags'] ?? ''
             ]);
-            
+
             return true;
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) { // Code pour duplicate entry
@@ -51,10 +62,10 @@ class LivreRepository {
     /**
      * Récupérer tous les livres avec pagination
      */
-    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null) {
+    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null, $type = null) {
         $limit = $limit ?? $this->itemsPerPage;
         $offset = ($page - 1) * $limit;
-        
+
         $sql = "SELECT * FROM livres WHERE 1=1";
         $params = [];
 
@@ -62,12 +73,17 @@ class LivreRepository {
             $sql .= " AND serie = :serie";
             $params[':serie'] = $serie;
         }
-        
+
         if ($support) {
             $sql .= " AND support = :support";
             $params[':support'] = $support;
         }
-        
+
+        if ($type) {
+            $sql .= " AND type_livre = :type";
+            $params[':type'] = $type;
+        }
+
         if ($search) {
             $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
@@ -105,7 +121,7 @@ class LivreRepository {
     /**
      * Compter le nombre total de livres (pour pagination)
      */
-    public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null) {
+    public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null, $type = null) {
         $sql = "SELECT COUNT(*) FROM livres WHERE 1=1";
         $params = [];
 
@@ -113,12 +129,17 @@ class LivreRepository {
             $sql .= " AND serie = :serie";
             $params[':serie'] = $serie;
         }
-        
+
         if ($support) {
             $sql .= " AND support = :support";
             $params[':support'] = $support;
         }
-        
+
+        if ($type) {
+            $sql .= " AND type_livre = :type";
+            $params[':type'] = $type;
+        }
+
         if ($search) {
             $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
@@ -164,12 +185,12 @@ class LivreRepository {
     /**
      * Mettre à jour les notes, tags et support d'un livre
      */
-    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null, $serie = null, $tome = null) {
+    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null, $serie = null, $tome = null, $type_livre = null, $format_numerique = null, $fichier_numerique_upload = null, $supprimer_fichier_numerique = false) {
         $book = $this->getBookById($id);
         if (!$book) {
             throw new Exception("Livre non trouvé");
         }
-        
+
         $nouvelle_couverture = $book['couverture'];
         
         // Gestion de la suppression de couverture
@@ -201,28 +222,78 @@ class LivreRepository {
         if ($support !== null && !in_array($support, $this->supports->getSupportEnumValues(), true)) {
             throw new Exception("Support invalide.");
         }
-        
+
+        $type_effectif = $type_livre ?? $book['type_livre'];
+        $nouveau_fichier_numerique = $book['fichier_numerique'];
+
+        if ($type_effectif === 'Papier') {
+            // Un livre papier n'a ni format ni fichier numérique associé : on
+            // efface l'éventuel fichier existant si le livre bascule de numérique à papier.
+            if ($book['fichier_numerique'] && file_exists($book['fichier_numerique'])) {
+                unlink($book['fichier_numerique']);
+            }
+            $nouveau_fichier_numerique = null;
+            $format_numerique = '';
+        } else {
+            // Gestion de la suppression du fichier numérique
+            if ($supprimer_fichier_numerique) {
+                if ($book['fichier_numerique'] && file_exists($book['fichier_numerique'])) {
+                    unlink($book['fichier_numerique']);
+                }
+                $nouveau_fichier_numerique = null;
+            }
+
+            // Gestion de l'upload d'un nouveau fichier numérique
+            if ($fichier_numerique_upload && $fichier_numerique_upload['error'] === UPLOAD_ERR_OK) {
+                $nouveau_fichier_numerique = $this->uploadFichierNumerique($fichier_numerique_upload, $format_numerique);
+
+                // Supprimer l'ancien fichier
+                if ($book['fichier_numerique'] && !$supprimer_fichier_numerique && file_exists($book['fichier_numerique'])) {
+                    unlink($book['fichier_numerique']);
+                }
+            }
+
+            // Valider le format numérique si fourni
+            if ($format_numerique !== null && $format_numerique !== '' && $this->formats->getFormatExtension($format_numerique) === null) {
+                throw new Exception("Format numérique invalide.");
+            }
+        }
+
         // Préparer la requête SQL avec support
-        $sql = "UPDATE livres SET 
-                note_personnelle = :note, 
-                tags = :tags, 
-                statut = :statut, 
-                couverture = :couverture";
-        
+        $sql = "UPDATE livres SET
+                note_personnelle = :note,
+                tags = :tags,
+                statut = :statut,
+                couverture = :couverture,
+                fichier_numerique = :fichier_numerique";
+
         $params = [
             ':id' => $id,
             ':note' => $note_personnelle,
             ':tags' => $tags,
             ':statut' => $statut,
-            ':couverture' => $nouvelle_couverture
+            ':couverture' => $nouvelle_couverture,
+            ':fichier_numerique' => $nouveau_fichier_numerique
         ];
-        
+
         // Ajouter le support si fourni
         if ($support !== null) {
             $sql .= ", support = :support";
             $params[':support'] = $support;
         }
-        
+
+        // Ajouter le type (papier/numérique) si fourni
+        if ($type_livre !== null) {
+            $sql .= ", type_livre = :type_livre";
+            $params[':type_livre'] = $type_livre;
+        }
+
+        // Format numérique : null = ne pas toucher, chaîne vide = effacer
+        if ($format_numerique !== null) {
+            $sql .= ", format_numerique = :format_numerique";
+            $params[':format_numerique'] = $format_numerique === '' ? null : $format_numerique;
+        }
+
         // Ajouter la description si fournie
         if ($description !== null) {
             $sql .= ", description = :description";
@@ -295,7 +366,58 @@ class LivreRepository {
         if (!move_uploaded_file($fichier['tmp_name'], $chemin_destination)) {
             throw new Exception("Erreur lors de l'upload du fichier");
         }
-        
+
+        return $chemin_destination;
+    }
+
+    /**
+     * Gérer l'upload du fichier numérique (ebook) d'un livre. Publique (contrairement
+     * à uploadCouverture()) car appelée depuis ajouter.php avant l'insertion du livre,
+     * quand l'id n'existe pas encore. L'extension attendue est celle enregistrée pour
+     * le format choisi dans le catalogue (voir FormatNumeriqueRepository), ce qui rend
+     * les formats acceptés extensibles sans modifier ce code.
+     */
+    public function uploadFichierNumerique($fichier, $format_numerique) {
+        $extension_attendue = $this->formats->getFormatExtension($format_numerique);
+        if ($extension_attendue === null) {
+            throw new Exception("Format numérique invalide.");
+        }
+
+        $taille_max = 100 * 1024 * 1024; // 100MB
+
+        $extension = strtolower(pathinfo($fichier['name'], PATHINFO_EXTENSION));
+
+        if ($extension !== $extension_attendue) {
+            throw new Exception("Le fichier doit être au format ." . $extension_attendue . " pour correspondre au format sélectionné (" . $format_numerique . ").");
+        }
+
+        if ($fichier['size'] > $taille_max) {
+            throw new Exception("Le fichier est trop volumineux (max 100MB)");
+        }
+
+        // Vérification best-effort du type MIME pour les formats les plus courants
+        $mimesConnus = ['pdf' => 'application/pdf', 'epub' => 'application/epub+zip'];
+        if (isset($mimesConnus[$extension])) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $fichier['tmp_name']);
+            finfo_close($finfo);
+            if ($mimeType !== $mimesConnus[$extension]) {
+                throw new Exception("Le fichier n'est pas un ." . $extension . " valide");
+            }
+        }
+
+        $dossier_upload = 'uploads/ebooks/';
+        if (!is_dir($dossier_upload)) {
+            mkdir($dossier_upload, 0755, true);
+        }
+
+        $nom_fichier = 'ebook_' . time() . '_' . uniqid() . '.' . $extension;
+        $chemin_destination = $dossier_upload . $nom_fichier;
+
+        if (!move_uploaded_file($fichier['tmp_name'], $chemin_destination)) {
+            throw new Exception("Erreur lors de l'upload du fichier");
+        }
+
         return $chemin_destination;
     }
     
@@ -395,6 +517,16 @@ class LivreRepository {
         if (!empty($criteres['support'])) {
             $conditions[] = "support = :support";
             $params[':support'] = $criteres['support'];
+        }
+
+        if (!empty($criteres['type_livre'])) {
+            $conditions[] = "type_livre = :type_livre";
+            $params[':type_livre'] = $criteres['type_livre'];
+        }
+
+        if (!empty($criteres['format_numerique'])) {
+            $conditions[] = "format_numerique = :format_numerique";
+            $params[':format_numerique'] = $criteres['format_numerique'];
         }
 
         if (!empty($criteres['statut'])) {

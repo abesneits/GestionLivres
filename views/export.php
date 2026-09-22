@@ -36,6 +36,25 @@ renderHead('Export - Ma Collection');
                         </select>
                     </div>
                     <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>Type</label>
+                        <select name="type_livre">
+                            <option value="">Tous</option>
+                            <option value="Papier" <?= $criteres['type_livre'] === 'Papier' ? 'selected' : '' ?>>Papier</option>
+                            <option value="Numérique" <?= $criteres['type_livre'] === 'Numérique' ? 'selected' : '' ?>>Numérique</option>
+                        </select>
+                    </div>
+                    <?php if (!empty($formatTypes)): ?>
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>Format numérique</label>
+                        <select name="format_numerique">
+                            <option value="">Tous</option>
+                            <?php foreach (array_keys($formatTypes) as $f): ?>
+                                <option value="<?= h($f) ?>" <?= $criteres['format_numerique'] === $f ? 'selected' : '' ?>><?= h($f) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                    <div class="form-group" style="flex:1; min-width:150px;">
                         <label>Statut</label>
                         <select name="statut">
                             <option value="">Tous</option>
@@ -265,6 +284,8 @@ renderHead('Export - Ma Collection');
             const fd = new FormData(form);
             const actif = (fd.get('search') || '').toString().trim() !== ''
                 || (fd.get('support') || '').toString() !== ''
+                || (fd.get('type_livre') || '').toString() !== ''
+                || (fd.get('format_numerique') || '').toString() !== ''
                 || (fd.get('statut') || '').toString() !== ''
                 || (fd.get('date_from') || '').toString() !== ''
                 || (fd.get('date_to') || '').toString() !== ''

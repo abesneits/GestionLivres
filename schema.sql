@@ -28,6 +28,12 @@ CREATE TABLE IF NOT EXISTS `livres` (
   `titre` varchar(255) NOT NULL,
   -- Liste modifiable depuis la page Outils (ajout / renommage de supports)
   `support` enum('Livre','Bande dessinée','Manga') NOT NULL,
+  -- Papier ou numérique : dimension indépendante du support ci-dessus
+  `type_livre` enum('Papier','Numérique') NOT NULL DEFAULT 'Papier',
+  -- Uniquement pour un livre numérique ; doit exister dans formats_numeriques
+  `format_numerique` varchar(50) DEFAULT NULL,
+  -- Chemin du fichier envoyé (uploads/ebooks/...), uniquement pour un livre numérique
+  `fichier_numerique` varchar(500) DEFAULT NULL,
   -- Un ou plusieurs auteurs, séparés par des virgules
   `auteur` varchar(255) DEFAULT NULL,
   -- Série (ex. « Cycle de Fondation ») et numéro de tome dans cette série
@@ -45,6 +51,7 @@ CREATE TABLE IF NOT EXISTS `livres` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `isbn` (`isbn`),
   KEY `idx_support` (`support`),
+  KEY `idx_type_livre` (`type_livre`),
   KEY `idx_statut` (`statut`),
   KEY `idx_date_ajout` (`date_ajout`),
   -- Index sur un préfixe : évite la limite de longueur de clé des anciens MySQL
@@ -115,3 +122,19 @@ CREATE TABLE IF NOT EXISTS `tags_catalogue` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `nom` (`nom`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------------------------------------------------------
+-- Catalogue des formats numériques (PDF, Epub, ...), extensible depuis la
+-- page Outils. L'extension sert à valider les fichiers envoyés.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `formats_numeriques` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(50) NOT NULL,
+  `extension` varchar(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `formats_numeriques` (`nom`, `extension`) VALUES
+  ('PDF', 'pdf'),
+  ('Epub', 'epub');

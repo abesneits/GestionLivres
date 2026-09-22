@@ -1,0 +1,13 @@
+
+# Sécurité pour le dossier uploads/ebooks
+# Contrairement aux couvertures (uploads/.htaccess), les fichiers numériques
+# (PDF, Epub, ...) sont un contenu de valeur : aucun accès direct par URL,
+# même pour les extensions autorisées. Le seul accès possible passe par
+# telecharger_ebook.php, qui exige d'être authentifié.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>

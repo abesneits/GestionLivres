@@ -39,6 +39,8 @@ function exportCSV($meta, $books, $filename) {
         'Éditeur',
         'Date de publication',
         'Support',
+        'Type',
+        'Format numérique',
         'Statut',
         'Genre',
         'Tags',
@@ -57,6 +59,8 @@ function exportCSV($meta, $books, $filename) {
             $book['editeur'] ?? '',
             $book['date_publication'] ?? '',
             $book['support'],
+            $book['type_livre'] ?? 'Papier',
+            $book['format_numerique'] ?? '',
             $book['statut'] ?? 'À lire',
             $book['genre'] ?? '',
             $book['tags'] ?? '',
@@ -113,6 +117,8 @@ function exportExcel($meta, $books, $filename) {
     echo '<th>Éditeur</th>';
     echo '<th>Date publication</th>';
     echo '<th>Support</th>';
+    echo '<th>Type</th>';
+    echo '<th>Format numérique</th>';
     echo '<th>Statut</th>';
     echo '<th>Genre</th>';
     echo '<th>Tags</th>';
@@ -131,6 +137,8 @@ function exportExcel($meta, $books, $filename) {
         echo '<td>' . htmlspecialchars($book['editeur'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['date_publication'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['support']) . '</td>';
+        echo '<td>' . htmlspecialchars($book['type_livre'] ?? 'Papier') . '</td>';
+        echo '<td>' . htmlspecialchars($book['format_numerique'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['statut'] ?? 'À lire') . '</td>';
         echo '<td>' . htmlspecialchars($book['genre'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['tags'] ?? '') . '</td>';
@@ -169,6 +177,8 @@ function exportJSON($meta, $books, $filename) {
                 'editeur' => $book['editeur'] ?? null,
                 'date_publication' => $book['date_publication'] ?? null,
                 'support' => $book['support'],
+                'type_livre' => $book['type_livre'] ?? 'Papier',
+                'format_numerique' => $book['format_numerique'] ?? null,
                 'statut' => $book['statut'] ?? 'À lire',
                 'genre' => $book['genre'] ?? null,
                 'tags' => $book['tags'] ? explode(',', $book['tags']) : [],
@@ -221,6 +231,10 @@ function exportTXT($meta, $books, $filename) {
         }
 
         echo "   Support  : " . $book['support'] . "\n";
+        echo "   Type     : " . ($book['type_livre'] ?? 'Papier') . "\n";
+        if (!empty($book['format_numerique'])) {
+            echo "   Format   : " . $book['format_numerique'] . "\n";
+        }
         echo "   Statut   : " . ($book['statut'] ?? 'À lire') . "\n";
 
         if (!empty($book['genre'])) {
@@ -339,6 +353,10 @@ function exportHTML($meta, $books, $filename) {
 
         echo '<div class="book-info">';
         echo '<span class="badge badge-support">' . htmlspecialchars($book['support']) . '</span>';
+        echo '<span class="badge badge-support">' . htmlspecialchars($book['type_livre'] ?? 'Papier') . '</span>';
+        if (!empty($book['format_numerique'])) {
+            echo '<span class="badge badge-statut">' . htmlspecialchars($book['format_numerique']) . '</span>';
+        }
         echo '<span class="badge badge-statut">' . htmlspecialchars($book['statut'] ?? 'À lire') . '</span>';
 
         if (!empty($book['isbn'])) {

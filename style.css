@@ -831,10 +831,31 @@ textarea.error {
     box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
 }
 
+/* Formulaire de recherche de la page d'accueil : recherche seule sur sa ligne,
+   filtres en dessous dans une grille à colonnes égales (contrairement à un flex
+   qui étire le dernier élément isolé d'une ligne incomplète sur toute la largeur). */
+.search-form-index {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.search-main-row .search-group {
+    max-width: 420px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
 .btn-search {
     background: #28a745;
     padding: 12px 20px;
     white-space: nowrap;
+    align-self: flex-start;
 }
 
 .btn-search:hover {
@@ -1057,6 +1078,24 @@ textarea.error {
     text-decoration: none;
 }
 
+.btn-download {
+    background: #6c757d;
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-download:hover {
+    background: #545b62;
+    color: white;
+    text-decoration: none;
+}
+
 .book-card-date {
     position: absolute;
     top: 10px;
@@ -1162,6 +1201,31 @@ textarea.error {
 .support-bd {
     background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
     color: #e65100;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+/* Type (Papier/Numérique) */
+.type-papier {
+    background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%);
+    color: #4e342e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.type-numerique {
+    background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+    color: #00695c;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1606,9 +1670,17 @@ td strong {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-group {
         min-width: auto;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-main-row .search-group {
+        max-width: none;
     }
     
     .actions-bar {

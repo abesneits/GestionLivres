@@ -5,8 +5,9 @@
 
 require_once 'includes/bootstrap.php';
 
-$section = in_array($_GET['section'] ?? '', ['bdd', 'edition', 'tags', 'supports']) ? $_GET['section'] : 'bdd';
+$section = in_array($_GET['section'] ?? '', ['bdd', 'edition', 'tags', 'supports', 'formats']) ? $_GET['section'] : 'bdd';
 $supportTypes = $bookManager->getSupportTypesWithCounts();
+$formatTypes = $bookManager->getFormatsNumeriquesWithCounts();
 
 $message = '';
 $messageType = '';
@@ -93,6 +94,30 @@ if ($_POST && isset($_POST['action'])) {
             $message = "Erreur : " . $e->getMessage();
             $messageType = 'error';
         }
+    } elseif ($_POST['action'] === 'add_format') {
+        try {
+            $bookManager->addFormatNumerique($_POST['nom'] ?? '', $_POST['extension'] ?? '');
+            redirectWithMessage('outils.php?section=formats', "Format ajouté.", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
+    } elseif ($_POST['action'] === 'rename_format') {
+        try {
+            $count = $bookManager->renameFormatNumerique($_POST['old_format'] ?? '', $_POST['new_format_name'] ?? '');
+            redirectWithMessage('outils.php?section=formats', "Format renommé : $count livre(s) mis à jour.", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
+    } elseif ($_POST['action'] === 'delete_format') {
+        try {
+            $bookManager->deleteFormatNumerique($_POST['nom'] ?? '');
+            redirectWithMessage('outils.php?section=formats', "Format supprimé.", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
     } elseif ($_POST['action'] === 'rename_tag') {
         try {
             $resultat = $bookManager->renameTag($_POST['old_tag'] ?? '', $_POST['new_tag'] ?? '');
@@ -126,7 +151,7 @@ $tousLesTags = [];
 $filtreActif = false;
 
 if ($section === 'edition') {
-    $criteres = sanitizeAdvancedSearchParams($_GET, array_keys($supportTypes));
+    $criteres = sanitizeAdvancedSearchParams($_GET, array_keys($supportTypes), array_keys($formatTypes));
     $totalResultats = $bookManager->countBooksAdvanced($criteres);
     $paginationInfoEdition = $bookManager->getPaginationInfo($totalResultats, $criteres['page']);
     $resultatsLivres = $bookManager->searchBooksAdvanced($criteres, $criteres['page']);
@@ -134,6 +159,8 @@ if ($section === 'edition') {
 
     $filtreActif = $criteres['search'] !== ''
         || $criteres['support'] !== ''
+        || $criteres['type_livre'] !== ''
+        || $criteres['format_numerique'] !== ''
         || $criteres['statut'] !== ''
         || !empty($criteres['tags'])
         || $criteres['date_from'] !== ''

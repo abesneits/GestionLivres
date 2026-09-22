@@ -7,6 +7,9 @@ logs/*.log
 # Fichiers uploadés par les utilisateurs (contenu dynamique, pas du code)
 uploads/*
 !uploads/.htaccess
+!uploads/ebooks/
+uploads/ebooks/*
+!uploads/ebooks/.htaccess
 
 # Divers
 .DS_Store

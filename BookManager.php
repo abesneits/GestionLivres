@@ -9,6 +9,7 @@ require_once __DIR__ . '/src/ListeRepository.php';
 require_once __DIR__ . '/src/AuteurRepository.php';
 require_once __DIR__ . '/src/TagRepository.php';
 require_once __DIR__ . '/src/SupportRepository.php';
+require_once __DIR__ . '/src/FormatNumeriqueRepository.php';
 require_once __DIR__ . '/src/LivreRepository.php';
 require_once __DIR__ . '/src/Schema.php';
 require_once __DIR__ . '/src/Maintenance.php';
@@ -21,6 +22,7 @@ class BookManager {
     private $auteurs;
     private $tags;
     private $supports;
+    private $formats;
     private $livres;
     private $schema;
     private $maintenance;
@@ -37,9 +39,10 @@ class BookManager {
         $this->auteurs = new AuteurRepository($this->pdo);
         $this->tags = new TagRepository($this->pdo);
         $this->supports = new SupportRepository($this->pdo);
-        $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports);
+        $this->formats = new FormatNumeriqueRepository($this->pdo);
+        $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports, $this->formats);
         $this->stats = new Stats($this->pdo, [$this->livres, 'countBooks']);
-        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags);
+        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags, $this->formats);
         $this->maintenance = new Maintenance($this->pdo);
     }
     
@@ -131,20 +134,24 @@ class BookManager {
         return $this->livres->addBook($bookInfo);
     }
 
-    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null) {
-        return $this->livres->getAllBooks($support, $search, $tag, $statut, $page, $limit, $serie);
+    public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null, $type = null) {
+        return $this->livres->getAllBooks($support, $search, $tag, $statut, $page, $limit, $serie, $type);
     }
 
-    public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null) {
-        return $this->livres->countBooks($support, $search, $tag, $statut, $serie);
+    public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null, $type = null) {
+        return $this->livres->countBooks($support, $search, $tag, $statut, $serie, $type);
     }
 
     public function getPaginationInfo($totalItems, $currentPage, $itemsPerPage = null) {
         return $this->livres->getPaginationInfo($totalItems, $currentPage, $itemsPerPage);
     }
 
-    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null, $serie = null, $tome = null) {
-        return $this->livres->updateBookNotes($id, $note_personnelle, $tags, $statut, $support, $description, $couverture_perso, $supprimer_couverture, $titre, $auteur, $serie, $tome);
+    public function updateBookNotes($id, $note_personnelle, $tags, $statut, $support = null, $description = null, $couverture_perso = null, $supprimer_couverture = false, $titre = null, $auteur = null, $serie = null, $tome = null, $type_livre = null, $format_numerique = null, $fichier_numerique_upload = null, $supprimer_fichier_numerique = false) {
+        return $this->livres->updateBookNotes($id, $note_personnelle, $tags, $statut, $support, $description, $couverture_perso, $supprimer_couverture, $titre, $auteur, $serie, $tome, $type_livre, $format_numerique, $fichier_numerique_upload, $supprimer_fichier_numerique);
+    }
+
+    public function uploadFichierNumerique($fichier, $format_numerique) {
+        return $this->livres->uploadFichierNumerique($fichier, $format_numerique);
     }
 
     public function getBookById($id) {
@@ -210,6 +217,10 @@ class BookManager {
 
     public function getRecentActivity($limit = 10) {
         return $this->stats->getRecentActivity($limit);
+    }
+
+    public function getFormatNumeriqueStats() {
+        return $this->stats->getFormatNumeriqueStats();
     }
 
     /**
@@ -329,5 +340,28 @@ class BookManager {
 
     public function renameSupportType($oldNom, $newNom) {
         return $this->supports->renameSupportType($oldNom, $newNom);
+    }
+
+    /**
+     * Formats numériques (voir FormatNumeriqueRepository)
+     */
+    public function getFormatsNumeriquesWithCounts() {
+        return $this->formats->getFormatsWithCounts();
+    }
+
+    public function getAllExtensionsNumeriques() {
+        return $this->formats->getAllExtensions();
+    }
+
+    public function addFormatNumerique($nom, $extension) {
+        return $this->formats->addFormat($nom, $extension);
+    }
+
+    public function renameFormatNumerique($oldNom, $newNom) {
+        return $this->formats->renameFormat($oldNom, $newNom);
+    }
+
+    public function deleteFormatNumerique($nom) {
+        return $this->formats->deleteFormat($nom);
     }
 }

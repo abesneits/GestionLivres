@@ -13,6 +13,7 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 | Couche de données découpée | `BookManager` délègue à des classes thématiques dans `src/` (voir [architecture.md](architecture.md)). |
 | Manifeste web | `site.webmanifest` complet (nom, langue, URL de démarrage, couleurs, icônes) et chemins relatifs, y compris pour les icônes de `includes/head.php` : le site peut donc être installé dans un sous-dossier et ajouté à l'écran d'accueil d'un téléphone (selon les navigateurs, HTTPS est exigé). Le fonctionnement hors connexion reste à faire (ci-dessous). |
 | Séparer les vues du traitement | Chaque page à la racine est un contrôleur qui se termine par `require 'views/<page>.php'` ; la vue ne contient que du HTML (voir [architecture.md](architecture.md)). |
+| Support papier / numérique | Distinction papier / numérique par livre (migration automatique : la collection existante passe en papier), catalogue de formats numériques extensible (PDF, Epub, ...), envoi et téléchargement authentifié du fichier (voir [architecture.md](architecture.md)). |
 
 ## Données et recherche
 

@@ -194,6 +194,11 @@ class Maintenance {
             $referenced[$chemin] = true;
         }
 
+        // Fichiers numériques (ebooks) des livres : même précaution que ci-dessus.
+        foreach ($this->pdo->query("SELECT fichier_numerique FROM livres WHERE fichier_numerique IS NOT NULL AND fichier_numerique != ''")->fetchAll(PDO::FETCH_COLUMN) as $chemin) {
+            $referenced[$chemin] = true;
+        }
+
         $tailleTotale = 0;
         $nbFichiers = 0;
         $orphelins = [];

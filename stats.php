@@ -14,5 +14,6 @@ $monthlyStats = $bookManager->getMonthlyAdditionStats();
 $topTags = $bookManager->getTopTags(10);
 $authorStats = $bookManager->getAuthorStats(10);
 $recentActivity = $bookManager->getRecentActivity(10);
+$formatStats = $bookManager->getFormatNumeriqueStats();
 
 require 'views/stats.php';
