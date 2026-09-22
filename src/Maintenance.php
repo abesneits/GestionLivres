@@ -173,7 +173,7 @@ class Maintenance {
     /**
      * Analyse le dossier uploads/ : taille totale, nombre de fichiers, et
      * détection des fichiers orphelins (présents sur le disque mais dont
-     * aucune ligne de la base - livre ou auteur - ne pointe plus vers eux).
+     * aucune ligne de la base - livre, auteur ou liste - ne pointe plus vers eux).
      */
     public function getUploadsStorageInfo() {
         $dossier = 'uploads/';
@@ -184,6 +184,13 @@ class Maintenance {
         }
 
         foreach ($this->pdo->query("SELECT image_url FROM auteurs WHERE image_url IS NOT NULL AND image_url != ''")->fetchAll(PDO::FETCH_COLUMN) as $chemin) {
+            $referenced[$chemin] = true;
+        }
+
+        // Couvertures des listes de lecture : sans cette vérification, toutes
+        // les images de listes étaient considérées comme orphelines et donc
+        // supprimables par erreur (voir historique de ce fichier).
+        foreach ($this->pdo->query("SELECT couverture FROM listes_lecture WHERE couverture IS NOT NULL AND couverture != ''")->fetchAll(PDO::FETCH_COLUMN) as $chemin) {
             $referenced[$chemin] = true;
         }
 
