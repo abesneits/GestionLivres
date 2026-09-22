@@ -12,6 +12,7 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 | Modèle de données lisible | [`schema.sql`](../schema.sql) décrit les tables (l'application continue de les créer et de les mettre à jour seule). |
 | Couche de données découpée | `BookManager` délègue à des classes thématiques dans `src/` (voir [architecture.md](architecture.md)). |
 | Manifeste web | `site.webmanifest` complet (nom, langue, URL de démarrage, couleurs, icônes) et chemins relatifs, y compris pour les icônes de `includes/head.php` : le site peut donc être installé dans un sous-dossier et ajouté à l'écran d'accueil d'un téléphone (selon les navigateurs, HTTPS est exigé). Le fonctionnement hors connexion reste à faire (ci-dessous). |
+| Séparer les vues du traitement | Chaque page à la racine est un contrôleur qui se termine par `require 'views/<page>.php'` ; la vue ne contient que du HTML (voir [architecture.md](architecture.md)). |
 
 ## Données et recherche
 
@@ -48,7 +49,6 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 
 | Évolution | Effort | Notes |
 |---|---|---|
-| **Séparer les vues du traitement** dans les pages (`index.php`, `listes.php`, …) | Élevé | Les pages mêlent encore traitement des formulaires et HTML. On peut avancer page par page, en commençant par la plus simple, sans réécriture globale. |
 | **Tests automatisés** (PHPUnit) | Moyen | Aujourd'hui les vérifications sont manuelles ou par scripts jetables. Les classes de `src/` prennent leur connexion en paramètre, ce qui facilite les tests. |
 | **Documentation utilisateur** dans `docs/` | Faible | Guide pas à pas avec captures d'écran. |
 

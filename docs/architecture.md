@@ -7,8 +7,12 @@ Le projet est en PHP (8.0+) et MySQL/MariaDB, sans framework, sans Composer et s
 ## Vue d'ensemble
 
 ```
-Navigateur ──► page (index.php, ajouter.php, …)
+Navigateur ──► page (index.php, ajouter.php, …)      « contrôleur »
                  │  charge includes/bootstrap.php : session, connexion, $bookManager
+                 │  traite le formulaire, appelle $bookManager, prépare les variables
+                 ▼
+               require 'views/<page>.php'             « vue »
+                 │  uniquement du HTML, aucun traitement
                  ▼
                BookManager  (façade : aucune logique, une méthode = un appel délégué)
                  ▼
@@ -17,7 +21,7 @@ Navigateur ──► page (index.php, ajouter.php, …)
                MySQL / MariaDB
 ```
 
-Ce n'est pas un MVC strict : la couche de données (le modèle) est isolée, mais chaque page contient à la fois le traitement du formulaire (contrôleur) et le HTML (vue). Séparer les vues est une évolution prévue (voir [evolutions.md](evolutions.md)).
+La couche de données (le modèle) est isolée, et chaque page à la racine est désormais un contrôleur fin : elle traite le formulaire (validation, upload, appels à `$bookManager`), prépare les variables nécessaires à l'affichage, puis se termine par `require 'views/<page>.php';`. La vue correspondante, dans `views/`, ne contient que du HTML et l'affichage de ces variables — elle n'écrit jamais dans la base ni ne traite de `$_POST`. Quelques vues appellent tout de même `$bookManager` directement, mais uniquement pour des données d'affichage en lecture seule (ex. la liste des séries ou des types de support pour remplir un menu déroulant).
 
 ## Démarrage d'une page
 
@@ -92,7 +96,7 @@ Application à un seul utilisateur : le hash bcrypt du mot de passe et le sel de
 
 1. **Une nouvelle donnée à stocker** : ajoutez la colonne dans `src/Schema.php` (migration rejouable) **et** dans `schema.sql`.
 2. **Une nouvelle requête** : écrivez la méthode dans la classe de `src/` concernée, puis ajoutez dans `BookManager` une méthode d'une ligne qui l'appelle.
-3. **Une nouvelle page** : commencez par `require_once 'includes/bootstrap.php'`, protégez les formulaires avec le jeton CSRF, affichez avec `h()`, et n'écrivez pas de SQL dans la page.
+3. **Une nouvelle page** : commencez par `require_once 'includes/bootstrap.php'`, protégez les formulaires avec le jeton CSRF, n'écrivez pas de SQL dans la page, et terminez le contrôleur par `require 'views/<page>.php';`. La vue affiche avec `h()` et ne fait aucun traitement.
 
 ## Vérifier une modification
 
