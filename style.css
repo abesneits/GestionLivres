@@ -2100,7 +2100,10 @@ textarea:focus {
     background: #0056b3;
 }
 
-input[type="file"] {
+/* Uniquement le champ remplacé par un bouton stylé (voir .upload-label
+   ci-dessus, utilisé par ajouter.php) : un input[type="file"] classique,
+   sans .file-input-hidden, doit rester visible (ex: outils.php, listes.php) */
+.file-input-hidden {
     display: none;
 }
 

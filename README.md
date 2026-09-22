@@ -112,17 +112,18 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 
 ## Structure du code
 
-Le projet reste volontairement simple (pas de framework, pas de Composer). L'accès aux données est séparé de l'affichage ; les pages, elles, regroupent encore traitement des formulaires et HTML (ce n'est donc pas un MVC strict).
+Le projet reste volontairement simple (pas de framework, pas de Composer), mais respecte une séparation vue/contrôleur : chaque page à la racine ne fait que du traitement (formulaires, upload, appels à `$bookManager`) et se termine par un `require` vers sa vue dans `views/`, qui ne contient que du HTML.
 
 ```
-index.php, ajouter.php, listes.php, …   Pages : traitement des formulaires (POST) + HTML
+index.php, ajouter.php, listes.php, …   Contrôleurs : traitement des formulaires (POST), aucun HTML
+views/                                  Vues : une par page, uniquement de l'affichage
 includes/                               Démarrage (bootstrap), authentification, menu, fonctions utilitaires et d'export
 BookManager.php                         Point d'entrée unique de la couche de données (façade)
 src/                                    Classes qui contiennent le SQL, une par thème
 install/                                Assistant d'installation (à supprimer après usage)
 ```
 
-Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la connexion et crée l'objet `$bookManager`. Les pages appellent ensuite `$bookManager->uneMethode()` sans jamais écrire de SQL.
+Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la connexion et crée l'objet `$bookManager`. Les pages appellent ensuite `$bookManager->uneMethode()` sans jamais écrire de SQL, puis délèguent l'affichage à leur vue (`require 'views/nom_de_la_page.php';`). Certaines vues appellent directement `$bookManager` pour des données purement d'affichage (ex : liste des séries ou des supports pour un menu déroulant), sans jamais modifier l'état de l'application.
 
 `BookManager` ne contient aucune logique : il crée une connexion PDO partagée et délègue chaque appel à la classe du dossier `src/` qui en est responsable :
 

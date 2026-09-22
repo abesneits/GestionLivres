@@ -142,18 +142,26 @@ class Maintenance {
         ];
 
         foreach ($tables as $table) {
+            // TABLE_ROWS d'information_schema n'est qu'une estimation pour les
+            // tables InnoDB (rafraîchie périodiquement, pas à chaque écriture) :
+            // elle peut dériver du vrai total après beaucoup d'insertions/suppressions.
+            // On garde information_schema seulement pour la taille (DATA_LENGTH/
+            // INDEX_LENGTH), qui n'a pas besoin d'être exacte, et on compte les
+            // lignes avec un vrai COUNT(*).
             $stmt = $this->pdo->prepare(
-                "SELECT TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH FROM information_schema.TABLES
+                "SELECT DATA_LENGTH, INDEX_LENGTH FROM information_schema.TABLES
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table"
             );
             $stmt->execute([':table' => $table]);
-            $ligne = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['TABLE_ROWS' => 0, 'DATA_LENGTH' => 0, 'INDEX_LENGTH' => 0];
+            $ligne = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['DATA_LENGTH' => 0, 'INDEX_LENGTH' => 0];
+
+            $nbLignes = (int)$this->pdo->query("SELECT COUNT(*) FROM $table")->fetchColumn();
 
             $index = $this->pdo->query("SHOW INDEX FROM $table")->fetchAll(PDO::FETCH_ASSOC);
             $nomsIndex = array_values(array_unique(array_column($index, 'Key_name')));
 
             $info['tables'][$table] = [
-                'lignes' => (int)$ligne['TABLE_ROWS'],
+                'lignes' => $nbLignes,
                 'taille_octets' => (int)$ligne['DATA_LENGTH'] + (int)$ligne['INDEX_LENGTH'],
                 'index' => $nomsIndex,
             ];
