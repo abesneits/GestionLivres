@@ -108,7 +108,7 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 
 - [Cas d'usage et besoins couverts](docs/cas-d-usage.md) : à quoi sert l'application, ce qu'elle fait et ce qu'elle ne fait pas
 - [Évolutions envisagées](docs/evolutions.md) : ce qui est prévu, écarté, et pourquoi
-- [Architecture](docs/architecture.md) : fonctionnement du code, à lire avant de le modifier
+- [Architecture](docs/architecture.md) : architecture fonctionnelle (fonctions et services) et logicielle (modèle / vue / contrôleur), à lire avant de modifier le code
 - [Modèle de données](schema.sql) : les tables de la base
 
 ## Structure du code
