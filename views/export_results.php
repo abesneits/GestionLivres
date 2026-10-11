@@ -1,6 +1,6 @@
     <h3>Résultats de la recherche</h3>
     <p style="color:#666; margin-bottom: 15px;">
-        <strong><?= number_format($totalResultats) ?></strong> livre<?= $totalResultats > 1 ? 's' : '' ?> correspondant<?= $totalResultats > 1 ? 's' : '' ?> aux critères ci-dessus.
+        <strong><?= formatNombre($totalResultats) ?></strong> livre<?= $totalResultats > 1 ? 's' : '' ?> correspondant<?= $totalResultats > 1 ? 's' : '' ?> aux critères ci-dessus.
     </p>
 
     <?php if (empty($previewBooks)): ?>

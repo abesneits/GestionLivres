@@ -25,8 +25,20 @@ class Schema {
     /**
      * Garantit que le schéma complet (tables, colonnes, index) existe et est à jour.
      * Point d'entrée unique appelé par includes/bootstrap.php sur chaque page.
+     *
+     * Les ~30 vérifications ne sont faites qu'une fois par « version du code de
+     * schéma » : l'empreinte des fichiers qui définissent le schéma est mémorisée
+     * dans la table schema_meta. Tant qu'elle ne change pas (aucun fichier mis à
+     * jour), une page ne coûte qu'UNE requête. Dès qu'un de ces fichiers est
+     * remplacé, la version change et les vérifications repartent une fois.
+     * $force = true les rejoue de toute façon (ex. colonne supprimée à la main).
      */
-    public function ensureSchema() {
+    public function ensureSchema($force = false) {
+        $version = $this->computeVersion();
+        if (!$force && $this->isUpToDate($version)) {
+            return;
+        }
+
         $this->createTable();
         $this->listes->createListTables();
         $this->auteurs->createAuthorTable();
@@ -34,6 +46,43 @@ class Schema {
         $this->auteurs->createIgnoredDuplicatesTable();
         $this->tags->createTagsCatalogTable();
         $this->formats->createFormatsCatalogTable();
+
+        $this->markUpToDate($version);
+    }
+
+    /**
+     * Empreinte des fichiers qui définissent le schéma : si l'un d'eux change,
+     * la version change et le schéma est revérifié.
+     */
+    private function computeVersion() {
+        $empreinte = '';
+        foreach (['Schema', 'SupportRepository', 'ListeRepository', 'AuteurRepository', 'TagRepository', 'FormatNumeriqueRepository'] as $classe) {
+            $empreinte .= (string)@md5_file(__DIR__ . '/' . $classe . '.php');
+        }
+        return md5($empreinte);
+    }
+
+    /**
+     * La version mémorisée en base est-elle celle du code actuel ?
+     * Si la table schema_meta n'existe pas encore (première fois), c'est « non ».
+     */
+    private function isUpToDate($version) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT valeur FROM schema_meta WHERE cle = 'version'");
+            $stmt->execute();
+            return $stmt->fetchColumn() === $version;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    private function markUpToDate($version) {
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS schema_meta (
+            cle VARCHAR(50) PRIMARY KEY,
+            valeur VARCHAR(64) NOT NULL
+        )");
+        $stmt = $this->pdo->prepare("REPLACE INTO schema_meta (cle, valeur) VALUES ('version', :v)");
+        $stmt->execute([':v' => $version]);
     }
 
     /**
@@ -43,7 +92,7 @@ class Schema {
         // Créer la table avec la structure de base si elle n'existe pas
         $sql = "CREATE TABLE IF NOT EXISTS livres (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            isbn VARCHAR(13) UNIQUE NOT NULL,
+            isbn VARCHAR(40) UNIQUE NOT NULL,
             titre VARCHAR(255) NOT NULL,
             support ENUM('Livre', 'Bande dessinée', 'Manga') NOT NULL,
             auteur VARCHAR(255),
@@ -97,7 +146,7 @@ class Schema {
             echo "<div class='message success'>✅ Colonne 'editeur' supprimée avec succès !</div>";
         }
 
-        // Élargir la colonne isbn : les ISBN temporaires générés pour la saisie
+        // Anciennes bases : élargir la colonne isbn (nouvelles bases : déjà à 40). Les ISBN temporaires générés pour la saisie
         // manuelle (ex: TEMP_1755600000_64f...) dépassent VARCHAR(13)
         $isbnColumn = $this->pdo->query("SHOW COLUMNS FROM livres LIKE 'isbn'")->fetch(PDO::FETCH_ASSOC);
         if ($isbnColumn && preg_match('/varchar\((\d+)\)/i', $isbnColumn['Type'], $matches) && (int)$matches[1] < 40) {

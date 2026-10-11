@@ -295,7 +295,7 @@ renderHead('Ajouter un livre - Ma Collection');
         <!-- Actions rapides -->
         <div class="quick-actions-bottom">
             <a href="index.php" class="btn-secondary">
-                Voir ma collection (<?= number_format($stats['total'] ?? 0) ?> livres)
+                Voir ma collection (<?= formatNombre($stats['total'] ?? 0) ?> livres)
             </a>
         </div>
     </div>

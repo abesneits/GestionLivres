@@ -152,7 +152,7 @@ class Stats {
             $tags = explode(',', $tagString);
             foreach ($tags as $tag) {
                 $tag = trim($tag);
-                if ($tag) {
+                if ($tag !== '') {
                     $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + 1;
                 }
             }
@@ -175,27 +175,33 @@ class Stats {
     }
     
     /**
-     * Obtenir les statistiques par auteur
+     * Obtenir les statistiques par auteur.
+     * Le champ livres.auteur peut contenir plusieurs noms séparés par des virgules :
+     * chaque nom est compté séparément (comme sur la page des auteurs), et un
+     * livre écrit à deux compte pour chacun de ses auteurs.
      */
     public function getAuthorStats($limit = 10) {
-        $sql = "
-            SELECT 
-                auteur,
-                COUNT(*) as count
-            FROM livres 
-            WHERE auteur IS NOT NULL AND auteur != ''
-            GROUP BY auteur 
-            ORDER BY count DESC, auteur ASC 
-            LIMIT :limit
-        ";
-        
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT auteur, COUNT(*) as count FROM livres WHERE auteur IS NOT NULL AND auteur != '' GROUP BY auteur";
+        $comptes = [];
+        foreach ($this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $noms = array_unique(array_filter(array_map('trim', explode(',', $row['auteur'])), 'strlen'));
+            foreach ($noms as $nom) {
+                $comptes[$nom] = ($comptes[$nom] ?? 0) + (int)$row['count'];
+            }
+        }
+
+        $resultat = [];
+        foreach ($comptes as $nom => $nb) {
+            $resultat[] = ['auteur' => (string)$nom, 'count' => $nb];
+        }
+        // Plus de livres d'abord, puis ordre alphabétique à égalité
+        usort($resultat, function ($a, $b) {
+            return [$b['count'], mb_strtolower($a['auteur'])] <=> [$a['count'], mb_strtolower($b['auteur'])];
+        });
+
+        return array_slice($resultat, 0, (int)$limit);
     }
-    
+
     /**
      * Obtenir l'activité récente (ajouts et modifications)
      */

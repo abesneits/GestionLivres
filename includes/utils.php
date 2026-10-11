@@ -4,6 +4,13 @@
  */
 
 /**
+ * Nombre entier à la française : 1 234 (et non 1,234).
+ */
+function formatNombre($nombre) {
+    return number_format((float)$nombre, 0, ',', ' ');
+}
+
+/**
  * Échapper et afficher du texte HTML de manière sécurisée
  */
 function h($text) {

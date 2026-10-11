@@ -142,7 +142,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="support-icon">📖</div>
                         <div class="support-info">
                             <div class="support-name">Livres</div>
-                            <div class="support-count"><?= number_format($stats['livres']) ?></div>
+                            <div class="support-count"><?= formatNombre($stats['livres']) ?></div>
                             <div class="support-percent">
                                 <?= $stats['total'] > 0 ? round(($stats['livres'] / $stats['total']) * 100) : 0 ?>%
                             </div>
@@ -152,7 +152,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="support-icon">🎨</div>
                         <div class="support-info">
                             <div class="support-name">Bandes Dessinées</div>
-                            <div class="support-count"><?= number_format($stats['bd']) ?></div>
+                            <div class="support-count"><?= formatNombre($stats['bd']) ?></div>
                             <div class="support-percent">
                                 <?= $stats['total'] > 0 ? round(($stats['bd'] / $stats['total']) * 100) : 0 ?>%
                             </div>
@@ -162,7 +162,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="support-icon">🇯🇵</div>
                         <div class="support-info">
                             <div class="support-name">Mangas</div>
-                            <div class="support-count"><?= number_format($stats['manga']) ?></div>
+                            <div class="support-count"><?= formatNombre($stats['manga']) ?></div>
                             <div class="support-percent">
                                 <?= $stats['total'] > 0 ? round(($stats['manga'] / $stats['total']) * 100) : 0 ?>%
                             </div>
@@ -179,7 +179,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="support-icon">📕</div>
                         <div class="support-info">
                             <div class="support-name">Papier</div>
-                            <div class="support-count"><?= number_format($stats['papier']) ?></div>
+                            <div class="support-count"><?= formatNombre($stats['papier']) ?></div>
                             <div class="support-percent">
                                 <?= $stats['total'] > 0 ? round(($stats['papier'] / $stats['total']) * 100) : 0 ?>%
                             </div>
@@ -189,7 +189,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="support-icon">💾</div>
                         <div class="support-info">
                             <div class="support-name">Numérique</div>
-                            <div class="support-count"><?= number_format($stats['numerique']) ?></div>
+                            <div class="support-count"><?= formatNombre($stats['numerique']) ?></div>
                             <div class="support-percent">
                                 <?= $stats['total'] > 0 ? round(($stats['numerique'] / $stats['total']) * 100) : 0 ?>%
                             </div>
@@ -218,7 +218,7 @@ renderHead('Statistiques - Ma Collection');
                         <div class="month-bar">
                             <div class="bar-fill" 
                                  style="height: <?= $maxCount > 0 ? ($month['count'] / $maxCount) * 100 : 0 ?>%"
-                                 title="<?= $month['month_name'] ?> : <?= $month['count'] ?> livres">
+                                 title="<?= h($month['month_name']) ?> : <?= (int)$month['count'] ?> livres">
                             </div>
                             <div class="month-label"><?= substr($month['month_name'], 0, 3) ?></div>
                             <div class="month-count"><?= $month['count'] ?></div>

@@ -57,8 +57,8 @@ class BookManager {
         return $this->schema->createIndexes();
     }
 
-    public function ensureSchema() {
-        return $this->schema->ensureSchema();
+    public function ensureSchema($force = false) {
+        return $this->schema->ensureSchema($force);
     }
     
     /**

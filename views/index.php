@@ -122,7 +122,7 @@ renderHead('Ma Collection');
                 <?php if ($search || $filter || $type || $tag || $statut || $serie): ?>
                     filtrés 
                 <?php endif; ?>
-                (<?= number_format($totalBooks) ?> livre<?= $totalBooks > 1 ? 's' : '' ?>)
+                (<?= formatNombre($totalBooks) ?> livre<?= $totalBooks > 1 ? 's' : '' ?>)
             </h2>
             
             <?php if ($paginationInfo['total_pages'] > 1): ?>

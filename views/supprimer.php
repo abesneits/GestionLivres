@@ -42,9 +42,9 @@ renderHead('Supprimer un livre - Ma Collection');
         <div class="results-info">
             <p>
                 <?php if ($search): ?>
-                    <strong><?= number_format($totalBooks) ?></strong> résultat(s) trouvé(s) pour "<?= h($search) ?>"
+                    <strong><?= formatNombre($totalBooks) ?></strong> résultat(s) trouvé(s) pour "<?= h($search) ?>"
                 <?php else: ?>
-                    <strong><?= number_format($totalBooks) ?></strong> livre(s) dans votre collection
+                    <strong><?= formatNombre($totalBooks) ?></strong> livre(s) dans votre collection
                 <?php endif; ?>
             </p>
             
@@ -186,7 +186,7 @@ renderHead('Supprimer un livre - Ma Collection');
             <?php if ($search): ?>
                 <div class="info-card">
                     <h3>Informations sur la recherche</h3>
-                    <p><strong><?= number_format($totalBooks) ?></strong> livre(s) correspondent à votre recherche sur un total de <strong><?= number_format($stats['total']) ?></strong> livres.</p>
+                    <p><strong><?= formatNombre($totalBooks) ?></strong> livre(s) correspondent à votre recherche sur un total de <strong><?= formatNombre($stats['total']) ?></strong> livres.</p>
                     
                     <?php if ($totalBooks > 20): ?>
                         <p class="warning-text">
