@@ -9,6 +9,18 @@
  */
 
 /**
+ * Neutralise l'injection de formule CSV : une cellule de texte qui commence par
+ * =, +, - ou @ serait interprétée comme une formule par un tableur. On la préfixe
+ * d'une apostrophe, qui force l'affichage en texte.
+ */
+function csvSafe($valeur) {
+    if (is_string($valeur) && $valeur !== '' && strpbrk($valeur[0], "=+-@\t\r") !== false) {
+        return "'" . $valeur;
+    }
+    return $valeur;
+}
+
+/**
  * Export CSV
  */
 function exportCSV($meta, $books, $filename) {
@@ -21,9 +33,9 @@ function exportCSV($meta, $books, $filename) {
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
     // En-tête
-    fputcsv($output, [$meta['nom']], ';');
+    fputcsv($output, [csvSafe($meta['nom'])], ';');
     if (!empty($meta['description'])) {
-        fputcsv($output, ['Description', $meta['description']], ';');
+        fputcsv($output, ['Description', csvSafe($meta['description'])], ';');
     }
     fputcsv($output, ['Nombre de livres', count($books)], ';');
     fputcsv($output, ['Date d\'export', date('d/m/Y H:i')], ';');
@@ -50,7 +62,7 @@ function exportCSV($meta, $books, $filename) {
 
     // Données
     foreach ($books as $book) {
-        fputcsv($output, [
+        fputcsv($output, array_map('csvSafe', [
             $book['titre'],
             $book['auteur'],
             $book['serie'] ?? '',
@@ -66,7 +78,7 @@ function exportCSV($meta, $books, $filename) {
             $book['tags'] ?? '',
             $book['note'] ?? '',
             $book['commentaire'] ?? ''
-        ], ';');
+        ]), ';');
     }
 
     fclose($output);
@@ -123,6 +135,7 @@ function exportExcel($meta, $books, $filename) {
     echo '<th>Genre</th>';
     echo '<th>Tags</th>';
     echo '<th>Note</th>';
+    echo '<th>Commentaire</th>';
     echo '</tr>';
     echo '</thead>';
     echo '<tbody>';
@@ -143,6 +156,7 @@ function exportExcel($meta, $books, $filename) {
         echo '<td>' . htmlspecialchars($book['genre'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['tags'] ?? '') . '</td>';
         echo '<td>' . htmlspecialchars($book['note'] ?? '') . '</td>';
+        echo '<td>' . htmlspecialchars($book['commentaire'] ?? '') . '</td>';
         echo '</tr>';
     }
 
@@ -200,7 +214,7 @@ function exportTXT($meta, $books, $filename) {
     header('Content-Disposition: attachment; filename="' . $filename . '.txt"');
 
     echo "╔══════════════════════════════════════════════════════════════╗\n";
-    echo "║  " . mb_strtoupper($meta['nom']) . str_repeat(' ', max(0, 58 - mb_strlen($meta['nom']))) . "║\n";
+    echo "║  " . mb_strtoupper($meta['nom']) . str_repeat(' ', max(0, 60 - mb_strlen($meta['nom']))) . "║\n";
     echo "╚══════════════════════════════════════════════════════════════╝\n\n";
 
     if (!empty($meta['description'])) {

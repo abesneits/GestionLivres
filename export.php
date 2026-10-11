@@ -7,14 +7,25 @@
 require_once 'includes/bootstrap.php';
 require_once 'includes/export_functions.php';
 
+// Le téléchargement est envoyé en POST (avec jeton CSRF) pour pouvoir transmettre une longue
+// sélection de livres sans dépasser la taille maximale d'une adresse. Le reste passe en GET.
+$input = $_GET;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        http_response_code(403);
+        die('Token de sécurité invalide');
+    }
+    $input = $_POST;
+}
+
 $supportTypes = $bookManager->getSupportTypesWithCounts();
 $formatTypes = $bookManager->getFormatsNumeriquesWithCounts();
-$criteres = sanitizeAdvancedSearchParams($_GET, array_keys($supportTypes), array_keys($formatTypes));
+$criteres = sanitizeAdvancedSearchParams($input, array_keys($supportTypes), array_keys($formatTypes));
 $formatsValides = ['csv', 'excel', 'json', 'html', 'txt'];
-$format = $_GET['format'] ?? '';
+$format = $input['format'] ?? '';
 
 $perPageOptions = [20, 50, 100];
-$perPageRequested = (int)($_GET['per_page'] ?? 20);
+$perPageRequested = (int)($input['per_page'] ?? 20);
 $perPage = in_array($perPageRequested, $perPageOptions, true) ? $perPageRequested : 20;
 
 $filtreActif = $criteres['search'] !== ''
@@ -32,8 +43,8 @@ $filtreActif = $criteres['search'] !== ''
 // Signature stable des critères de recherche (hors pagination/format), utilisée côté
 // client pour savoir si une sélection de livres mémorisée correspond toujours à la
 // recherche en cours, ou si elle doit être réinitialisée.
-$signatureParams = $_GET;
-unset($signatureParams['page'], $signatureParams['per_page'], $signatureParams['livres_ids'], $signatureParams['format'], $signatureParams['ajax']);
+$signatureParams = $input;
+unset($signatureParams['csrf_token'], $signatureParams['page'], $signatureParams['per_page'], $signatureParams['livres_ids'], $signatureParams['format'], $signatureParams['ajax']);
 ksort($signatureParams);
 $filterSignature = http_build_query($signatureParams);
 
@@ -95,20 +106,15 @@ function renderExportResults($previewBooks, $paginationInfo, $totalResultats) {
 // IDs cochés manuellement dans la liste de résultats, pour affiner la sélection
 // au-delà des seuls critères de recherche (voir buildAdvancedWhere()).
 $selectedIds = [];
-if (!empty($_GET['livres_ids']) && is_array($_GET['livres_ids'])) {
-    $selectedIds = array_values(array_unique(array_filter(array_map('intval', $_GET['livres_ids']))));
+if (!empty($input['livres_ids']) && is_array($input['livres_ids'])) {
+    $selectedIds = array_values(array_unique(array_filter(array_map('intval', $input['livres_ids']))));
 }
 
 // Génération et téléchargement direct du fichier si un format valide est demandé
 if (in_array($format, $formatsValides, true)) {
+    // Les livres cochés sont filtrés directement par la requête SQL (id IN (...))
+    $criteres['ids'] = $selectedIds;
     $books = $bookManager->searchBooksAdvanced($criteres, 1, 999999);
-
-    if (!empty($selectedIds)) {
-        $idsVoulus = array_flip($selectedIds);
-        $books = array_values(array_filter($books, function($book) use ($idsVoulus) {
-            return isset($idsVoulus[(int)$book['id']]);
-        }));
-    }
 
     $sortLabels = [
         'titre_asc' => 'Titre A-Z',

@@ -561,6 +561,15 @@ class LivreRepository {
             $params[':date_to'] = $criteres['date_to'] . ' 23:59:59';
         }
 
+        if (!empty($criteres['ids']) && is_array($criteres['ids'])) {
+            $placeholders = [];
+            foreach (array_values($criteres['ids']) as $i => $id) {
+                $placeholders[] = ':id' . $i;
+                $params[':id' . $i] = (int)$id;
+            }
+            $conditions[] = 'id IN (' . implode(', ', $placeholders) . ')';
+        }
+
         if (!empty($criteres['sans_couverture'])) {
             $conditions[] = "(couverture IS NULL OR couverture = '')";
         }

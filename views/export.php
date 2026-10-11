@@ -17,6 +17,7 @@ renderHead('Export - Ma Collection');
 
         <form method="GET" id="exportForm">
         <input type="hidden" id="filterSignature" value="<?= h($filterSignature) ?>">
+        <input type="hidden" id="csrfToken" value="<?= h(generateCSRFToken()) ?>">
         <details class="search-section search-section-collapsible" open>
             <summary>Recherche avancée <span id="filtreActifBadge" class="filtre-actif-badge" style="<?= $filtreActif ? '' : 'display:none;' ?>">filtres actifs</span></summary>
 
@@ -181,6 +182,7 @@ renderHead('Export - Ma Collection');
         const form = document.getElementById('exportForm');
         const resultsEl = document.getElementById('exportResults');
         const signatureInput = document.getElementById('filterSignature');
+        const csrfInput = document.getElementById('csrfToken');
         const STORAGE_KEY = 'export_selection_v1';
 
         function loadState() {
@@ -372,6 +374,22 @@ renderHead('Export - Ma Collection');
                     hidden.dataset.crossPageSelection = '1';
                     form.appendChild(hidden);
                 });
+
+                // Le téléchargement part en POST (jeton CSRF + liste de livres sans limite de taille).
+                const token = document.createElement('input');
+                token.type = 'hidden';
+                token.name = 'csrf_token';
+                token.value = csrfInput ? csrfInput.value : '';
+                token.dataset.crossPageSelection = '1';
+                form.appendChild(token);
+                form.method = 'POST';
+
+                // Le fichier se télécharge sans recharger la page : on remet le formulaire
+                // en état (GET, sans champs ajoutés) juste après l'envoi.
+                setTimeout(function() {
+                    form.method = 'GET';
+                    form.querySelectorAll('input[data-cross-page-selection]').forEach(el => el.remove());
+                }, 200);
                 return;
             }
             e.preventDefault();
