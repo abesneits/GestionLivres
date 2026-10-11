@@ -89,8 +89,6 @@ class IsbnLookup {
             CURLOPT_TIMEOUT => 8,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BookManager/2.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_HTTPHEADER => [
@@ -175,7 +173,6 @@ class IsbnLookup {
             CURLOPT_TIMEOUT => 15,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BookManager/2.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json'
@@ -250,7 +247,6 @@ class IsbnLookup {
             CURLOPT_TIMEOUT => 10,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BookManager/2.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_FOLLOWLOCATION => true,
         ]);
 
@@ -474,11 +470,16 @@ class IsbnLookup {
         }
 
         // Mots-clés pour détecter les BD
-        $motsBD = ['comic', 'bande dessinée', 'bd', 'comics', 'graphic novel', 'roman graphique'];
+        $motsBD = ['comic', 'bande dessinée', 'comics', 'graphic novel', 'roman graphique'];
         foreach ($motsBD as $mot) {
             if (strpos($texteComplete, $mot) !== false) {
                 return 'Bande dessinée';
             }
+        }
+        // « bd » est trop court pour une recherche en sous-chaîne (« abdomen », « subdivision »…) :
+        // on ne l'accepte que comme mot entier.
+        if (preg_match('/(?<![\p{L}\p{N}])bd(?![\p{L}\p{N}])/u', $texteComplete)) {
+            return 'Bande dessinée';
         }
 
         return 'Livre';

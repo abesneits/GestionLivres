@@ -452,7 +452,10 @@ class LivreRepository {
      * Obtenir les livres récents
      */
     public function getRecentBooks($limit = 5) {
-        return $this->getAllBooks(null, null, null, null, 1, $limit);
+        $stmt = $this->pdo->prepare("SELECT * FROM livres ORDER BY date_ajout DESC, id DESC LIMIT :limit");
+        $stmt->bindValue(':limit', max(1, (int)$limit), PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
     /**

@@ -52,7 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]
                 ];
 
-                $errors = validateInput($_POST, $validationRules);
+                // Nettoyer l'ISBN AVANT de le valider : une saisie avec tirets ou espaces
+                // (ex. 978-2-07-061275-8) ne doit pas être refusée pour sa longueur brute.
+                $isbnNettoye = strtoupper(preg_replace('/[-\s]/', '', $_POST['isbn']));
+                $errors = validateInput(['isbn' => $isbnNettoye], $validationRules);
 
                 if (!empty($errors)) {
                     $message = "Erreur de validation : " . implode(' ', $errors);
@@ -198,6 +201,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Valider le fichier
                         if (isValidImage($_FILES['couverture_fichier'])) {
                             $extension = strtolower(pathinfo($_FILES['couverture_fichier']['name'], PATHINFO_EXTENSION));
+                            // Même liste blanche que LivreRepository::uploadCouverture()
+                            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                                throw new Exception("Format de fichier non autorisé. Utilisez : jpg, jpeg, png, gif, webp");
+                            }
                             $nomFichier = 'couverture_' . time() . '_' . uniqid() . '.' . $extension;
                             $cheminFichier = $uploadDir . $nomFichier;
 

@@ -2,7 +2,7 @@
 <html lang="fr">
 <?php 
 include 'includes/head.php'; 
-renderHead('Ajouter un livre - Ma Collection'); 
+renderHead('Supprimer un livre - Ma Collection'); 
 ?>
 <body>
     <?php include 'includes/menu.php'; ?>
