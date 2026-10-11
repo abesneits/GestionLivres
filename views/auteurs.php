@@ -241,11 +241,15 @@ renderHead('Auteurs - Ma Collection');
         });
     });
 
+    const CSRF_TOKEN = <?= json_encode(generateCSRFToken()) ?>;
+
     function loadBiographie(bioDiv, nom, force) {
         bioDiv.innerHTML = '<p class="auteur-bio-loading">Chargement de la biographie...</p>';
-        const url = 'get_biographie.php?nom=' + encodeURIComponent(nom) + (force ? '&force=1' : '');
+        const url = 'get_biographie.php?nom=' + encodeURIComponent(nom);
+        // « Relancer » modifie la base : c'est un POST avec le jeton CSRF ; la simple lecture reste un GET
+        const options = force ? { method: 'POST', headers: { 'X-CSRF-Token': CSRF_TOKEN } } : {};
 
-        fetch(url)
+        fetch(url, options)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) {

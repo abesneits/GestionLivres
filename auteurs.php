@@ -71,7 +71,13 @@ $filterTag = trim($_GET['tag'] ?? '');
 $tri = in_array($_GET['tri'] ?? '', ['alpha', 'count_desc', 'recent']) ? $_GET['tri'] : 'alpha';
 $bioManquante = isset($_GET['bio_manquante']) && $_GET['bio_manquante'] === '1';
 
-$authors = $bookManager->getAllAuthorsWithBooks($search ?: null, $filterSupport ?: null, $filterTag ?: null, $tri, $bioManquante);
+// La liste complète est calculée UNE seule fois, puis réutilisée (noms, doublons, et affichage s'il n'y a pas de filtre)
+$tousLesAuteurs = $bookManager->getAllAuthorsWithBooks();
+if (!$search && !$filterSupport && !$filterTag && !$bioManquante && $tri === 'alpha') {
+    $authors = $tousLesAuteurs;
+} else {
+    $authors = $bookManager->getAllAuthorsWithBooks($search ?: null, $filterSupport ?: null, $filterTag ?: null, $tri, $bioManquante);
+}
 
 // Export CSV du résultat filtré, avant tout envoi de HTML
 if (($_GET['export'] ?? '') === 'csv') {
@@ -79,7 +85,7 @@ if (($_GET['export'] ?? '') === 'csv') {
 }
 
 $allTags = $bookManager->getAllTags();
-$allAuthorNames = array_map(function($a) { return $a['nom']; }, $bookManager->getAllAuthorsWithBooks());
+$allAuthorNames = array_column($tousLesAuteurs, 'nom');
 sort($allAuthorNames, SORT_NATURAL | SORT_FLAG_CASE);
-$duplicateGroups = $bookManager->findDuplicateAuthorGroups();
+$duplicateGroups = $bookManager->findDuplicateAuthorGroups($tousLesAuteurs);
 require 'views/auteurs.php';

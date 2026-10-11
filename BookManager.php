@@ -36,8 +36,8 @@ class BookManager {
         }
         $this->isbnLookup = new IsbnLookup($googleBooksApiKey);
         $this->listes = new ListeRepository($this->pdo);
-        $this->auteurs = new AuteurRepository($this->pdo);
         $this->tags = new TagRepository($this->pdo);
+        $this->auteurs = new AuteurRepository($this->pdo, $this->tags);
         $this->supports = new SupportRepository($this->pdo);
         $this->formats = new FormatNumeriqueRepository($this->pdo);
         $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports, $this->formats);
@@ -242,8 +242,8 @@ class BookManager {
         return $this->auteurs->getAuthorBiography($nom);
     }
 
-    public function findDuplicateAuthorGroups() {
-        return $this->auteurs->findDuplicateAuthorGroups();
+    public function findDuplicateAuthorGroups($authors = null) {
+        return $this->auteurs->findDuplicateAuthorGroups($authors);
     }
 
     public function createIgnoredDuplicatesTable() {

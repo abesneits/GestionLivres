@@ -7,9 +7,11 @@
  */
 class AuteurRepository {
     private $pdo;
+    private $tags;
 
-    public function __construct(PDO $pdo) {
+    public function __construct(PDO $pdo, ?TagRepository $tags = null) {
         $this->pdo = $pdo;
+        $this->tags = $tags ?? new TagRepository($pdo);
     }
 
     /**
@@ -55,8 +57,10 @@ class AuteurRepository {
         }
 
         if ($tag) {
-            $sql .= " AND tags LIKE :tag";
-            $params[':tag'] = '%' . $tag . '%';
+            // Correspondance EXACTE d'un tag (« lu » ne doit pas trouver « relu »)
+            $cond = $this->tags->buildTagCondition($tag, '_auteur');
+            $sql .= " AND " . $cond['sql'];
+            $params = array_merge($params, $cond['params']);
         }
 
         $sql .= " ORDER BY titre ASC";
@@ -132,6 +136,7 @@ class AuteurRepository {
      * Envoie directement les en-têtes et le fichier, comme les autres exports de l'application.
      */
     public function exportAuthorsCSV($authors) {
+        require_once __DIR__ . '/../includes/export_functions.php';
         $filename = 'auteurs_' . date('Y-m-d') . '.csv';
 
         header('Content-Type: text/csv; charset=utf-8');
@@ -144,14 +149,19 @@ class AuteurRepository {
 
         fputcsv($output, ['Nom', 'Nombre de livres', 'Naissance', 'Décès', 'Nationalité', 'Biographie', 'Titres possédés'], ';');
 
+        // Une seule requête pour toutes les fiches, indexées par nom (au lieu d'une requête par auteur)
+        $metas = [];
+        foreach ($this->pdo->query("SELECT nom, biographie, naissance, deces, nationalite FROM auteurs")->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $metas[$ligne['nom']] = $ligne;
+        }
+
         foreach ($authors as $auteur) {
-            $stmt = $this->pdo->prepare("SELECT biographie, naissance, deces, nationalite FROM auteurs WHERE nom = :nom");
-            $stmt->execute([':nom' => $auteur['nom']]);
-            $meta = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $meta = $metas[$auteur['nom']] ?? [];
 
             $titres = implode(' | ', array_column($auteur['livres'], 'titre'));
 
-            fputcsv($output, [
+            // csvSafe neutralise les cellules qui commenceraient par = + - @ (injection de formule)
+            fputcsv($output, array_map('csvSafe', [
                 $auteur['nom'],
                 count($auteur['livres']),
                 $meta['naissance'] ?? '',
@@ -159,7 +169,7 @@ class AuteurRepository {
                 $meta['nationalite'] ?? '',
                 $meta['biographie'] ?? '',
                 $titres
-            ], ';');
+            ]), ';');
         }
 
         fclose($output);
@@ -228,6 +238,14 @@ class AuteurRepository {
 
         if ($fichier['size'] > $taille_max) {
             throw new Exception("Le fichier est trop volumineux (max 5MB)");
+        }
+
+        // Type réel du fichier (et non celui annoncé par l'extension ou le navigateur)
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $fichier['tmp_name']);
+        finfo_close($finfo);
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true)) {
+            throw new Exception("Le fichier n'est pas une image valide");
         }
 
         $info_image = getimagesize($fichier['tmp_name']);
@@ -382,8 +400,6 @@ class AuteurRepository {
             CURLOPT_TIMEOUT => 8,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BookManager/2.0)',
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_HTTPHEADER => [
@@ -421,8 +437,9 @@ class AuteurRepository {
     /**
      * Repérer des groupes d'auteurs probablement identiques (variantes de casse/accents)
      */
-    public function findDuplicateAuthorGroups() {
-        $authors = $this->getAllAuthorsWithBooks();
+    public function findDuplicateAuthorGroups($authors = null) {
+        // On peut fournir la liste déjà calculée pour éviter de relire toute la collection
+        $authors = $authors ?? $this->getAllAuthorsWithBooks();
 
         $groups = [];
         foreach ($authors as $auteur) {
@@ -476,8 +493,22 @@ class AuteurRepository {
      */
     public function authorExists($nom) {
         $nom = trim($nom);
-        $noms = array_column($this->getAllAuthorsWithBooks(), 'nom');
-        return in_array($nom, $noms, true);
+        if ($nom === '') {
+            return false;
+        }
+
+        // La base ne garde que les livres dont le texte « auteur » contient ce nom ;
+        // PHP vérifie ensuite la correspondance exacte, nom par nom.
+        $stmt = $this->pdo->prepare("SELECT auteur FROM livres WHERE auteur LIKE :motif");
+        $stmt->execute([':motif' => '%' . addcslashes($nom, '\\%_') . '%']);
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $texte) {
+            foreach (array_map('trim', explode(',', $texte)) as $candidat) {
+                if ($candidat === $nom) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -506,35 +537,46 @@ class AuteurRepository {
         $update = $this->pdo->prepare("UPDATE livres SET auteur = :auteur WHERE id = :id");
         $livresModifies = 0;
 
-        foreach ($books as $book) {
-            $noms = array_filter(array_map('trim', explode(',', $book['auteur'])));
-            $nouveauxNoms = [];
+        // Tout ou rien : une erreur au milieu ne laisse pas des auteurs à moitié fusionnés
+        $this->pdo->beginTransaction();
+        try {
+            foreach ($books as $book) {
+                $noms = array_filter(array_map('trim', explode(',', $book['auteur'])));
+                $nouveauxNoms = [];
 
-            foreach ($noms as $nom) {
-                if (in_array($nom, $sourceNames, true)) {
-                    $nom = $targetName;
+                foreach ($noms as $nom) {
+                    if (in_array($nom, $sourceNames, true)) {
+                        $nom = $targetName;
+                    }
+                    $nouveauxNoms[] = $nom;
                 }
-                $nouveauxNoms[] = $nom;
+
+                $nouveauxNoms = array_values(array_unique($nouveauxNoms));
+                $nouvelAuteur = implode(', ', $nouveauxNoms);
+
+                if ($nouvelAuteur !== $book['auteur']) {
+                    $update->execute([
+                        ':auteur' => $nouvelAuteur,
+                        ':id' => $book['id']
+                    ]);
+                    $livresModifies++;
+                }
             }
 
-            $nouveauxNoms = array_values(array_unique($nouveauxNoms));
-            $nouvelAuteur = implode(', ', $nouveauxNoms);
-
-            if ($nouvelAuteur !== $book['auteur']) {
-                $update->execute([
-                    ':auteur' => $nouvelAuteur,
-                    ':id' => $book['id']
-                ]);
-                $livresModifies++;
+            // Nettoyer le cache de biographies des anciens noms fusionnés
+            $delStmt = $this->pdo->prepare("DELETE FROM auteurs WHERE nom = :nom");
+            foreach ($sourceNames as $nom) {
+                if ($nom !== $targetName) {
+                    $delStmt->execute([':nom' => $nom]);
+                }
             }
-        }
 
-        // Nettoyer le cache de biographies des anciens noms fusionnés
-        $delStmt = $this->pdo->prepare("DELETE FROM auteurs WHERE nom = :nom");
-        foreach ($sourceNames as $nom) {
-            if ($nom !== $targetName) {
-                $delStmt->execute([':nom' => $nom]);
+        $this->pdo->commit();
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
             }
+            throw $e;
         }
 
         return $livresModifies;
