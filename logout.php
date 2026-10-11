@@ -3,8 +3,8 @@
  * Page de déconnexion
  */
 
-session_start();
 require_once 'includes/auth.php';
+startSecureSession();
 
 // Vérifier le token CSRF si c'est une requête POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

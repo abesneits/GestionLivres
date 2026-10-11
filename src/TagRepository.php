@@ -63,6 +63,9 @@ class TagRepository {
         if ($nom === '') {
             throw new Exception("Nom de tag invalide.");
         }
+        if (strpos($nom, ',') !== false) {
+            throw new Exception("Un nom de tag ne peut pas contenir de virgule.");
+        }
         $stmt = $this->pdo->prepare("INSERT IGNORE INTO tags_catalogue (nom) VALUES (:nom)");
         $stmt->execute([':nom' => $nom]);
     }
@@ -73,13 +76,13 @@ class TagRepository {
      * substring, qui ferait matcher "lu" avec "relu").
      */
     public function buildTagCondition($tag, $suffixe) {
+        // La liste est entourée de virgules (« ,a,b, ») après avoir retiré les espaces qui suivent
+        // une virgule : un seul motif « ,tag, » couvre alors tous les cas (tag seul, au début,
+        // au milieu, à la fin), y compris « Fantasy, Witcher » saisi avec un espace.
         return [
-            'sql' => "(tags = :tagExact$suffixe OR tags LIKE :tagStart$suffixe OR tags LIKE :tagEnd$suffixe OR tags LIKE :tagMid$suffixe)",
+            'sql' => "CONCAT(',', REPLACE(tags, ', ', ','), ',') LIKE :tagMatch$suffixe",
             'params' => [
-                ":tagExact$suffixe" => $tag,
-                ":tagStart$suffixe" => $tag . ',%',
-                ":tagEnd$suffixe" => '%,' . $tag,
-                ":tagMid$suffixe" => '%,' . $tag . ',%',
+                ":tagMatch$suffixe" => '%,' . addcslashes($tag, '\%_') . ',%',
             ],
         ];
     }
@@ -103,6 +106,21 @@ class TagRepository {
     }
 
     /**
+     * Nombre de livres par tag, calculé en UNE seule passe sur les livres
+     * (au lieu d'une requête par tag). Retourne [tag => nombre].
+     */
+    public function countBooksForAllTags() {
+        $comptes = [];
+        $stmt = $this->pdo->query("SELECT tags FROM livres WHERE tags IS NOT NULL AND tags != ''");
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $chaine) {
+            foreach (array_unique($this->splitTagsExact($chaine)) as $tag) {
+                $comptes[$tag] = ($comptes[$tag] ?? 0) + 1;
+            }
+        }
+        return $comptes;
+    }
+
+    /**
      * Renomme un tag partout où il apparaît. Ne tronque jamais silencieusement :
      * un livre dont la nouvelle chaîne dépasserait 500 caractères est ignoré et
      * listé dans skipped_too_long.
@@ -112,6 +130,9 @@ class TagRepository {
         $newTag = trim($newTag);
         if ($oldTag === '' || $newTag === '') {
             throw new Exception("Nom de tag invalide.");
+        }
+        if (strpos($newTag, ',') !== false) {
+            throw new Exception("Un nom de tag ne peut pas contenir de virgule.");
         }
 
         $stmt = $this->pdo->query("SELECT id, tags FROM livres WHERE tags IS NOT NULL AND tags != ''");

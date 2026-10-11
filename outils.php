@@ -23,8 +23,13 @@ if ($_POST && isset($_POST['action'])) {
         $message = "Token de sécurité invalide. Veuillez réessayer.";
         $messageType = 'error';
     } elseif ($_POST['action'] === 'optimize_tables') {
-        $resultats = $bookManager->optimizeTables();
-        redirectWithMessage('outils.php?section=bdd', "Optimisation effectuée sur " . count($resultats) . " table(s).", 'success');
+        try {
+            $resultats = $bookManager->optimizeTables();
+            redirectWithMessage('outils.php?section=bdd', "Optimisation effectuée sur " . count($resultats) . " table(s).", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur lors de l'optimisation : " . $e->getMessage();
+            $messageType = 'error';
+        }
     } elseif ($_POST['action'] === 'restore_backup') {
         if (($_POST['confirm_text'] ?? '') !== 'RESTAURER') {
             $message = "Veuillez taper RESTAURER pour confirmer la restauration.";
@@ -38,7 +43,7 @@ if ($_POST && isset($_POST['action'])) {
                 $resume = $bookManager->restoreDataBackup($contenu);
                 redirectWithMessage(
                     'outils.php?section=bdd',
-                    "Restauration effectuée : {$resume['livres']} livre(s), {$resume['auteurs']} auteur(s), {$resume['listes_lecture']} liste(s).",
+                    "Restauration effectuée : {$resume['livres']} livre(s), {$resume['auteurs']} auteur(s), {$resume['listes_lecture']} liste(s). L'état précédent est conservé dans backups/{$resume['sauvegarde_securite']}.",
                     'success'
                 );
             } catch (Exception $e) {
@@ -131,11 +136,21 @@ if ($_POST && isset($_POST['action'])) {
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'delete_tag') {
-        $count = $bookManager->deleteTagEverywhere($_POST['tag'] ?? '');
-        redirectWithMessage('outils.php?section=tags', "Tag supprimé de $count livre(s).", 'success');
+        try {
+            $count = $bookManager->deleteTagEverywhere($_POST['tag'] ?? '');
+            redirectWithMessage('outils.php?section=tags', "Tag supprimé de $count livre(s).", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
     } elseif ($_POST['action'] === 'delete_orphans') {
-        $count = $bookManager->deleteOrphanUploads();
-        redirectWithMessage('outils.php?section=bdd', "$count fichier(s) orphelin(s) supprimé(s).", 'success');
+        try {
+            $count = $bookManager->deleteOrphanUploads();
+            redirectWithMessage('outils.php?section=bdd', "$count fichier(s) orphelin(s) supprimé(s).", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
     }
 }
 
@@ -171,6 +186,7 @@ if ($section === 'edition') {
 
 if ($section === 'tags') {
     $tousLesTags = $bookManager->getAllTags();
+    $comptesTags = $bookManager->countBooksForAllTags();
 }
 
 function formatTailleOctets($octets) {

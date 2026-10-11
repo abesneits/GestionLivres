@@ -311,6 +311,10 @@ class BookManager {
         return $this->livres->bulkUpdateBooks($bookIds, $newSupport, $newStatut, $tagMode, $tagsCsv);
     }
 
+    public function countBooksForAllTags() {
+        return $this->tags->countBooksForAllTags();
+    }
+
     public function countBooksByTag($tag) {
         return $this->tags->countBooksByTag($tag);
     }

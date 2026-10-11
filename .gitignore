@@ -3,6 +3,10 @@ config.php
 
 # Journaux applicatifs
 logs/*.log
+logs/*.json
+
+# Sauvegardes de sécurité créées avant une restauration
+backups/
 
 # Fichiers uploadés par les utilisateurs (contenu dynamique, pas du code)
 uploads/*

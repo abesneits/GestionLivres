@@ -115,12 +115,23 @@ class FormatNumeriqueRepository {
             throw new Exception("Un format porte déjà ce nom.");
         }
 
-        $stmt = $this->pdo->prepare("UPDATE livres SET format_numerique = :new WHERE format_numerique = :old");
-        $stmt->execute([':new' => $newNom, ':old' => $oldNom]);
-        $updated = $stmt->rowCount();
+        // Les deux mises à jour (livres, puis catalogue) forment un tout : tout ou rien
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("UPDATE livres SET format_numerique = :new WHERE format_numerique = :old");
+            $stmt->execute([':new' => $newNom, ':old' => $oldNom]);
+            $updated = $stmt->rowCount();
 
-        $this->pdo->prepare("UPDATE formats_numeriques SET nom = :new WHERE nom = :old")
-            ->execute([':new' => $newNom, ':old' => $oldNom]);
+            $this->pdo->prepare("UPDATE formats_numeriques SET nom = :new WHERE nom = :old")
+                ->execute([':new' => $newNom, ':old' => $oldNom]);
+
+            $this->pdo->commit();
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
 
         return $updated;
     }

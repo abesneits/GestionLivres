@@ -15,13 +15,7 @@ class Maintenance {
      * et déclenche le téléchargement du fichier.
      */
     public function exportDataBackup() {
-        $data = [
-            'meta' => ['version' => 1, 'date' => date('c')],
-            'auteurs' => $this->pdo->query("SELECT * FROM auteurs")->fetchAll(PDO::FETCH_ASSOC),
-            'livres' => $this->pdo->query("SELECT * FROM livres")->fetchAll(PDO::FETCH_ASSOC),
-            'listes_lecture' => $this->pdo->query("SELECT * FROM listes_lecture")->fetchAll(PDO::FETCH_ASSOC),
-            'livres_listes' => $this->pdo->query("SELECT * FROM livres_listes")->fetchAll(PDO::FETCH_ASSOC),
-        ];
+        $data = $this->buildBackupData();
 
         $filename = 'sauvegarde_donnees_' . date('Y-m-d_H-i-s') . '.json';
 
@@ -31,6 +25,53 @@ class Maintenance {
         header('Expires: 0');
 
         echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Rassemble toutes les données à sauvegarder. Les catalogues (tags créés à l'avance,
+     * formats numériques) sont facultatifs à la restauration, pour rester compatible
+     * avec les anciennes sauvegardes.
+     */
+    private function buildBackupData() {
+        return [
+            'meta' => ['version' => 1, 'date' => date('c')],
+            'auteurs' => $this->pdo->query("SELECT * FROM auteurs")->fetchAll(PDO::FETCH_ASSOC),
+            'livres' => $this->pdo->query("SELECT * FROM livres")->fetchAll(PDO::FETCH_ASSOC),
+            'listes_lecture' => $this->pdo->query("SELECT * FROM listes_lecture")->fetchAll(PDO::FETCH_ASSOC),
+            'livres_listes' => $this->pdo->query("SELECT * FROM livres_listes")->fetchAll(PDO::FETCH_ASSOC),
+            'tags_catalogue' => $this->pdo->query("SELECT * FROM tags_catalogue")->fetchAll(PDO::FETCH_ASSOC),
+            'formats_numeriques' => $this->pdo->query("SELECT * FROM formats_numeriques")->fetchAll(PDO::FETCH_ASSOC),
+        ];
+    }
+
+    /**
+     * Enregistre sur le serveur une copie de l'état actuel (dossier backups/, interdit
+     * d'accès depuis le web) juste avant une restauration, et ne garde que les 10 plus
+     * récentes. Retourne le nom du fichier créé.
+     */
+    private function saveSafetyBackup() {
+        $dossier = 'backups';
+        if (!is_dir($dossier) && !mkdir($dossier, 0755, true)) {
+            throw new Exception("Impossible de créer le dossier de sauvegarde de sécurité : restauration annulée.");
+        }
+        $htaccess = $dossier . '/.htaccess';
+        if (!file_exists($htaccess)) {
+            file_put_contents($htaccess, "# Sauvegardes : jamais accessibles depuis le web\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>\n");
+        }
+
+        $nom = 'avant_restauration_' . date('Y-m-d_H-i-s') . '.json';
+        $json = json_encode($this->buildBackupData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        if ($json === false || file_put_contents($dossier . '/' . $nom, $json, LOCK_EX) === false) {
+            throw new Exception("Impossible d'enregistrer la sauvegarde de sécurité : restauration annulée.");
+        }
+
+        $anciennes = glob($dossier . '/avant_restauration_*.json');
+        sort($anciennes);
+        foreach (array_slice($anciennes, 0, max(0, count($anciennes) - 10)) as $ancienne) {
+            @unlink($ancienne);
+        }
+
+        return $nom;
     }
 
     /**
@@ -47,6 +88,9 @@ class Maintenance {
             throw new Exception("Fichier de sauvegarde invalide ou incomplet.");
         }
 
+        // Filet de sécurité : une copie de l'état actuel est gardée AVANT d'effacer quoi que ce soit
+        $sauvegardeSecurite = $this->saveSafetyBackup();
+
         try {
             $this->pdo->beginTransaction();
 
@@ -62,6 +106,14 @@ class Maintenance {
             $this->insertRows('listes_lecture', $data['listes_lecture']);
             $this->insertRows('livres_listes', $data['livres_listes']);
 
+            // Catalogues (présents seulement dans les sauvegardes récentes)
+            foreach (['tags_catalogue', 'formats_numeriques'] as $catalogue) {
+                if (isset($data[$catalogue]) && is_array($data[$catalogue])) {
+                    $this->pdo->exec("DELETE FROM $catalogue");
+                    $this->insertRows($catalogue, $data[$catalogue]);
+                }
+            }
+
             $this->pdo->commit();
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) {
@@ -75,6 +127,7 @@ class Maintenance {
             'livres' => count($data['livres']),
             'listes_lecture' => count($data['listes_lecture']),
             'livres_listes' => count($data['livres_listes']),
+            'sauvegarde_securite' => $sauvegardeSecurite,
         ];
     }
 

@@ -4,9 +4,8 @@
  * connexion à la base de données et mise à niveau du schéma.
  */
 
-session_start();
-
 require_once __DIR__ . '/auth.php';
+startSecureSession();
 requireAuth();
 
 require_once __DIR__ . '/../BookManager.php';

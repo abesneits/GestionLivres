@@ -96,13 +96,18 @@ renderHead('Outils - Ma Collection');
                 </form>
 
                 <a href="outils.php?section=bdd&export=backup" class="btn-secondary">📥 Télécharger une sauvegarde</a>
+                <p style="color:#999; font-size:0.85em; margin-top:10px;">
+                    La sauvegarde contient les données (livres, auteurs, listes, tags, formats), mais <strong>pas les images</strong> :
+                    copiez aussi le dossier <code>uploads/</code>.
+                </p>
             </div>
 
             <div class="search-section danger-zone">
                 <h3>⚠️ Restaurer une sauvegarde</h3>
                 <p style="color:#666; margin-bottom: 15px;">
                     Cette opération remplace <strong>toutes</strong> les données actuelles (livres, listes, auteurs) par le contenu du fichier envoyé.
-                    Téléchargez d'abord une sauvegarde récente avant de continuer.
+                    Une copie de l'état actuel est enregistrée automatiquement dans <code>backups/</code> avant la restauration,
+                    mais téléchargez quand même une sauvegarde récente avant de continuer.
                 </p>
                 <form method="POST" enctype="multipart/form-data" id="restoreForm" onsubmit="return confirm('Cette action va remplacer toutes les données actuelles. Continuer ?');">
                     <input type="hidden" name="action" value="restore_backup">
@@ -376,11 +381,20 @@ renderHead('Outils - Ma Collection');
                 list.classList.toggle('grid-view', mode === 'grid');
                 btnList.classList.toggle('active', mode === 'list');
                 btnGrid.classList.toggle('active', mode === 'grid');
-                localStorage.setItem('outils_edition_view', mode);
+                try {
+                    localStorage.setItem('outils_edition_view', mode);
+                } catch (e) {
+                    // Stockage indisponible (navigation privée...) : le choix ne sera simplement pas mémorisé
+                }
             }
 
             (function() {
-                const modeEnregistre = localStorage.getItem('outils_edition_view');
+                let modeEnregistre = null;
+                try {
+                    modeEnregistre = localStorage.getItem('outils_edition_view');
+                } catch (e) {
+                    // Stockage indisponible : on garde l'affichage en liste
+                }
                 if (modeEnregistre === 'grid') {
                     setBooksView('grid');
                 }
@@ -421,7 +435,7 @@ renderHead('Outils - Ma Collection');
                             <?php foreach ($tousLesTags as $tag): ?>
                                 <tr>
                                     <td><span class="badge-small"><?= h($tag) ?></span></td>
-                                    <td><?= $bookManager->countBooksByTag($tag) ?></td>
+                                    <td><?= $comptesTags[$tag] ?? 0 ?></td>
                                     <td>
                                         <form method="POST" style="display:flex; gap:5px;" onsubmit="return confirm('Renommer le tag « <?= h(addslashes($tag)) ?> » partout où il apparaît ?');">
                                             <input type="hidden" name="action" value="rename_tag">

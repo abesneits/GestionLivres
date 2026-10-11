@@ -138,9 +138,9 @@
             </div>
         <?php endif; ?>
         
-        <?php if ($attempts > 0 && $attempts < 5): ?>
+        <?php if ($attempts > 0 && $attempts < LOGIN_MAX_ATTEMPTS): ?>
             <div class="login-info">
-                Tentative <?= $attempts ?>/5. Attention aux tentatives répétées.
+                Tentative <?= $attempts ?>/<?= LOGIN_MAX_ATTEMPTS ?>. Attention aux tentatives répétées.
             </div>
         <?php endif; ?>
         
@@ -154,20 +154,20 @@
                        name="password" 
                        required 
                        autocomplete="current-password"
-                       <?= $attempts >= 5 && (time() - $lastAttempt) < 300 ? 'disabled' : '' ?>>
+                       <?= $attempts >= LOGIN_MAX_ATTEMPTS && (time() - $lastAttempt) < LOGIN_LOCK_SECONDS ? 'disabled' : '' ?>>
             </div>
             
             <button type="submit" 
                     class="login-btn" 
-                    <?= $attempts >= 5 && (time() - $lastAttempt) < 300 ? 'disabled' : '' ?>>
+                    <?= $attempts >= LOGIN_MAX_ATTEMPTS && (time() - $lastAttempt) < LOGIN_LOCK_SECONDS ? 'disabled' : '' ?>>
                 Se connecter
             </button>
         </form>
         
         <div class="security-note">
             <strong>Sécurité :</strong> Votre session expirera après 1 heure d'inactivité.
-            <?php if ($attempts >= 3): ?>
-                <br><strong>Attention :</strong> Compte temporairement bloqué après 5 tentatives.
+            <?php if ($attempts >= 3 && $attempts < LOGIN_MAX_ATTEMPTS): ?>
+                <br><strong>Attention :</strong> après <?= LOGIN_MAX_ATTEMPTS ?> échecs, la connexion sera bloquée <?= (int)(LOGIN_LOCK_SECONDS / 60) ?> minutes.
             <?php endif; ?>
         </div>
     </div>
@@ -182,7 +182,7 @@
         });
         
         // Actualiser la page si bloqué (pour mettre à jour le timer)
-        <?php if ($attempts >= 5 && (time() - $lastAttempt) < 300): ?>
+        <?php if ($attempts >= LOGIN_MAX_ATTEMPTS && (time() - $lastAttempt) < LOGIN_LOCK_SECONDS): ?>
             setTimeout(function() {
                 window.location.reload();
             }, <?= ($timeLeft ?? 60) * 1000 ?>);
