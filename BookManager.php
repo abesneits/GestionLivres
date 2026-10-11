@@ -104,16 +104,8 @@ class BookManager {
         return $this->listes->removeBookFromList($listeId, $livreId);
     }
 
-    public function moveBookUp($listeId, $livreId) {
-        return $this->listes->moveBookUp($listeId, $livreId);
-    }
-
-    public function moveBookDown($listeId, $livreId) {
-        return $this->listes->moveBookDown($listeId, $livreId);
-    }
-
-    public function reorderBooks($listeId, $orderedBookIds) {
-        return $this->listes->reorderBooks($listeId, $orderedBookIds);
+    public function uploadCouvertureListe($fichier) {
+        return $this->listes->uploadCouvertureListe($fichier);
     }
 
     public function getListsForBook($livreId) {
@@ -132,6 +124,10 @@ class BookManager {
      */
     public function addBook($bookInfo) {
         return $this->livres->addBook($bookInfo);
+    }
+
+    public function getBooksForPicker() {
+        return $this->livres->getBooksForPicker();
     }
 
     public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null, $type = null) {

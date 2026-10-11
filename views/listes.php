@@ -426,6 +426,7 @@ renderHead('Mes Listes - Ma Collection');
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'X-CSRF-Token': <?= json_encode(generateCSRFToken()) ?>
                             },
                             body: JSON.stringify({
                                 liste_id: <?= $currentList['id'] ?>,

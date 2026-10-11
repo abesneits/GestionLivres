@@ -22,22 +22,7 @@ if ($_POST) {
 
                 // Gestion de l'upload de la couverture
                 if (isset($_FILES['couverture']) && $_FILES['couverture']['error'] === UPLOAD_ERR_OK) {
-                    $uploadDir = 'uploads/listes/';
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
-
-                    $extension = strtolower(pathinfo($_FILES['couverture']['name'], PATHINFO_EXTENSION));
-                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-                    if (in_array($extension, $allowedExtensions)) {
-                        $filename = uniqid('liste_') . '.' . $extension;
-                        $filepath = $uploadDir . $filename;
-
-                        if (move_uploaded_file($_FILES['couverture']['tmp_name'], $filepath)) {
-                            $couverture = $filepath;
-                        }
-                    }
+                    $couverture = $bookManager->uploadCouvertureListe($_FILES['couverture']);
                 }
 
                 $listId = $bookManager->createList($_POST['nom'], $_POST['description'] ?? '', $couverture);
@@ -55,27 +40,12 @@ if ($_POST) {
 
                 // Gestion de l'upload de la nouvelle couverture
                 if (isset($_FILES['couverture']) && $_FILES['couverture']['error'] === UPLOAD_ERR_OK) {
-                    $uploadDir = 'uploads/listes/';
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
+                    $nouvelleCouverture = $bookManager->uploadCouvertureListe($_FILES['couverture']);
+                    // Supprimer l'ancienne couverture une fois la nouvelle bien enregistrée
+                    if ($couverture && file_exists($couverture)) {
+                        unlink($couverture);
                     }
-
-                    $extension = strtolower(pathinfo($_FILES['couverture']['name'], PATHINFO_EXTENSION));
-                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-                    if (in_array($extension, $allowedExtensions)) {
-                        // Supprimer l'ancienne couverture
-                        if ($couverture && file_exists($couverture)) {
-                            unlink($couverture);
-                        }
-
-                        $filename = uniqid('liste_') . '.' . $extension;
-                        $filepath = $uploadDir . $filename;
-
-                        if (move_uploaded_file($_FILES['couverture']['tmp_name'], $filepath)) {
-                            $couverture = $filepath;
-                        }
-                    }
+                    $couverture = $nouvelleCouverture;
                 }
 
                 $bookManager->updateList($_POST['liste_id'], $_POST['nom'], $_POST['description'] ?? '', $couverture);
@@ -163,6 +133,6 @@ if (isset($_GET['edit'])) {
 }
 
 // Récupérer tous les livres pour l'ajout
-$allBooks = $bookManager->getAllBooks(null, null, null, null, 1, 999999);
+$allBooks = $bookManager->getBooksForPicker();
 
 require 'views/listes.php';

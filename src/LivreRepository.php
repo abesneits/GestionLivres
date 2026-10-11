@@ -60,6 +60,15 @@ class LivreRepository {
     }
     
     /**
+     * Liste allégée de toute la collection (seulement les colonnes affichées),
+     * pour la fenêtre « Ajouter des livres » d'une liste de lecture.
+     */
+    public function getBooksForPicker() {
+        $sql = "SELECT id, titre, auteur, couverture, support, type_livre FROM livres ORDER BY titre ASC";
+        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Récupérer tous les livres avec pagination
      */
     public function getAllBooks($support = null, $search = null, $tag = null, $statut = null, $page = 1, $limit = null, $serie = null, $type = null) {

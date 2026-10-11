@@ -247,156 +247,42 @@ public function updateBookOrder($listeId, $orderedBookIds) {
     }
     
     /**
-     * Déplacer un livre vers le haut dans la liste
+     * Enregistrer la couverture envoyée pour une liste : taille, extension (liste blanche),
+     * type réel de l'image (finfo). Renvoie le chemin enregistré, ou lève une Exception.
      */
-    public function moveBookUp($listeId, $livreId) {
-        try {
-            // Récupérer l'ordre actuel du livre
-            $sql = "SELECT ordre FROM livres_listes WHERE liste_id = :liste_id AND livre_id = :livre_id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':liste_id' => $listeId, ':livre_id' => $livreId]);
-            $currentOrdre = $stmt->fetchColumn();
-            
-            if ($currentOrdre === false || $currentOrdre <= 1) {
-                return false; // Déjà en première position
-            }
-            
-            // Trouver le livre au-dessus
-            $sql = "SELECT livre_id, ordre FROM livres_listes 
-                    WHERE liste_id = :liste_id AND ordre < :ordre 
-                    ORDER BY ordre DESC LIMIT 1";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':liste_id' => $listeId, ':ordre' => $currentOrdre]);
-            $previousBook = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$previousBook) {
-                return false;
-            }
-            
-            // Échanger les ordres
-            $this->pdo->beginTransaction();
-            
-            // Mettre le livre actuel à l'ordre du précédent
-            $sql = "UPDATE livres_listes SET ordre = :new_ordre 
-                    WHERE liste_id = :liste_id AND livre_id = :livre_id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([
-                ':new_ordre' => $previousBook['ordre'],
-                ':liste_id' => $listeId,
-                ':livre_id' => $livreId
-            ]);
-            
-            // Mettre le livre précédent à l'ordre de l'actuel
-            $stmt->execute([
-                ':new_ordre' => $currentOrdre,
-                ':liste_id' => $listeId,
-                ':livre_id' => $previousBook['livre_id']
-            ]);
-            
-            $this->pdo->commit();
-            return true;
-            
-        } catch (PDOException $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            error_log("Erreur moveBookUp : " . $e->getMessage());
-            throw $e;
+    public function uploadCouvertureListe($fichier) {
+        $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $typesMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        if ($fichier['size'] > 5 * 1024 * 1024) {
+            throw new Exception("La couverture est trop volumineuse (max 5MB)");
         }
-    }
-    
-    /**
-     * Déplacer un livre vers le bas dans la liste
-     */
-    public function moveBookDown($listeId, $livreId) {
-        try {
-            // Récupérer l'ordre actuel du livre
-            $sql = "SELECT ordre FROM livres_listes WHERE liste_id = :liste_id AND livre_id = :livre_id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':liste_id' => $listeId, ':livre_id' => $livreId]);
-            $currentOrdre = $stmt->fetchColumn();
-            
-            if ($currentOrdre === false) {
-                return false;
-            }
-            
-            // Trouver le livre en dessous
-            $sql = "SELECT livre_id, ordre FROM livres_listes 
-                    WHERE liste_id = :liste_id AND ordre > :ordre 
-                    ORDER BY ordre ASC LIMIT 1";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':liste_id' => $listeId, ':ordre' => $currentOrdre]);
-            $nextBook = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$nextBook) {
-                return false; // Déjà en dernière position
-            }
-            
-            // Échanger les ordres
-            $this->pdo->beginTransaction();
-            
-            // Mettre le livre actuel à l'ordre du suivant
-            $sql = "UPDATE livres_listes SET ordre = :new_ordre 
-                    WHERE liste_id = :liste_id AND livre_id = :livre_id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([
-                ':new_ordre' => $nextBook['ordre'],
-                ':liste_id' => $listeId,
-                ':livre_id' => $livreId
-            ]);
-            
-            // Mettre le livre suivant à l'ordre de l'actuel
-            $stmt->execute([
-                ':new_ordre' => $currentOrdre,
-                ':liste_id' => $listeId,
-                ':livre_id' => $nextBook['livre_id']
-            ]);
-            
-            $this->pdo->commit();
-            return true;
-            
-        } catch (PDOException $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            error_log("Erreur moveBookDown : " . $e->getMessage());
-            throw $e;
+
+        $extension = strtolower(pathinfo($fichier['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, $extensions, true)) {
+            throw new Exception("Format de couverture non autorisé. Utilisez : " . implode(', ', $extensions));
         }
-    }
-    
-    /**
-     * Réorganiser l'ordre des livres (pour drag & drop)
-     */
-    public function reorderBooks($listeId, $orderedBookIds) {
-        try {
-            $this->pdo->beginTransaction();
-            
-            $ordre = 1;
-            $sql = "UPDATE livres_listes SET ordre = :ordre 
-                    WHERE liste_id = :liste_id AND livre_id = :livre_id";
-            $stmt = $this->pdo->prepare($sql);
-            
-            foreach ($orderedBookIds as $livreId) {
-                $stmt->execute([
-                    ':ordre' => $ordre,
-                    ':liste_id' => $listeId,
-                    ':livre_id' => $livreId
-                ]);
-                $ordre++;
-            }
-            
-            $this->pdo->commit();
-            return true;
-            
-        } catch (PDOException $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            error_log("Erreur reorderBooks : " . $e->getMessage());
-            throw $e;
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $fichier['tmp_name']);
+        finfo_close($finfo);
+        if (!in_array($mime, $typesMime, true)) {
+            throw new Exception("Le fichier n'est pas une image valide");
         }
+
+        $dossier = 'uploads/listes/';
+        if (!is_dir($dossier)) {
+            mkdir($dossier, 0755, true);
+        }
+
+        $chemin = $dossier . uniqid('liste_') . '.' . $extension;
+        if (!move_uploaded_file($fichier['tmp_name'], $chemin)) {
+            throw new Exception("Erreur lors de l'enregistrement de la couverture");
+        }
+
+        return $chemin;
     }
-    
+
     /**
      * Obtenir les listes contenant un livre
      */
