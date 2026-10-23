@@ -23,11 +23,84 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
             <p>Les livres que vous souhaitez acheter. Une fois achetés, validez-les pour les ajouter à votre collection.</p>
         </div>
 
+        <!-- Liste des achats -->
+        <div class="actions-bar">
+            <strong><?= count($achats) ?> livre<?= count($achats) > 1 ? 's' : '' ?> à acheter</strong>
+            <?php if ($totalEstime > 0): ?>
+                — total estimé : <strong><?= number_format($totalEstime, 2, ',', ' ') ?> €</strong>
+            <?php endif; ?>
+            <form method="GET" style="display:inline;margin-left:15px;">
+                <label for="tri">Trier par</label>
+                <select id="tri" name="tri" onchange="this.form.submit()">
+                    <option value="priorite" <?= $tri === 'priorite' ? 'selected' : '' ?>>Priorité</option>
+                    <option value="titre" <?= $tri === 'titre' ? 'selected' : '' ?>>Titre</option>
+                    <option value="auteur" <?= $tri === 'auteur' ? 'selected' : '' ?>>Auteur</option>
+                    <option value="date" <?= $tri === 'date' ? 'selected' : '' ?>>Date d'ajout</option>
+                </select>
+            </form>
+            <?php if (!empty($achats)): ?>
+                <a href="export_achats.php?tri=<?= h($tri) ?>" target="_blank" class="btn-secondary">🖨️ Version imprimable</a>
+            <?php endif; ?>
+        </div>
+
+        <?php if (empty($achats)): ?>
+            <div class="empty-state">
+                <div class="empty-icon">🛒</div>
+                <h3>Aucun achat prévu</h3>
+                <p>Ajoutez ci-dessus les livres que vous voulez acheter.</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($achats as $a): ?>
+                <div class="book-item">
+                    <div class="book-item-cover">
+                        <?php if ($a['couverture']): ?>
+                            <img src="<?= h(getImageUrl($a['couverture'])) ?>" alt="Couverture de <?= h($a['titre']) ?>">
+                        <?php else: ?>
+                            <div class="cover-placeholder-small">📚</div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="book-item-info">
+                        <div class="book-item-title"><?= h($a['titre']) ?><?= $a['serie'] ? ' — ' . h($a['serie']) . ($a['tome'] !== null ? ' T' . (int)$a['tome'] : '') : '' ?></div>
+                        <div class="book-item-author"><?= h($a['auteur'] ?? '') ?></div>
+                        <div class="book-item-meta">
+                            <?= $libellesPriorite[(int)$a['priorite']] ?? '' ?> ·
+                            <?= h($a['support']) ?> · <?= h($a['type_livre']) ?>
+                            <?php if ($a['isbn']): ?> · ISBN <?= h($a['isbn']) ?><?php endif; ?>
+                            <?php if ($a['prix_estime'] !== null): ?> · <?= number_format((float)$a['prix_estime'], 2, ',', ' ') ?> €<?php endif; ?>
+                            <?php if ($a['lieu_achat']): ?> · <?= h($a['lieu_achat']) ?><?php endif; ?>
+                            <?php if ($a['tags']): ?> · 🏷️ <?= h($a['tags']) ?><?php endif; ?>
+                        </div>
+                        <?php if ($a['note']): ?><div class="book-item-meta">📝 <?= h($a['note']) ?></div><?php endif; ?>
+                        <div class="liste-actions" style="margin-top:8px;">
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('Valider l\'achat et ajouter ce livre à la collection ?');">
+                                <input type="hidden" name="action" value="valider_achat">
+                                <input type="hidden" name="achat_id" value="<?= (int)$a['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                <select name="statut" title="Statut dans la collection">
+                                    <option value="À lire">À lire</option>
+                                    <option value="En cours">En cours</option>
+                                    <option value="Lu">Lu</option>
+                                </select>
+                                <button type="submit" class="btn-primary">✅ Acheté</button>
+                            </form>
+                            <a href="?edit=<?= (int)$a['id'] ?>#formulaire" class="btn-edit">✏️</a>
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('Retirer ce livre des achats ?');">
+                                <input type="hidden" name="action" value="delete_achat">
+                                <input type="hidden" name="achat_id" value="<?= (int)$a['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                <button type="submit" class="btn-danger">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
         <!-- Formulaire d'ajout / modification -->
-        <div class="form-card">
+        <div class="form-card" id="formulaire">
             <h2><?= $editId ? '✏️ Modifier l\'achat' : '➕ Nouvel achat' ?></h2>
 
-            <form method="POST" id="formRecherche" style="margin-bottom:15px;">
+            <form method="POST" action="achats.php#formulaire" id="formRecherche" style="margin-bottom:15px;">
                 <input type="hidden" name="action" value="search_isbn">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <input type="hidden" name="achat_id" value="<?= $editId ?>">
@@ -41,7 +114,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                 <button type="submit" class="btn-secondary">🔍 Chercher par ISBN</button>
             </form>
 
-            <form method="POST">
+            <form method="POST" action="achats.php#formulaire">
                 <input type="hidden" name="action" value="save_achat">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <input type="hidden" name="achat_id" value="<?= $editId ?>">
@@ -116,84 +189,11 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                 <div class="form-actions">
                     <button type="submit" class="btn-add-book"><?= $editId ? '💾 Enregistrer' : '➕ Ajouter aux achats' ?></button>
                     <?php if ($editId): ?>
-                        <a href="achats.php" class="btn-secondary">Annuler</a>
+                        <a href="achats.php#formulaire" class="btn-secondary">Annuler</a>
                     <?php endif; ?>
                 </div>
             </form>
         </div>
-
-        <!-- Liste des achats -->
-        <div class="actions-bar">
-            <strong><?= count($achats) ?> livre<?= count($achats) > 1 ? 's' : '' ?> à acheter</strong>
-            <?php if ($totalEstime > 0): ?>
-                — total estimé : <strong><?= number_format($totalEstime, 2, ',', ' ') ?> €</strong>
-            <?php endif; ?>
-            <form method="GET" style="display:inline;margin-left:15px;">
-                <label for="tri">Trier par</label>
-                <select id="tri" name="tri" onchange="this.form.submit()">
-                    <option value="priorite" <?= $tri === 'priorite' ? 'selected' : '' ?>>Priorité</option>
-                    <option value="titre" <?= $tri === 'titre' ? 'selected' : '' ?>>Titre</option>
-                    <option value="auteur" <?= $tri === 'auteur' ? 'selected' : '' ?>>Auteur</option>
-                    <option value="date" <?= $tri === 'date' ? 'selected' : '' ?>>Date d'ajout</option>
-                </select>
-            </form>
-            <?php if (!empty($achats)): ?>
-                <a href="export_achats.php?tri=<?= h($tri) ?>" target="_blank" class="btn-secondary">🖨️ Version imprimable</a>
-            <?php endif; ?>
-        </div>
-
-        <?php if (empty($achats)): ?>
-            <div class="empty-state">
-                <div class="empty-icon">🛒</div>
-                <h3>Aucun achat prévu</h3>
-                <p>Ajoutez ci-dessus les livres que vous voulez acheter.</p>
-            </div>
-        <?php else: ?>
-            <?php foreach ($achats as $a): ?>
-                <div class="book-item">
-                    <div class="book-item-cover">
-                        <?php if ($a['couverture']): ?>
-                            <img src="<?= h(getImageUrl($a['couverture'])) ?>" alt="Couverture de <?= h($a['titre']) ?>">
-                        <?php else: ?>
-                            <div class="cover-placeholder-small">📚</div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="book-item-info">
-                        <div class="book-item-title"><?= h($a['titre']) ?><?= $a['serie'] ? ' — ' . h($a['serie']) . ($a['tome'] !== null ? ' T' . (int)$a['tome'] : '') : '' ?></div>
-                        <div class="book-item-author"><?= h($a['auteur'] ?? '') ?></div>
-                        <div class="book-item-meta">
-                            <?= $libellesPriorite[(int)$a['priorite']] ?? '' ?> ·
-                            <?= h($a['support']) ?> · <?= h($a['type_livre']) ?>
-                            <?php if ($a['isbn']): ?> · ISBN <?= h($a['isbn']) ?><?php endif; ?>
-                            <?php if ($a['prix_estime'] !== null): ?> · <?= number_format((float)$a['prix_estime'], 2, ',', ' ') ?> €<?php endif; ?>
-                            <?php if ($a['lieu_achat']): ?> · <?= h($a['lieu_achat']) ?><?php endif; ?>
-                            <?php if ($a['tags']): ?> · 🏷️ <?= h($a['tags']) ?><?php endif; ?>
-                        </div>
-                        <?php if ($a['note']): ?><div class="book-item-meta">📝 <?= h($a['note']) ?></div><?php endif; ?>
-                        <div class="liste-actions" style="margin-top:8px;">
-                            <form method="POST" style="display:inline;" onsubmit="return confirm('Valider l\'achat et ajouter ce livre à la collection ?');">
-                                <input type="hidden" name="action" value="valider_achat">
-                                <input type="hidden" name="achat_id" value="<?= (int)$a['id'] ?>">
-                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                <select name="statut" title="Statut dans la collection">
-                                    <option value="À lire">À lire</option>
-                                    <option value="En cours">En cours</option>
-                                    <option value="Lu">Lu</option>
-                                </select>
-                                <button type="submit" class="btn-primary">✅ Acheté</button>
-                            </form>
-                            <a href="?edit=<?= (int)$a['id'] ?>" class="btn-edit">✏️</a>
-                            <form method="POST" style="display:inline;" onsubmit="return confirm('Retirer ce livre des achats ?');">
-                                <input type="hidden" name="action" value="delete_achat">
-                                <input type="hidden" name="achat_id" value="<?= (int)$a['id'] ?>">
-                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                <button type="submit" class="btn-danger">🗑️</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
     </div>
 
     <script src="tag-input.js"></script>
