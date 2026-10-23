@@ -11,6 +11,7 @@ require_once __DIR__ . '/src/TagRepository.php';
 require_once __DIR__ . '/src/SupportRepository.php';
 require_once __DIR__ . '/src/FormatNumeriqueRepository.php';
 require_once __DIR__ . '/src/LivreRepository.php';
+require_once __DIR__ . '/src/AchatRepository.php';
 require_once __DIR__ . '/src/Schema.php';
 require_once __DIR__ . '/src/Maintenance.php';
 
@@ -24,6 +25,7 @@ class BookManager {
     private $supports;
     private $formats;
     private $livres;
+    private $achats;
     private $schema;
     private $maintenance;
 
@@ -41,8 +43,9 @@ class BookManager {
         $this->supports = new SupportRepository($this->pdo);
         $this->formats = new FormatNumeriqueRepository($this->pdo);
         $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports, $this->formats);
+        $this->achats = new AchatRepository($this->pdo, $this->livres);
         $this->stats = new Stats($this->pdo, [$this->livres, 'countBooks']);
-        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags, $this->formats);
+        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags, $this->formats, $this->achats);
         $this->maintenance = new Maintenance($this->pdo);
     }
     
@@ -325,6 +328,33 @@ class BookManager {
 
     public function deleteTagEverywhere($tag) {
         return $this->tags->deleteTagEverywhere($tag);
+    }
+
+    /**
+     * Achats à effectuer (voir AchatRepository)
+     */
+    public function getAchats($tri = 'priorite') {
+        return $this->achats->getAchats($tri);
+    }
+
+    public function getAchat($id) {
+        return $this->achats->getAchat($id);
+    }
+
+    public function addAchat(array $data) {
+        return $this->achats->addAchat($data);
+    }
+
+    public function updateAchat($id, array $data) {
+        return $this->achats->updateAchat($id, $data);
+    }
+
+    public function deleteAchat($id) {
+        return $this->achats->deleteAchat($id);
+    }
+
+    public function validerAchat($id, $statut = 'À lire') {
+        return $this->achats->validerAchat($id, $statut);
     }
 
     /**

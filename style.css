@@ -2902,3 +2902,28 @@ textarea:focus {
 .books-list.grid-view .book-item-meta {
     justify-content: center;
 }
+
+/* Scan d'ISBN par caméra */
+#scannerBox {
+    margin-top: 10px;
+    max-width: 420px;
+}
+
+#scanner {
+    display: block;
+    object-fit: cover;
+    background: #000;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+#scanBtn {
+    margin-top: 10px;
+}
+
+#photoBtn {
+    margin-top: 10px;
+    margin-left: 6px;
+}

@@ -138,3 +138,30 @@ CREATE TABLE IF NOT EXISTS `formats_numeriques` (
 INSERT IGNORE INTO `formats_numeriques` (`nom`, `extension`) VALUES
   ('PDF', 'pdf'),
   ('Epub', 'epub');
+
+-- ----------------------------------------------------------------------------
+-- Achats à effectuer : livres à acheter. Validés, ils sont ajoutés à `livres`
+-- puis retirés de cette table.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `achats` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `isbn` varchar(40) DEFAULT NULL,
+  `titre` varchar(255) NOT NULL,
+  `auteur` varchar(255) DEFAULT NULL,
+  `support` varchar(50) NOT NULL DEFAULT 'Livre',
+  `type_livre` enum('Papier','Numérique') NOT NULL DEFAULT 'Papier',
+  `serie` varchar(255) DEFAULT NULL,
+  `tome` int DEFAULT NULL,
+  `couverture` text,
+  `description` text,
+  `date_publication` varchar(20) DEFAULT NULL,
+  `tags` varchar(500) DEFAULT NULL,
+  -- 1 haute, 2 normale, 3 basse
+  `priorite` tinyint NOT NULL DEFAULT 2,
+  `prix_estime` decimal(8,2) DEFAULT NULL,
+  `lieu_achat` varchar(150) DEFAULT NULL,
+  `note` text,
+  `date_ajout` timestamp DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_achats_priorite` (`priorite`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -12,14 +12,16 @@ class Schema {
     private $auteurs;
     private $tags;
     private $formats;
+    private $achats;
 
-    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags, FormatNumeriqueRepository $formats) {
+    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags, FormatNumeriqueRepository $formats, AchatRepository $achats) {
         $this->pdo = $pdo;
         $this->supports = $supports;
         $this->listes = $listes;
         $this->auteurs = $auteurs;
         $this->tags = $tags;
         $this->formats = $formats;
+        $this->achats = $achats;
     }
 
     /**
@@ -46,6 +48,7 @@ class Schema {
         $this->auteurs->createIgnoredDuplicatesTable();
         $this->tags->createTagsCatalogTable();
         $this->formats->createFormatsCatalogTable();
+        $this->achats->createAchatsTable();
 
         $this->markUpToDate($version);
     }
@@ -56,7 +59,7 @@ class Schema {
      */
     private function computeVersion() {
         $empreinte = '';
-        foreach (['Schema', 'SupportRepository', 'ListeRepository', 'AuteurRepository', 'TagRepository', 'FormatNumeriqueRepository'] as $classe) {
+        foreach (['Schema', 'SupportRepository', 'ListeRepository', 'AuteurRepository', 'TagRepository', 'FormatNumeriqueRepository', 'AchatRepository'] as $classe) {
             $empreinte .= (string)@md5_file(__DIR__ . '/' . $classe . '.php');
         }
         return md5($empreinte);

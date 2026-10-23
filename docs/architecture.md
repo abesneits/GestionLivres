@@ -99,6 +99,7 @@ VUE          views/<page>.php : HTML et affichage des variables, via h()
 | F3 Auteurs | `auteurs.php`, `get_biographie.php` (AJAX) | `auteurs.php` | `AuteurRepository` |
 | F4 Statistiques | `stats.php` | `stats.php` | `Stats` |
 | F5 Export | `export.php`, `export_liste.php` | `export.php`, `export_results.php` | `LivreRepository`, `ListeRepository` (+ `includes/export_functions.php`) |
+| F7 Achats | `achats.php`, `export_achats.php` | `achats.php` | `AchatRepository`, `LivreRepository`, `IsbnLookup`, `TagRepository`, `SupportRepository` |
 | F6 Paramétrage et maintenance | `outils.php` | `outils.php` | `TagRepository`, `SupportRepository`, `FormatNumeriqueRepository`, `LivreRepository` (édition en masse), `Maintenance`, `Schema` |
 | Transverse | `login.php`, `logout.php`, `includes/bootstrap.php`, `includes/auth.php` | `login.php`, `includes/head.php`, `includes/menu.php` | `Schema` |
 
@@ -184,6 +185,7 @@ Le modèle est entièrement dans `src/`. `BookManager.php` n'en fait pas partie 
 | `AuteurRepository` | F3 ; S3, S5 | Auteurs (`auteurs`, `auteurs_doublons_ignores`) : biographies (Wikipédia, Wikidata), photos, regroupement, doublons, fusion. | — |
 | `TagRepository` | S1, S4 | Tags (chaîne CSV dans `livres.tags`) et catalogue `tags_catalogue` ; conditions SQL sur les tags pour la recherche avancée. | — |
 | `SupportRepository` | S4 | Types de support, stockés dans l'`ENUM` de `livres.support`. | — |
+| `AchatRepository` | F7 | Achats à effectuer (`achats`) : liste, modification, suppression ; la validation ajoute le livre à `livres` via `LivreRepository::addBook()` puis supprime l'achat, dans une transaction. Table non couverte par la sauvegarde JSON. | `LivreRepository` |
 | `FormatNumeriqueRepository` | S4 | Formats numériques (PDF, Epub, ...) : catalogue extensible `formats_numeriques` (nom + extension attendue), utilisé pour valider les livres numériques. | — |
 | `IsbnLookup` | S3 | Recherche par ISBN auprès de Google Books, Open Library, BnF. N'utilise pas la base. | — |
 | `Stats` | F4 | Statistiques. | `LivreRepository` (comptage) |

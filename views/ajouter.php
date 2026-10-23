@@ -52,6 +52,13 @@ renderHead('Ajouter un livre - Ma Collection');
                                    value="<?= h($_POST['isbn'] ?? '') ?>">
                             <small>Vous pouvez saisir l'ISBN avec ou sans tirets (10 ou 13 chiffres)</small>
                             <span id="isbn-error" class="form-validation-error" style="display: none;"></span>
+                            <button type="button" class="btn-secondary" id="scanBtn" style="display: none;" onclick="demarrerScan()">📷 Scanner avec la caméra</button>
+                            <button type="button" class="btn-secondary" id="photoBtn" style="display: none;" onclick="document.getElementById('photoIsbn').click()">📸 Photographier le code-barres</button>
+                            <input type="file" id="photoIsbn" accept="image/*" capture="environment" style="display: none;" onchange="lirePhotoIsbn(this)">
+                            <div id="scannerBox" style="display: none;">
+                                <video id="scanner" playsinline muted autoplay></video>
+                                <button type="button" class="btn-secondary" onclick="arreterScan()">Annuler</button>
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn-add-book" id="searchBtn">
@@ -301,6 +308,9 @@ renderHead('Ajouter un livre - Ma Collection');
     </div>
 
     <script src="tag-input.js"></script>
+    <?php if ($step === 1): ?>
+    <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <?php endif; ?>
     <script>
         let currentStep = <?= $step ?>;
         const allTags = <?= json_encode($allTags, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
@@ -313,6 +323,141 @@ renderHead('Ajouter un livre - Ma Collection');
             }
         }
         
+        // Scan d'ISBN par la caméra (nécessite HTTPS)
+        let scanneur = null;
+
+        function afficherErreurIsbn(texte) {
+            const errorSpan = document.getElementById('isbn-error');
+            errorSpan.textContent = texte;
+            errorSpan.style.display = 'block';
+        }
+
+        function demarrerScan() {
+            if (typeof ZXing === 'undefined') {
+                afficherErreurIsbn('Le scanner n\'a pas pu être chargé. Saisissez l\'ISBN à la main.');
+                return;
+            }
+            document.getElementById('isbn-error').style.display = 'none';
+            document.getElementById('scanBtn').style.display = 'none';
+            document.getElementById('scannerBox').style.display = '';
+
+            // ZXing : lecteur de codes-barres 1D bien plus fiable que html5-qrcode, notamment sur iPhone
+            const hints = new Map();
+            hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13]);
+            hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+            scanneur = new ZXing.BrowserMultiFormatReader(hints, 100);
+
+            scanneur.decodeFromConstraints(
+                {
+                    audio: false,
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                },
+                document.getElementById('scanner'),
+                function (resultat) {
+                    if (!resultat) {
+                        return; // aucun code lu sur cette image : on continue
+                    }
+                    const code = resultat.getText();
+                    // Un ISBN-13 commence par 978 ou 979 ; les autres codes-barres sont ignorés
+                    if (!/^97[89]\d{10}$/.test(code)) {
+                        return;
+                    }
+                    arreterScan();
+                    const input = document.getElementById('isbn');
+                    input.value = code;
+                    input.dispatchEvent(new Event('input'));
+                    document.getElementById('searchForm').requestSubmit();
+                }
+            ).catch(function () {
+                arreterScan();
+                afficherErreurIsbn('Impossible d\'accéder à la caméra. Vérifiez l\'autorisation du navigateur.');
+            });
+        }
+
+        function validerIsbnScanne(code) {
+            const input = document.getElementById('isbn');
+            input.value = code;
+            input.dispatchEvent(new Event('input'));
+            document.getElementById('searchForm').requestSubmit();
+        }
+
+        // Lecture à partir d'une photo prise avec l'appareil photo natif (plus nette que le flux vidéo)
+        function lirePhotoIsbn(fichierInput) {
+            const fichier = fichierInput.files && fichierInput.files[0];
+            fichierInput.value = '';
+            if (!fichier) {
+                return;
+            }
+            if (typeof ZXing === 'undefined') {
+                afficherErreurIsbn('Le scanner n\'a pas pu être chargé. Saisissez l\'ISBN à la main.');
+                return;
+            }
+            document.getElementById('isbn-error').style.display = 'none';
+            const url = URL.createObjectURL(fichier);
+            const img = new Image();
+            img.onload = function () {
+                URL.revokeObjectURL(url);
+                const hints = new Map();
+                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13]);
+                hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+                const lecteur = new ZXing.MultiFormatReader();
+                lecteur.setHints(hints);
+
+                // On réduit la photo (12 Mpx trop lourd) et on essaie en horizontal puis en vertical
+                const echelle = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+                const l = Math.round(img.naturalWidth * echelle);
+                const h = Math.round(img.naturalHeight * echelle);
+                for (const rotation of [0, 90]) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = rotation ? h : l;
+                    canvas.height = rotation ? l : h;
+                    const ctx = canvas.getContext('2d');
+                    if (rotation) {
+                        ctx.translate(canvas.width, 0);
+                        ctx.rotate(Math.PI / 2);
+                    }
+                    ctx.drawImage(img, 0, 0, l, h);
+                    try {
+                        const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+                        const code = lecteur.decode(bitmap).getText();
+                        if (/^97[89]\d{10}$/.test(code)) {
+                            validerIsbnScanne(code);
+                            return;
+                        }
+                    } catch (e) { /* rien lu dans cette orientation */ }
+                }
+                afficherErreurIsbn('Code-barres non reconnu sur la photo. Reprenez-la en cadrant bien le code-barres de l\'ISBN.');
+            };
+            img.onerror = function () {
+                afficherErreurIsbn('Impossible de lire cette photo.');
+            };
+            img.src = url;
+        }
+
+        function arreterScan() {
+            document.getElementById('scannerBox').style.display = 'none';
+            document.getElementById('scanBtn').style.display = '';
+            const courant = scanneur;
+            scanneur = null;
+            if (courant) {
+                courant.reset();
+            }
+            return Promise.resolve();
+        }
+
+        if (document.getElementById('photoBtn')) {
+            document.getElementById('photoBtn').style.display = '';
+        }
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && document.getElementById('scanBtn')) {
+            document.getElementById('scanBtn').style.display = '';
+        }
+        window.addEventListener('pagehide', function () { arreterScan(); });
+
         function goToManualAdd() {
             const form = document.createElement('form');
             form.method = 'POST';

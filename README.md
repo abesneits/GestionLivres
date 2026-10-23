@@ -7,6 +7,7 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 - **Ajout par ISBN** : récupération automatique du titre, de l'auteur, de la description et de la couverture via Google Books, avec repli sur Open Library puis sur la BnF
 - **Ajout manuel** et envoi de couvertures personnalisées
 - **Listes de lecture** réordonnables par glisser-déposer
+- **Achats à effectuer** : liste de livres à acheter (priorité, prix estimé), validation qui les ajoute à la collection, version imprimable
 - **Fiches auteurs** avec biographie issue de Wikipédia, détection et fusion des doublons
 - **Séries et tomes** : rattachez un livre à une série (« Cycle de Fondation », « One Piece »…) avec son numéro de tome, puis filtrez et triez par série
 - **Livres numériques** : distinction papier/numérique, formats extensibles (PDF, Epub…), envoi et téléchargement du fichier protégés par mot de passe
@@ -135,6 +136,7 @@ Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la c
 | `AuteurRepository` | biographies (Wikipédia / Wikidata), photos, regroupement par auteur, doublons et fusion |
 | `TagRepository` | tags et catalogue de tags |
 | `SupportRepository` | types de support (Livre, Bande dessinée, Manga…) |
+| `AchatRepository` | achats à effectuer : liste, validation (ajout à la collection) |
 | `FormatNumeriqueRepository` | formats numériques (PDF, Epub…) et leur extension attendue |
 | `IsbnLookup` | recherche par ISBN : Google Books, Open Library, BnF |
 | `Stats` | statistiques de la collection |

@@ -26,6 +26,10 @@ require_once 'includes/auth.php';
                     ➕ Ajouter
                 </a></li>
                 
+                <li><a href="achats.php" class="<?= $current_page === 'achats.php' ? 'active' : '' ?>">
+                    🛒 Achats
+                </a></li>
+
                 <li><a href="listes.php" class="<?= $current_page === 'listes.php' ? 'active' : '' ?>">
                     📋 Listes
                 </a></li>

@@ -28,7 +28,7 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 
 | Évolution | Effort | Notes |
 |---|---|---|
-| **« À acheter » / « emprunté »** (liste de souhaits, prêts, bibliothèque) | Faible à moyen | Non prioritaire pour l'instant. Le plus simple serait de nouveaux statuts (le statut est déjà un champ à valeurs fixes) plutôt qu'un modèle de données séparé. Un suivi des prêts (à qui, depuis quand) demanderait une table dédiée. |
+| **Suivi des prêts** (à qui, depuis quand) | Moyen | Demanderait une table dédiée. La liste « Achats à effectuer » est déjà réalisée. |
 | **Dates de lecture** (début, fin) | Moyen | Permettrait des statistiques de lecture par année. |
 
 ## Mobile et hors connexion

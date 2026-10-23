@@ -23,6 +23,7 @@ L'objectif est de répondre à quelques questions simples :
 | **Suivre mes lectures** | Statuts (À lire, En cours, Lu, Abandonné), note personnelle, tags libres. | Ma collection |
 | **Cataloguer mes livres numériques** | Distinction papier / numérique par livre, format libre et extensible (PDF, Epub, ...), envoi du fichier et téléchargement protégé par mot de passe. | Ajouter, Ma collection, Outils |
 | **Suivre une série** | Rattachement d'un livre à une série avec son numéro de tome ; filtre par série et tri par série puis par tome. | Ma collection, Édition |
+| **Préparer mes achats** | Liste d'achats avec priorité, prix estimé et lieu ; validation d'un achat = ajout automatique à la collection ; version imprimable avec cases à cocher. | Achats |
 | **Préparer des lectures** | Listes de lecture nommées, dont l'ordre se change par glisser-déposer. | Listes |
 | **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; détection et fusion des doublons dus à la casse ou aux accents (« victor hugo » / « Victor Hugo »). | Auteurs |
 | **Avoir une vue d'ensemble** | Répartition par support et par statut, ajouts par mois, tags et auteurs les plus fréquents. | Statistiques |
@@ -41,9 +42,9 @@ Le modèle complet est dans [`schema.sql`](../schema.sql).
 ## Ce que l'application ne fait pas (limites connues)
 
 - **Pas de recherche par titre** : sans ISBN, la fiche se saisit à la main.
-- **Pas de scan de code-barres** : l'ISBN se tape ou se colle.
+- **Scan de code-barres limité** : la caméra ou une photo peuvent lire l'ISBN, mais cela nécessite HTTPS et un navigateur compatible ; sinon l'ISBN se tape ou se colle.
 - **Données récupérées limitées** : pas d'éditeur, de langue, de nombre de pages, de collection ni de format (poche, grand format). Les statistiques ne peuvent donc pas s'appuyer dessus.
-- **Pas de notion d'« à acheter » ou d'« emprunté »** : la collection décrit ce que l'on possède ou a possédé, pas une liste de souhaits.
+- **Pas de suivi des prêts (« emprunté »)** : la liste « Achats à effectuer » couvre les livres à acheter, mais pas ceux prêtés ou empruntés.
 - **Pas d'application mobile ni de mode hors connexion** : l'accès depuis un téléphone se fait par le navigateur (le site peut être ajouté à l'écran d'accueil), et il faut une connexion. Pour consulter une liste sans réseau, il faut l'exporter (HTML ou CSV) avant.
 - **Un seul utilisateur** et un seul mot de passe.
 - **MySQL / MariaDB uniquement** : le code utilise des fonctions propres à ces serveurs (voir [architecture.md](architecture.md)).
