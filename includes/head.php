@@ -17,6 +17,13 @@ function renderHead($title = "Ma Collection de Livres", $description = "Gérez v
     <link rel="manifest" href="site.webmanifest" />
     <meta name="theme-color" content="#667eea">
 
+    <script>
+        // Thème choisi (clair/sombre) appliqué avant l'affichage pour éviter un flash
+        try {
+            var t = localStorage.getItem('theme'); if (t) document.documentElement.setAttribute('data-theme', t);
+            if (localStorage.getItem('menu') === 'reduit') document.documentElement.setAttribute('data-menu', 'reduit');
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
 <?php

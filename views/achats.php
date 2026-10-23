@@ -50,6 +50,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                 <p>Ajoutez ci-dessus les livres que vous voulez acheter.</p>
             </div>
         <?php else: ?>
+            <div class="achats-grid">
             <?php foreach ($achats as $a): ?>
                 <div class="book-item">
                     <div class="book-item-cover">
@@ -94,6 +95,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                     </div>
                 </div>
             <?php endforeach; ?>
+            </div>
         <?php endif; ?>
 
         <!-- Formulaire d'ajout / modification -->

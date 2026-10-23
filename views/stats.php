@@ -409,7 +409,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .stats-section {
-            background: white;
+            background: var(--surface);
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -695,7 +695,7 @@ renderHead('Statistiques - Ma Collection');
             display: flex;
             align-items: center;
             padding: 20px;
-            background: white;
+            background: var(--surface);
             border: 2px solid #e9ecef;
             border-radius: 10px;
             text-decoration: none;

@@ -470,7 +470,7 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .liste-card {
-            background: white;
+            background: var(--surface);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -635,7 +635,7 @@ renderHead('Mes Listes - Ma Collection');
             position: absolute;
             right: 0;
             top: 100%;
-            background-color: white;
+            background-color: var(--surface);
             min-width: 180px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.2);
             border-radius: 8px;
