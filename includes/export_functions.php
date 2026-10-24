@@ -99,7 +99,7 @@ function exportExcel($meta, $books, $filename) {
     echo 'table { border-collapse: collapse; width: 100%; }';
     echo 'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }';
     echo 'th { background-color: #4CAF50; color: white; font-weight: bold; }';
-    echo '.header-info { background-color: #e3f2fd; font-weight: bold; }';
+    echo '.header-info { background-color: #e8e8e8; font-weight: bold; }';
     echo '</style>';
     echo '</head>';
     echo '<body>';
@@ -293,12 +293,12 @@ function exportHTML($meta, $books, $filename) {
         }
         h1 {
             color: #333;
-            border-bottom: 3px solid #007bff;
+            border-bottom: 3px solid #3a3a3a;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
         .meta {
-            background: #f8f9fa;
+            background: #f6f6f6;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 30px;
@@ -306,7 +306,7 @@ function exportHTML($meta, $books, $filename) {
         .book {
             page-break-inside: avoid;
             margin-bottom: 20px;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #3a3a3a;
             padding-left: 15px;
         }
         .book-title {
@@ -332,7 +332,7 @@ function exportHTML($meta, $books, $filename) {
             font-size: 9pt;
             margin-right: 5px;
         }
-        .badge-support { background: #e3f2fd; color: #1976d2; }
+        .badge-support { background: #e8e8e8; color: #3a3a3a; }
         .badge-statut { background: #e8f5e9; color: #388e3c; }
         .footer {
             position: fixed;

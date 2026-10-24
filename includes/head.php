@@ -15,7 +15,7 @@ function renderHead($title = "Ma Collection de Livres", $description = "Gérez v
     <link rel="shortcut icon" href="favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#4a4a4a">
 
     <script>
         // Thème choisi (clair/sombre) appliqué avant l'affichage pour éviter un flash

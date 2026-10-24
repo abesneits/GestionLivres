@@ -137,9 +137,9 @@ renderHead('Ma Collection');
             <div class="empty-message">
                 <p>Aucun livre trouvé avec ces critères.</p>
                 <?php if ($search || $filter || $type || $tag || $statut || $serie): ?>
-                    <p><a href="?" style="color: #007bff;">Réinitialiser les filtres</a></p>
+                    <p><a href="?" style="color: var(--accent-text);">Réinitialiser les filtres</a></p>
                 <?php else: ?>
-                    <p><a href="ajouter.php" style="color: #007bff;">Ajouter votre premier livre</a></p>
+                    <p><a href="ajouter.php" style="color: var(--accent-text);">Ajouter votre premier livre</a></p>
                 <?php endif; ?>
             </div>
         <?php elseif ($view === 'grid'): ?>

@@ -498,7 +498,7 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .liste-cover-default {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -570,11 +570,11 @@ renderHead('Mes Listes - Ma Collection');
             gap: 10px;
             margin-top: auto;
             padding-top: 15px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--border-soft);
         }
 
         .btn-view {
-            background: #007bff;
+            background: var(--accent);
             color: white;
             padding: 8px 16px;
             border-radius: 6px;
@@ -586,7 +586,7 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .btn-view:hover {
-            background: #0056b3;
+            background: var(--accent-hover);
             text-decoration: none;
             color: white;
         }
@@ -608,7 +608,7 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .back-link {
-            color: #007bff;
+            color: var(--accent-text);
             text-decoration: none;
             font-size: 0.9em;
             display: inline-block;
@@ -655,8 +655,8 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .dropdown-content a:hover {
-            background-color: #f8f9fa;
-            color: #007bff;
+            background-color: var(--surface-2);
+            color: var(--accent-text);
         }
 
         .export-icon {
@@ -677,7 +677,7 @@ renderHead('Mes Listes - Ma Collection');
             gap: 10px;
             margin-bottom: 15px;
             padding: 12px;
-            background: #f8f9fa;
+            background: var(--surface-2);
             border-radius: 6px;
         }
 
@@ -707,11 +707,11 @@ renderHead('Mes Listes - Ma Collection');
         .books-list {
             max-height: 450px;
             overflow-y: auto;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border-soft);
             border-radius: 6px;
             padding: 8px;
             margin-bottom: 20px;
-            background: #fafbfc;
+            background: var(--surface-2);
         }
 
         .book-item {
@@ -727,8 +727,8 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .book-item:hover {
-            background: #f8f9fa;
-            border-color: #e9ecef;
+            background: var(--surface-2);
+            border-color: var(--border-soft);
         }
 
         .book-item input[type="checkbox"] {
@@ -744,7 +744,7 @@ renderHead('Mes Listes - Ma Collection');
             border-radius: 3px;
             overflow: hidden;
             flex-shrink: 0;
-            background: #e9ecef;
+            background: var(--border-soft);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
@@ -760,7 +760,7 @@ renderHead('Mes Listes - Ma Collection');
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
             font-size: 16px;
         }
 
@@ -795,8 +795,8 @@ renderHead('Mes Listes - Ma Collection');
         }
 
         .badge-small {
-            background: #e3f2fd;
-            color: #1976d2;
+            background: var(--accent-soft);
+            color: var(--accent-text);
             padding: 2px 6px;
             border-radius: 8px;
             font-size: 0.7em;
@@ -816,7 +816,7 @@ renderHead('Mes Listes - Ma Collection');
 
         .sortable-ghost {
             opacity: 0.4;
-            background: #f8f9fa;
+            background: var(--surface-2);
         }
 
         .sortable-chosen {
@@ -832,7 +832,7 @@ renderHead('Mes Listes - Ma Collection');
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #28a745;
+            background: var(--accent);
             color: white;
             padding: 12px 20px;
             border-radius: 8px;

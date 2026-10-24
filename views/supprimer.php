@@ -33,7 +33,7 @@ renderHead('Supprimer un livre - Ma Collection');
             </form>
             <?php if ($search): ?>
                 <p style="margin-top: 10px;">
-                    <a href="supprimer.php" style="color: #007bff;">← Afficher tous les livres</a>
+                    <a href="supprimer.php" style="color: var(--accent-text);">← Afficher tous les livres</a>
                 </p>
             <?php endif; ?>
         </div>
@@ -60,7 +60,7 @@ renderHead('Supprimer un livre - Ma Collection');
             <div class="empty-message">
                 <?php if ($search): ?>
                     <p>Aucun livre trouvé avec la recherche "<?= h($search) ?>"</p>
-                    <p><a href="supprimer.php" style="color: #007bff;">Voir tous les livres</a></p>
+                    <p><a href="supprimer.php" style="color: var(--accent-text);">Voir tous les livres</a></p>
                 <?php else: ?>
                     <div class="empty-state">
                         <div class="empty-icon">📚</div>
@@ -336,7 +336,7 @@ renderHead('Supprimer un livre - Ma Collection');
         .cover-placeholder-small {
             width: 40px;
             height: 60px;
-            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            background: linear-gradient(135deg, var(--border-soft) 0%, var(--border-soft) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -422,12 +422,12 @@ renderHead('Supprimer un livre - Ma Collection');
         }
         
         .btn-delete-small:disabled {
-            background: #6c757d;
+            background: #6b6b6b;
             cursor: not-allowed;
         }
         
         .btn-edit-small {
-            background: #17a2b8;
+            background: #9a9a9a;
             color: white;
             padding: 6px 8px;
             border-radius: 4px;
@@ -438,7 +438,7 @@ renderHead('Supprimer un livre - Ma Collection');
         }
         
         .btn-edit-small:hover {
-            background: #138496;
+            background: #6b6b6b;
             color: white;
             text-decoration: none;
         }

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -68,15 +68,15 @@
         }
         
         .login-form input[type="password"]:focus {
-            border-color: #667eea;
+            border-color: #4a4a4a;
             outline: none;
-            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 0 5px rgba(55,65,81,0.3);
         }
         
         .login-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -106,19 +106,19 @@
         }
         
         .login-info {
-            background: #d4edda;
-            color: #155724;
+            background: var(--accent-soft);
+            color: var(--accent-text);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border-left: 4px solid #28a745;
+            border-left: 4px solid var(--accent);
             font-size: 14px;
         }
         
         .security-note {
             margin-top: 20px;
             padding: 15px;
-            background: #f8f9fa;
+            background: var(--surface-2);
             border-radius: 8px;
             font-size: 12px;
             color: #666;

@@ -366,7 +366,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .stat-card-large {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
             color: white;
             padding: 25px;
             border-radius: 15px;
@@ -452,13 +452,13 @@ renderHead('Statistiques - Ma Collection');
             border-radius: 50%;
         }
 
-        .status-dot.status-lu { background: #28a745; }
-        .status-dot.status-a-lire { background: #17a2b8; }
-        .status-dot.status-en-cours { background: #ffc107; }
+        .status-dot.status-lu { background: var(--accent); }
+        .status-dot.status-a-lire { background: #c4c4c4; }
+        .status-dot.status-en-cours { background: #6b6b6b; }
         .status-dot.status-abandonne { background: #dc3545; }
 
         .progress-bar {
-            background: #e9ecef;
+            background: var(--border-soft);
             height: 10px;
             border-radius: 5px;
             overflow: hidden;
@@ -469,14 +469,14 @@ renderHead('Statistiques - Ma Collection');
             transition: width 0.5s ease;
         }
 
-        .progress-fill.status-lu { background: #28a745; }
-        .progress-fill.status-a-lire { background: #17a2b8; }
-        .progress-fill.status-en-cours { background: #ffc107; }
+        .progress-fill.status-lu { background: var(--accent); }
+        .progress-fill.status-a-lire { background: #c4c4c4; }
+        .progress-fill.status-en-cours { background: #6b6b6b; }
         .progress-fill.status-abandonne { background: #dc3545; }
 
         .progress-percent {
             font-weight: bold;
-            color: #495057;
+            color: #4a4a4a;
             font-size: 0.9em;
         }
 
@@ -490,7 +490,7 @@ renderHead('Statistiques - Ma Collection');
             flex: 1;
             text-align: center;
             padding: 20px;
-            background: #f8f9fa;
+            background: var(--surface-2);
             border-radius: 10px;
         }
 
@@ -501,7 +501,7 @@ renderHead('Statistiques - Ma Collection');
 
         .support-name {
             font-weight: 600;
-            color: #495057;
+            color: #4a4a4a;
             margin-bottom: 5px;
         }
 
@@ -512,7 +512,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .support-percent {
-            color: #6c757d;
+            color: #6b6b6b;
             font-size: 0.9em;
         }
 
@@ -535,7 +535,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .bar-fill {
-            background: linear-gradient(to top, #007bff, #6c5ce7);
+            background: linear-gradient(to top, var(--accent), #4a4a4a);
             width: 20px;
             border-radius: 3px 3px 0 0;
             min-height: 5px;
@@ -568,7 +568,7 @@ renderHead('Statistiques - Ma Collection');
             gap: 15px;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid var(--border-soft);
         }
 
         .top-item:last-child {
@@ -592,14 +592,14 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .top-bar {
-            background: #e9ecef;
+            background: var(--border-soft);
             height: 8px;
             border-radius: 4px;
             overflow: hidden;
         }
 
         .top-fill {
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #4a4a4a, #1f1f1f);
             height: 100%;
             transition: width 0.5s ease;
         }
@@ -613,7 +613,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .tag-item {
-            background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+            background: linear-gradient(135deg, var(--border-soft), var(--surface-2));
             padding: 8px 15px;
             border-radius: 20px;
             border: 1px solid #dee2e6;
@@ -621,7 +621,7 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .tag-item:hover {
-            background: linear-gradient(135deg, #007bff, #6c5ce7);
+            background: linear-gradient(135deg, var(--accent), #4a4a4a);
             color: white;
         }
 
@@ -645,9 +645,9 @@ renderHead('Statistiques - Ma Collection');
             display: flex;
             gap: 15px;
             padding: 15px;
-            background: #f8f9fa;
+            background: var(--surface-2);
             border-radius: 8px;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid var(--accent);
         }
 
         .activity-icon {
@@ -681,7 +681,7 @@ renderHead('Statistiques - Ma Collection');
         .stats-actions {
             margin-top: 40px;
             padding-top: 30px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--border-soft);
         }
 
         .actions-grid {
@@ -696,7 +696,7 @@ renderHead('Statistiques - Ma Collection');
             align-items: center;
             padding: 20px;
             background: var(--surface);
-            border: 2px solid #e9ecef;
+            border: 2px solid var(--border-soft);
             border-radius: 10px;
             text-decoration: none;
             color: inherit;
@@ -704,8 +704,8 @@ renderHead('Statistiques - Ma Collection');
         }
 
         .action-btn:hover {
-            border-color: #007bff;
-            box-shadow: 0 4px 12px rgba(0,123,255,0.1);
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(55,65,81,0.1);
             text-decoration: none;
             color: inherit;
         }

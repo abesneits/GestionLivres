@@ -1,44 +1,58 @@
 /* Styles pour le Gestionnaire de Collection de Livres */
 
-/* Thème : variables de couleurs (clair par défaut, sombre selon le système ou le choix manuel) */
+/* Thème : variables de couleurs en nuances de gris (clair par défaut, sombre selon le système ou le choix manuel) */
 :root {
     color-scheme: light;
+    --page-bg: #efefef;
     --surface: #ffffff;
-    --surface-2: #f8f9fa;
-    --border: #dee2e6;
-    --text: #333333;
-    --text-muted: #666666;
+    --surface-2: #f6f6f6;
+    --border: #dcdcdc;
+    --border-soft: #ececec;
+    --text: #2b2b2b;
+    --text-muted: #6b6b6b;
+    --accent: #3a3a3a;
+    --accent-hover: #1f1f1f;
+    --accent-text: #3a3a3a;
+    --accent-soft: #e8e8e8;
     --font-base: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         color-scheme: dark;
-        --surface: #1e2430;
-        --surface-2: #2a3140;
-        --border: #3b4456;
-        --text: #e6e9ef;
-        --text-muted: #a3acbd;
-    }
-    :root:not([data-theme="light"]) body {
-        background-image: none;
-        background-color: #141821;
+        --page-bg: #141414;
+        --surface: #1f1f1f;
+        --surface-2: #2a2a2a;
+        --border: #3d3d3d;
+        --border-soft: #333333;
+        --text: #e6e6e6;
+        --text-muted: #a3a3a3;
+        --accent: #525252;
+        --accent-hover: #6b6b6b;
+        --accent-text: #d4d4d4;
+        --accent-soft: #2e2e2e;
     }
 }
 
 :root[data-theme="dark"] {
     color-scheme: dark;
-    --surface: #1e2430;
-    --surface-2: #2a3140;
-    --border: #3b4456;
-    --text: #e6e9ef;
-    --text-muted: #a3acbd;
+    --page-bg: #141414;
+    --surface: #1f1f1f;
+    --surface-2: #2a2a2a;
+    --border: #3d3d3d;
+    --border-soft: #333333;
+    --text: #e6e6e6;
+    --text-muted: #a3a3a3;
+    --accent: #525252;
+    --accent-hover: #6b6b6b;
+    --accent-text: #d4d4d4;
+    --accent-soft: #2e2e2e;
 }
 
-/* En sombre : fond uni à la place de l'image */
-:root[data-theme="dark"] body {
+/* Fond de page uni (pas d'image) */
+body {
     background-image: none;
-    background-color: #141821;
+    background-color: var(--page-bg);
 }
 
 input, select, textarea {
@@ -52,7 +66,7 @@ body {
     font-family: var(--font-base);
     margin: 0;
     padding: 0;
-    background-color: var(--surface-2);
+    background-color: var(--page-bg);
     line-height: 1.6;
 }
 
@@ -87,11 +101,11 @@ body {
 }
 
 .warning-text {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--accent-soft);
+    color: var(--accent-text);
     padding: 10px 15px;
     border-radius: 6px;
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid #9a9a9a;
     margin-top: 10px !important;
 }
 
@@ -118,7 +132,7 @@ body {
 .stat-card {
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
     color: white;
     padding: 10px;
     border-radius: 15px;
@@ -167,9 +181,9 @@ body {
     border-left: 4px solid;
 }
 
-.action-card.add-book { border-left-color: #28a745; }
-.action-card.view-collection { border-left-color: #007bff; }
-.action-card.export-data { border-left-color: #6f42c1; }
+.action-card.add-book { border-left-color: var(--accent); }
+.action-card.view-collection { border-left-color: var(--accent); }
+.action-card.export-data { border-left-color: #4a4a4a; }
 
 .action-card:hover {
     transform: translateY(-3px);
@@ -202,14 +216,14 @@ body {
 }
 
 .view-all {
-    color: #007bff;
+    color: var(--accent-text);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
 }
 
 .view-all:hover {
-    color: #0056b3;
+    color: var(--accent-text);
 }
 
 /* État vide */
@@ -256,7 +270,7 @@ body {
 }
 
 .btn-edit-home {
-    background: #17a2b8;
+    background: #9a9a9a;
     color: white;
     padding: 6px 12px;
     border: none;
@@ -269,7 +283,7 @@ body {
 }
 
 .btn-edit-home:hover {
-    background: #138496;
+    background: #6b6b6b;
     color: white;
     text-decoration: none;
 }
@@ -285,7 +299,7 @@ body {
 
 /* Tag "plus" pour montrer qu'il y a plus de tags */
 .tag-more {
-    background: #6c757d !important;
+    background: #6b6b6b !important;
     color: white !important;
     font-size: 0.7em;
 }
@@ -346,8 +360,8 @@ body {
     font-weight: 600;
 }
 
-.type-livre { background: #e3f2fd; color: #1565c0; }
-.type-bd { background: #fff3e0; color: #e65100; }
+.type-livre { background: var(--accent-soft); color: var(--accent-text); }
+.type-bd { background: var(--accent-soft); color: var(--accent-text); }
 
 .book-date {
     font-size: 0.8em;
@@ -362,9 +376,9 @@ body {
     display: inline-block;
 }
 
-.status-lu { background: #d4edda; color: #155724; }
-.status-encours { background: #fff3cd; color: #856404; }
-.status-alire { background: #d1ecf1; color: #0c5460; }
+.status-lu { background: var(--accent-soft); color: var(--accent-text); }
+.status-encours { background: var(--accent-soft); color: var(--accent-text); }
+.status-alire { background: var(--accent-soft); color: var(--accent-text); }
 .status-abandonne { background: #f8d7da; color: #721c24; }
 
 /* Formulaire d'ajout */
@@ -376,7 +390,7 @@ body {
     background: var(--surface-2);
     padding: 30px;
     border-radius: 10px;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--accent);
     margin-bottom: 30px;
 }
 
@@ -397,7 +411,7 @@ body {
 }
 
 .btn-add-book {
-    background: #28a745;
+    background: var(--accent);
     color: white;
     padding: 15px 30px;
     border: none;
@@ -414,7 +428,7 @@ body {
 }
 
 .btn-add-book:hover {
-    background: #218838;
+    background: var(--accent-hover);
     transform: translateY(-2px);
 }
 
@@ -451,7 +465,7 @@ body {
 }
 
 .example-isbn:hover {
-    background: #007bff;
+    background: var(--accent);
     color: white;
 }
 
@@ -522,7 +536,7 @@ body {
 .cover-placeholder-small {
     width: 50px;
     height: 75px;
-    background: #f0f0f0;
+    background: var(--border-soft);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -604,13 +618,13 @@ body {
 }
 
 .btn-edit-link {
-    color: #17a2b8;
+    color: #9a9a9a;
     text-decoration: none;
     font-size: 0.85em;
 }
 
 .btn-edit-link:hover {
-    color: #138496;
+    color: #6b6b6b;
 }
 
 .bulk-actions-info {
@@ -622,7 +636,7 @@ body {
     padding: 15px;
     border-radius: 6px;
     margin-bottom: 20px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--accent);
 }
 
 .results-info p {
@@ -632,7 +646,7 @@ body {
 
 /* Boutons généraux */
 .btn-primary {
-    background: #007bff;
+    background: var(--accent);
     color: white;
     padding: 12px 24px;
     border: none;
@@ -644,13 +658,13 @@ body {
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
     color: white;
     text-decoration: none;
 }
 
 .btn-secondary {
-    background: #6c757d;
+    background: #6b6b6b;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -663,7 +677,7 @@ body {
 }
 
 .btn-secondary:hover {
-    background: #545b62;
+    background: #555555;
     color: white;
     text-decoration: none;
 }
@@ -697,11 +711,11 @@ h2 {
 
 /* Section formulaire */
 .form-section {
-    background: #f9f9f9;
+    background: var(--surface-2);
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 30px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--accent);
 }
 
 .form-group {
@@ -732,9 +746,9 @@ input[type="text"]:focus,
 input[type="file"]:focus,
 select:focus,
 textarea:focus {
-    border-color: #007bff;
+    border-color: var(--accent);
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 5px rgba(55,65,81,0.3);
 }
 
 small {
@@ -746,7 +760,7 @@ small {
 
 /* Boutons */
 button {
-    background: #007bff;
+    background: var(--accent);
     color: white;
     padding: 12px 24px;
     border: none;
@@ -758,7 +772,7 @@ button {
 }
 
 button:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
     transform: translateY(-1px);
 }
 
@@ -785,9 +799,9 @@ button:hover {
 }
 
 .message.success {
-    background: #d4edda;
-    color: #155724;
-    border-left-color: #28a745;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    border-left-color: var(--accent);
 }
 
 .message.error {
@@ -797,15 +811,15 @@ button:hover {
 }
 
 .message.warning {
-    background: #fff3cd;
-    color: #856404;
-    border-left-color: #ffc107;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    border-left-color: #9a9a9a;
 }
 
 .message.info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border-left-color: #17a2b8;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    border-left-color: #9a9a9a;
 }
 
 /* Validation des formulaires */
@@ -829,7 +843,7 @@ textarea.error {
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--accent);
 }
 
 .search-row {
@@ -863,9 +877,9 @@ textarea.error {
 
 .search-group input:focus, 
 .search-group select:focus {
-    border-color: #28a745;
+    border-color: var(--accent);
     outline: none;
-    box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 0 5px rgba(55,65,81,0.3);
 }
 
 /* Formulaire de recherche de la page d'accueil : recherche seule sur sa ligne,
@@ -889,14 +903,14 @@ textarea.error {
 }
 
 .btn-search {
-    background: #28a745;
+    background: var(--accent);
     padding: 12px 20px;
     white-space: nowrap;
     align-self: flex-start;
 }
 
 .btn-search:hover {
-    background: #218838;
+    background: var(--accent-hover);
 }
 
 /* Sélecteur de vue */
@@ -918,7 +932,7 @@ textarea.error {
 }
 
 .view-btn.active {
-    background: #007bff;
+    background: var(--accent);
     color: white;
 }
 
@@ -928,7 +942,7 @@ textarea.error {
 }
 
 .view-btn.active:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
 }
 
 /* Vue en grille */
@@ -975,7 +989,7 @@ textarea.error {
 .book-card-cover .cover-placeholder {
     width: 80px;
     height: 120px;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    background: linear-gradient(135deg, var(--border-soft) 0%, var(--border-soft) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1004,7 +1018,7 @@ textarea.error {
 
 .book-card-serie {
     font-size: 0.85em;
-    color: #667eea;
+    color: #4a4a4a;
     margin: 2px 0 4px;
 }
 
@@ -1045,18 +1059,18 @@ textarea.error {
 
 /* Classes de statut corrigées */
 .statut-a-lire { 
-    background: #d1ecf1; 
-    color: #0c5460; 
+    background: var(--accent-soft); 
+    color: var(--accent-text); 
 }
 
 .statut-en-cours { 
-    background: #fff3cd; 
-    color: #856404; 
+    background: var(--accent-soft); 
+    color: var(--accent-text); 
 }
 
 .statut-lu { 
-    background: #d4edda; 
-    color: #155724; 
+    background: var(--accent-soft); 
+    color: var(--accent-text); 
 }
 
 .statut-abandonne { 
@@ -1098,7 +1112,7 @@ textarea.error {
 }
 
 .btn-edit {
-    background: #17a2b8;
+    background: #9a9a9a;
     color: white;
     padding: 6px 12px;
     border: none;
@@ -1110,13 +1124,13 @@ textarea.error {
 }
 
 .btn-edit:hover {
-    background: #138496;
+    background: #6b6b6b;
     color: white;
     text-decoration: none;
 }
 
 .btn-download {
-    background: #6c757d;
+    background: #6b6b6b;
     color: white;
     padding: 6px 10px;
     border: none;
@@ -1128,7 +1142,7 @@ textarea.error {
 }
 
 .btn-download:hover {
-    background: #545b62;
+    background: #555555;
     color: white;
     text-decoration: none;
 }
@@ -1155,7 +1169,7 @@ textarea.error {
 }
 
 .btn-export {
-    background: #6f42c1;
+    background: #4a4a4a;
     color: white;
     padding: 10px 16px;
     border: none;
@@ -1167,7 +1181,7 @@ textarea.error {
 }
 
 .btn-export:hover {
-    background: #5a32a3;
+    background: #3a3a3a;
     color: white;
     text-decoration: none;
 }
@@ -1182,7 +1196,7 @@ textarea.error {
 }
 
 .stat-box {
-    background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+    background: linear-gradient(135deg, var(--border-soft) 0%, var(--surface-2) 100%);
     padding: 25px 20px;
     border-radius: 12px;
     flex: 1;
@@ -1212,8 +1226,8 @@ textarea.error {
 
 /* Supports (Livre/BD/Manga) */
 .support-manga {
-    background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
-    color: #ad1457;
+    background: linear-gradient(135deg, #f2f2f2 0%, #d4d4d4 100%);
+    color: #3a3a3a;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1224,8 +1238,8 @@ textarea.error {
 }
 
 .support-livre {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    color: #1565c0;
+    background: linear-gradient(135deg, #f2f2f2 0%, #e6e6e6 100%);
+    color: var(--accent-text);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1236,8 +1250,8 @@ textarea.error {
 }
 
 .support-bd {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
-    color: #e65100;
+    background: linear-gradient(135deg, #e6e6e6 0%, #d4d4d4 100%);
+    color: var(--accent-text);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1249,8 +1263,8 @@ textarea.error {
 
 /* Type (Papier/Numérique) */
 .type-papier {
-    background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%);
-    color: #4e342e;
+    background: linear-gradient(135deg, #ececec 0%, #d4d4d4 100%);
+    color: #3a3a3a;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1261,8 +1275,8 @@ textarea.error {
 }
 
 .type-numerique {
-    background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
-    color: #00695c;
+    background: linear-gradient(135deg, #f1f1f1 0%, #d9d9d9 100%);
+    color: #3a3a3a;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1290,7 +1304,7 @@ textarea.error {
 .cover-placeholder {
     width: 50px;
     height: 75px;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    background: linear-gradient(135deg, var(--border-soft) 0%, var(--border-soft) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1317,7 +1331,7 @@ th, td {
 }
 
 th {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--surface-2) 0%, var(--border-soft) 100%);
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1373,7 +1387,7 @@ td strong {
 }
 
 .pagination-btn {
-    background: #007bff;
+    background: var(--accent);
     color: white;
     padding: 8px 16px;
     border: none;
@@ -1387,14 +1401,14 @@ td strong {
 }
 
 .pagination-btn:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
     color: white;
     text-decoration: none;
     transform: translateY(-1px);
 }
 
 .pagination-btn:disabled {
-    background: #6c757d;
+    background: #6b6b6b;
     cursor: not-allowed;
     transform: none;
 }
@@ -1423,13 +1437,13 @@ td strong {
     background: var(--border);
     color: var(--text-muted);
     text-decoration: none;
-    border-color: #adb5bd;
+    border-color: #adadad;
 }
 
 .pagination-number.pagination-current {
-    background: #007bff;
+    background: var(--accent);
     color: white;
-    border-color: #007bff;
+    border-color: var(--accent);
     cursor: default;
 }
 
@@ -1510,7 +1524,7 @@ td strong {
 }
 
 .modal-close:hover {
-    background-color: #f0f0f0;
+    background-color: var(--border-soft);
     color: var(--text);
 }
 
@@ -1547,9 +1561,9 @@ td strong {
 .modal-content input:focus,
 .modal-content select:focus,
 .modal-content textarea:focus {
-    border-color: #007bff;
+    border-color: var(--accent);
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 5px rgba(55,65,81,0.3);
 }
 
 .modal-content textarea {
@@ -1611,7 +1625,7 @@ td strong {
 }
 
 .modal-actions .btn-secondary {
-    background: #6c757d;
+    background: #6b6b6b;
     color: white;
     padding: 12px 24px;
     border: none;
@@ -1624,13 +1638,13 @@ td strong {
 }
 
 .modal-actions .btn-secondary:hover {
-    background: #545b62;
+    background: #555555;
     color: white;
     text-decoration: none;
 }
 
 .modal-actions .btn-primary {
-    background: #007bff;
+    background: var(--accent);
     color: white;
     padding: 12px 24px;
     border: none;
@@ -1641,7 +1655,7 @@ td strong {
 }
 
 .modal-actions .btn-primary:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
 }
 
 /* Indicateur de chargement */
@@ -1941,12 +1955,12 @@ td strong {
 }
 
 .step.active .step-number {
-    background: #007bff;
+    background: var(--accent);
     color: white;
 }
 
 .step.completed .step-number {
-    background: #28a745;
+    background: var(--accent);
     color: white;
 }
 
@@ -1967,7 +1981,7 @@ td strong {
     background: var(--surface-2);
     padding: 30px;
     border-radius: 12px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--accent);
     margin-bottom: 30px;
 }
 
@@ -2022,7 +2036,7 @@ td strong {
 .no-cover {
     width: 120px;
     height: 180px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--surface-2) 0%, var(--border-soft) 100%);
     border: 2px dashed var(--border);
     border-radius: 8px;
     display: flex;
@@ -2176,7 +2190,7 @@ td strong {
 
 /* Amélioration des boutons de formulaire */
 .btn-add-book:disabled {
-    background: #6c757d;
+    background: #6b6b6b;
     cursor: not-allowed;
     transform: none;
 }
@@ -2185,15 +2199,15 @@ td strong {
 input:focus,
 select:focus,
 textarea:focus {
-    border-color: #007bff !important;
+    border-color: var(--accent) !important;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 5px rgba(55,65,81,0.3);
 }
 /* ===== STYLES POUR UPLOAD DE FICHIERS ===== */
 
 .upload-label {
     display: block;
-    background: #007bff;
+    background: var(--accent);
     color: white;
     padding: 10px 15px;
     border-radius: 6px;
@@ -2206,7 +2220,7 @@ textarea:focus {
 }
 
 .upload-label:hover {
-    background: #0056b3;
+    background: var(--accent-hover);
 }
 
 /* Uniquement le champ remplacé par un bouton stylé (voir .upload-label
@@ -2235,7 +2249,7 @@ textarea:focus {
 }
 
 .no-cover:hover {
-    border-color: #adb5bd;
+    border-color: #adadad;
 }
 
 /* État de chargement pour boutons */
@@ -2291,8 +2305,8 @@ textarea:focus {
 }
 
 .tag-input-container:focus-within {
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    border-color: var(--accent);
+    box-shadow: 0 0 5px rgba(55,65,81,0.3);
 }
 
 .tag-chip {
@@ -2442,13 +2456,13 @@ textarea:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f0f0f0;
+    background: var(--border-soft);
     font-size: 1.1em;
 }
 
 .auteur-count {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--accent-soft);
+    color: var(--accent-text);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8em;
@@ -2462,7 +2476,7 @@ textarea:focus {
     flex-wrap: wrap;
     gap: 15px;
     align-items: flex-start;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-soft);
     padding-top: 15px;
 }
 
@@ -2534,7 +2548,7 @@ textarea:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    background: linear-gradient(135deg, var(--border-soft) 0%, var(--border-soft) 100%);
     color: #999;
     font-size: 20px;
 }
@@ -2551,12 +2565,12 @@ textarea:focus {
 }
 
 .duplicates-section {
-    border: 1px solid #ffe69c;
-    background: #fffbf0;
+    border: 1px solid #9a9a9a;
+    background: var(--accent-soft);
 }
 
 .duplicates-hint {
-    color: #856404;
+    color: var(--accent-text);
     font-size: 0.9em;
     margin: 5px 0 15px 0;
 }
@@ -2627,7 +2641,7 @@ textarea:focus {
 }
 
 .btn-edit-bio:hover {
-    background: #f0f0f0;
+    background: var(--border-soft);
     border-color: #ccc;
 }
 
@@ -2647,7 +2661,7 @@ textarea:focus {
     display: flex;
     gap: 5px;
     margin-bottom: 25px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid var(--border-soft);
     flex-wrap: wrap;
 }
 
@@ -2662,13 +2676,13 @@ textarea:focus {
 }
 
 .outils-tab:hover {
-    color: #007bff;
+    color: var(--accent-text);
     text-decoration: none;
 }
 
 .outils-tab.active {
-    color: #007bff;
-    border-bottom-color: #007bff;
+    color: var(--accent-text);
+    border-bottom-color: var(--accent);
     font-weight: 600;
 }
 
@@ -2690,7 +2704,7 @@ textarea:focus {
 .bulk-edit-panel {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 2px solid #f0f0f0;
+    border-top: 2px solid var(--border-soft);
 }
 
 .tags-table {
@@ -2702,7 +2716,7 @@ textarea:focus {
 .tags-table td {
     text-align: left;
     padding: 10px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-soft);
     vertical-align: middle;
 }
 
@@ -2736,7 +2750,7 @@ textarea:focus {
 .search-section-collapsible summary::before {
     content: '▸';
     display: inline-block;
-    color: #28a745;
+    color: var(--accent);
     transition: transform 0.2s ease;
 }
 
@@ -2749,8 +2763,8 @@ textarea:focus {
 }
 
 .filtre-actif-badge {
-    background: #d4edda;
-    color: #155724;
+    background: var(--accent-soft);
+    color: var(--accent-text);
     padding: 2px 8px;
     border-radius: 10px;
     font-size: 0.7em;
@@ -2830,7 +2844,7 @@ textarea:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4a4a4a 0%, #1f1f1f 100%);
     font-size: 16px;
 }
 
@@ -2865,8 +2879,8 @@ textarea:focus {
 }
 
 .badge-small {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--accent-soft);
+    color: var(--accent-text);
     padding: 2px 6px;
     border-radius: 8px;
     font-size: 0.7em;
@@ -2893,13 +2907,13 @@ textarea:focus {
 }
 
 .view-toggle-btn:hover {
-    border-color: #007bff;
-    color: #007bff;
+    border-color: var(--accent);
+    color: var(--accent-text);
 }
 
 .view-toggle-btn.active {
-    background: #007bff;
-    border-color: #007bff;
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
 }
 

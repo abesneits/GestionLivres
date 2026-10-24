@@ -124,7 +124,7 @@ body:has(> .main-menu) {
     box-sizing: border-box;
     background: var(--surface);
     box-shadow: 2px 0 12px rgba(0,0,0,0.1);
-    border-right: 3px solid #007bff;
+    border-right: 3px solid var(--accent);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -171,19 +171,19 @@ body:has(> .main-menu) {
 
 .menu-items a:hover {
     background: var(--surface-2);
-    color: #007bff;
+    color: var(--accent-text);
 }
 
 .menu-items a.active {
-    background: #007bff;
+    background: var(--accent);
     color: white;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    box-shadow: 0 2px 8px rgba(55,65,81,0.3);
 }
 
 .menu-bottom {
     margin-top: auto;
     padding-top: 16px;
-    border-top: 2px solid #f0f0f0;
+    border-top: 2px solid var(--border-soft);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -219,8 +219,8 @@ body:has(> .main-menu) {
 
 .stats-badge {
     display: inline-block;
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--accent-soft);
+    color: var(--accent-text);
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 0.9em;
