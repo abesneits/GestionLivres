@@ -78,7 +78,7 @@ CONTRÔLEUR   pages à la racine : index.php, ajouter.php, listes.php, …
    │                                   MySQL / MariaDB, dossier uploads/
    ▼
 VUE          views/<page>.php : HTML et affichage des variables, via h()
-             includes/head.php, includes/menu.php : parties communes
+             includes/head.php, includes/menu.php, includes/icones.php : parties communes
              style.css, tag-input.js : présentation
 ```
 
@@ -87,6 +87,11 @@ VUE          views/<page>.php : HTML et affichage des variables, via h()
 **Contrôleur** — chaque page `.php` à la racine. Elle ne contient pas de SQL : elle valide les paramètres, appelle le modèle, puis se termine par `require 'views/<page>.php';`. Les pages sans affichage (`export_liste.php`, `get_biographie.php`, `update_order.php`, `telecharger_ebook.php`) renvoient directement un fichier, du JSON ou une redirection. Les fonctions communes aux contrôleurs sont dans `includes/utils.php` (nettoyage des paramètres de recherche, CSRF, messages flash) et `includes/export_functions.php` (génération des formats d'export).
 
 **Vue** — `views/`. Uniquement du HTML et l'affichage des variables préparées par le contrôleur ; aucune vue ne traite `$_POST` ni n'écrit dans la base. Quelques vues lisent encore `$bookManager` pour remplir un menu déroulant (séries, types de support).
+
+**Conventions de présentation** : l'interface est en nuances de gris, avec un thème clair et un thème sombre.
+- Les couleurs sont des variables CSS définies en tête de `style.css` (`--surface`, `--text`, `--accent`, etc.) ; le thème sombre suit le système ou le bouton « Thème » du menu. Les pages autonomes (export HTML, liste d'achats imprimable) utilisent des gris fixes.
+- `includes/menu.php` est une barre latérale à gauche, réductible aux icônes (tiroir avec bouton hamburger sur mobile). Les choix de thème et de réduction sont mémorisés dans le navigateur.
+- Il n'y a pas d'emojis dans l'interface : toutes les icônes sont des SVG fournis par la fonction `icone('nom')` de `includes/icones.php` (ajouter la forme dans la liste de ce fichier pour créer une nouvelle icône).
 
 **Écarts connus au découpage** : l'envoi de la couverture d'une liste (`listes.php`) et de la couverture d'un livre ajouté à la main (`ajouter.php`) est encore traité dans le contrôleur au lieu d'une classe de `src/`, et les lectures de `$bookManager` depuis les vues mentionnées ci-dessus.
 
