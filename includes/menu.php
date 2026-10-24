@@ -13,41 +13,41 @@ require_once 'includes/auth.php';
 
 <nav class="main-menu">
     <div class="menu-logo">
-        <a href="index.php" title="Accueil"><span class="menu-icon">📚</span><span class="menu-label">Ma Collection</span></a>
+        <a href="index.php" title="Accueil"><span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="menu-label">Ma Collection</span></a>
     </div>
 
     <div class="menu-wrapper">
         <ul class="menu-items">
             <li><a href="index.php" title="Accueil" class="<?= $current_page === 'index.php' ? 'active' : '' ?>">
-                <span class="menu-icon">🏠</span><span class="menu-label">Accueil</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="menu-label">Accueil</span>
             </a></li>
 
             <li><a href="ajouter.php" title="Ajouter" class="<?= $current_page === 'ajouter.php' ? 'active' : '' ?>">
-                <span class="menu-icon">➕</span><span class="menu-label">Ajouter</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></span><span class="menu-label">Ajouter</span>
             </a></li>
 
             <li><a href="achats.php" title="Achats" class="<?= $current_page === 'achats.php' ? 'active' : '' ?>">
-                <span class="menu-icon">🛒</span><span class="menu-label">Achats</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></span><span class="menu-label">Achats</span>
             </a></li>
 
             <li><a href="listes.php" title="Listes" class="<?= $current_page === 'listes.php' ? 'active' : '' ?>">
-                <span class="menu-icon">📋</span><span class="menu-label">Listes</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></span><span class="menu-label">Listes</span>
             </a></li>
 
             <li><a href="auteurs.php" title="Auteurs" class="<?= $current_page === 'auteurs.php' ? 'active' : '' ?>">
-                <span class="menu-icon">🖋️</span><span class="menu-label">Auteurs</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg></span><span class="menu-label">Auteurs</span>
             </a></li>
 
             <li><a href="stats.php" title="Stats" class="<?= $current_page === 'stats.php' ? 'active' : '' ?>">
-                <span class="menu-icon">📊</span><span class="menu-label">Stats</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span><span class="menu-label">Stats</span>
             </a></li>
 
             <li><a href="outils.php" title="Outils" class="<?= $current_page === 'outils.php' ? 'active' : '' ?>">
-                <span class="menu-icon">🛠️</span><span class="menu-label">Outils</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="menu-label">Outils</span>
             </a></li>
 
             <li><a href="export.php" title="Export" class="<?= $current_page === 'export.php' ? 'active' : '' ?>">
-                <span class="menu-icon">📥</span><span class="menu-label">Export</span>
+                <span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></span><span class="menu-label">Export</span>
             </a></li>
         </ul>
 
@@ -61,9 +61,9 @@ require_once 'includes/auth.php';
                 }
                 ?>
             </div>
-            <button type="button" class="theme-btn collapse-btn" onclick="toggleReduit()" title="Réduire / agrandir le menu"><span class="menu-icon collapse-icon">◀</span><span class="menu-label">Réduire</span></button>
-            <button type="button" class="theme-btn" onclick="toggleTheme()" title="Changer de thème"><span class="menu-icon">🌓</span><span class="menu-label">Thème</span></button>
-            <a href="logout.php" class="logout-btn" title="Se déconnecter"><span class="menu-icon">🚪</span><span class="menu-label">Déconnexion</span></a>
+            <button type="button" class="theme-btn collapse-btn" onclick="toggleReduit()" title="Réduire / agrandir le menu"><span class="menu-icon collapse-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg></span><span class="menu-label">Réduire</span></button>
+            <button type="button" class="theme-btn" onclick="toggleTheme()" title="Changer de thème"><span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></svg></span><span class="menu-label">Thème</span></button>
+            <a href="logout.php" class="logout-btn" title="Se déconnecter"><span class="menu-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></span><span class="menu-label">Déconnexion</span></a>
         </div>
     </div>
 </nav>
@@ -137,6 +137,8 @@ body:has(> .main-menu) {
 }
 
 .menu-logo a {
+    display: flex;
+    align-items: center;
     color: var(--text);
     text-decoration: none;
     font-weight: 600;
@@ -160,7 +162,8 @@ body:has(> .main-menu) {
 
 .menu-items a,
 .menu-bottom .logout-btn {
-    display: block;
+    display: flex;
+    align-items: center;
     padding: 11px 16px;
     color: var(--text);
     text-decoration: none;
@@ -195,7 +198,8 @@ body:has(> .main-menu) {
 }
 
 .menu-bottom .theme-btn {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     padding: 11px 16px;
     background: none;
@@ -233,10 +237,18 @@ body:has(> .main-menu) {
 }
 
 .menu-icon {
-    display: inline-block;
-    width: 1.5em;
-    margin-right: 8px;
-    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+}
+
+.menu-icon .icon {
+    width: 20px;
+    height: 20px;
 }
 
 .collapse-icon {
@@ -260,7 +272,8 @@ body:has(> .main-menu) {
 
     html[data-menu="reduit"] .menu-logo {
         padding: 22px 0 14px;
-        text-align: center;
+        justify-content: center;
+        display: flex;
     }
 
     html[data-menu="reduit"] .menu-wrapper {
@@ -271,7 +284,7 @@ body:has(> .main-menu) {
     html[data-menu="reduit"] .menu-bottom .logout-btn,
     html[data-menu="reduit"] .menu-bottom .theme-btn {
         padding: 11px 0;
-        text-align: center;
+        justify-content: center;
     }
 
     html[data-menu="reduit"] .menu-icon {
