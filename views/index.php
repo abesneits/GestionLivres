@@ -111,7 +111,7 @@ renderHead('Ma Collection');
                     'statut' => $statut,
                     'serie' => $serie,
                     'tags' => $tag ? [$tag] : [],
-                ]))) ?>" class="btn-export">📤 Exporter</a>
+                ]))) ?>" class="btn-export"><?= icone('envoyer') ?> Exporter</a>
             </div>
         </div>
         
@@ -153,7 +153,7 @@ renderHead('Ma Collection');
                                 <?php $imageUrl = getImageUrl($book['couverture']); ?>
                                 <img src="<?= h($imageUrl) ?>" 
                                      alt="Couverture de <?= h($book['titre']) ?>"
-                                     onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;>📚</div>';">
+                                     onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                             </div>
                             
                             <div class="book-card-info">
@@ -161,7 +161,7 @@ renderHead('Ma Collection');
                                 <div class="book-card-author">par <?= h($book['auteur']) ?></div>
                                 <?php if (!empty($book['serie'])): ?>
                                     <div class="book-card-serie">
-                                        📖 <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?>
+                                        <?= icone('livre-ouvert') ?> <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?>
                                     </div>
                                 <?php endif; ?>
                                 <div class="book-card-meta">
@@ -194,15 +194,15 @@ renderHead('Ma Collection');
                         <?php endif; ?>
                         
                         <div class="book-card-actions">
-                            <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit">Éditer</a>
+                            <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit" title="Éditer" aria-label="Éditer"><?= icone('crayon') ?></a>
                             <?php if (!empty($book['fichier_numerique'])): ?>
-                                <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique">⬇️</a>
+                                <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique"><?= icone('telecharger') ?></a>
                             <?php endif; ?>
                             <form method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce livre ?');">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
                                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                <button type="submit" class="btn-danger">🗑️</button>
+                                <button type="submit" class="btn-danger" title="Supprimer" aria-label="Supprimer"><?= icone('corbeille') ?></button>
                             </form>
                         </div>
                     </div>
@@ -233,12 +233,12 @@ renderHead('Ma Collection');
                                     <img src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>" 
                                          class="cover-image"
-                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;>📚</div>';">
+                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                 </td>
                                 <td>
                                     <strong><?= h($book['titre']) ?></strong>
                                     <?php if (!empty($book['serie'])): ?>
-                                        <br><small class="book-card-serie">📖 <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?></small>
+                                        <br><small class="book-card-serie"><?= icone('livre-ouvert') ?> <a href="<?= h(buildUrl(['serie' => $book['serie'], 'page' => 1])) ?>"><?= h($book['serie']) ?></a><?= $book['tome'] !== null ? ' · tome ' . (int)$book['tome'] : '' ?></small>
                                     <?php endif; ?>
                                 </td>
                                 <td><?= h($book['auteur']) ?></td>
@@ -265,15 +265,15 @@ renderHead('Ma Collection');
                                 </td>
                                 <td><?= formatDate($book['date_ajout']) ?></td>
                                 <td>
-                                    <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit">✏️</a>
+                                    <a href="<?= buildUrl(['edit' => $book['id']]) ?>" class="btn-edit" title="Éditer" aria-label="Éditer"><?= icone('crayon') ?></a>
                                     <?php if (!empty($book['fichier_numerique'])): ?>
-                                        <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique">⬇️</a>
+                                        <a href="<?= h('telecharger_ebook.php?id=' . $book['id']) ?>" class="btn-download" title="Télécharger le fichier numérique"><?= icone('telecharger') ?></a>
                                     <?php endif; ?>
                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce livre ?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
                                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                        <button type="submit" class="btn-danger">🗑️</button>
+                                        <button type="submit" class="btn-danger" title="Supprimer" aria-label="Supprimer"><?= icone('corbeille') ?></button>
                                     </form>
                                 </td>
                             </tr>

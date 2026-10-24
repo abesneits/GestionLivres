@@ -33,7 +33,7 @@ renderHead('Supprimer un livre - Ma Collection');
             </form>
             <?php if ($search): ?>
                 <p style="margin-top: 10px;">
-                    <a href="supprimer.php" style="color: var(--accent-text);">← Afficher tous les livres</a>
+                    <a href="supprimer.php" style="color: var(--accent-text);"><?= icone('fleche-gauche') ?> Afficher tous les livres</a>
                 </p>
             <?php endif; ?>
         </div>
@@ -63,7 +63,7 @@ renderHead('Supprimer un livre - Ma Collection');
                     <p><a href="supprimer.php" style="color: var(--accent-text);">Voir tous les livres</a></p>
                 <?php else: ?>
                     <div class="empty-state">
-                        <div class="empty-icon">📚</div>
+                        <div class="empty-icon"><?= icone('livres') ?></div>
                         <h3>Votre collection est vide</h3>
                         <p>Vous n'avez aucun livre à supprimer.</p>
                         <p><a href="ajouter.php" class="btn-primary">Ajouter votre premier livre</a></p>
@@ -96,7 +96,7 @@ renderHead('Supprimer un livre - Ma Collection');
                                     <img src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>"
                                          class="cover-image-small"
-                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder-small&quot;>📚</div>';">
+                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder-small&quot;><?= h(icone('livres')) ?></div>';">
                                 </td>
                                 <td class="title-cell">
                                     <strong><?= h($book['titre']) ?></strong>
@@ -142,14 +142,14 @@ renderHead('Supprimer un livre - Ma Collection');
                                             <input type="hidden" name="book_id" value="<?= $book['id'] ?>">
                                             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                             <button type="submit" class="btn-delete-small" title="Supprimer ce livre">
-                                                🗑️
+                                                <?= icone('corbeille') ?>
                                             </button>
                                         </form>
                                         
                                         <a href="index.php?edit=<?= $book['id'] ?>" 
                                            class="btn-edit-small" 
                                            title="Éditer plutôt que supprimer">
-                                            ✏️
+                                            <?= icone('crayon') ?>
                                         </a>
                                     </div>
                                 </td>
@@ -203,7 +203,9 @@ renderHead('Supprimer un livre - Ma Collection');
         function confirmDelete(form) {
             const titre = form.getAttribute('data-title');
             const confirmation = confirm(
-                '⚠️ ATTENTION ⚠️\n\n' +
+                'ATTENTION\n\n' +
+
+' +
                 'Êtes-vous sûr de vouloir supprimer définitivement le livre :\n' +
                 '"' + titre + '" ?\n\n' +
                 'Cette action ne peut pas être annulée.'
@@ -211,9 +213,9 @@ renderHead('Supprimer un livre - Ma Collection');
             
             if (confirmation) {
                 // Afficher un indicateur de chargement
-                const submitBtn = form.querySelector('.btn-delete-small');
+                submitBtn.innerHTML = <?= json_encode(icone('sablier')) ?>;
                 const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '⏳';
+                submitBtn.innerHTML = '<?= icone('sablier') ?>';
                 submitBtn.disabled = true;
                 
                 // Restaurer le bouton en cas d'erreur

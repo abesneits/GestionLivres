@@ -22,7 +22,7 @@
                         <img src="<?= h($imageUrl) ?>"
                              alt="<?= h($book['titre']) ?>"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="cover-placeholder-small" style="display:none;">📚</div>
+                        <div class="cover-placeholder-small" style="display:none;"><?= icone('livres') ?></div>
                     </div>
                     <div class="book-item-info">
                         <div class="book-item-title"><?= h($book['titre']) ?></div>

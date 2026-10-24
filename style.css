@@ -3111,3 +3111,37 @@ summary:focus-visible {
     outline: 2px solid var(--accent-text);
     outline-offset: 2px;
 }
+
+/* ===== Icônes SVG (fonction icone() de includes/icones.php) ===== */
+.icon {
+    width: 1.1em;
+    height: 1.1em;
+    vertical-align: -0.17em;
+    flex-shrink: 0;
+}
+
+.icon-fill {
+    fill: currentColor;
+}
+
+.empty-icon .icon,
+.stat-icon .icon,
+.support-icon .icon,
+.action-icon .icon,
+.liste-cover-icon .icon,
+.auteur-photo-placeholder .icon,
+.cover-placeholder .icon,
+.cover-placeholder-small .icon,
+.activity-icon .icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+}
+
+/* Boutons d'action : icône seule, centrée */
+.btn-edit, .btn-danger, .btn-download, .btn-delete-small, .btn-edit-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}

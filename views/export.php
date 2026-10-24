@@ -11,7 +11,7 @@ renderHead('Export - Ma Collection');
     <div class="container">
 
         <div class="page-header">
-            <h1>📤 Export de la collection</h1>
+            <h1><?= icone('envoyer') ?> Export de la collection</h1>
             <p>Filtrez et triez votre collection, puis choisissez le format d'export.</p>
         </div>
 
@@ -135,7 +135,7 @@ renderHead('Export - Ma Collection');
                     </div>
                 <?php endif; ?>
 
-                <button type="submit" class="btn-primary">🔍 Filtrer</button>
+                <button type="submit" class="btn-primary"><?= icone('loupe') ?> Filtrer</button>
                 <a href="export.php" class="btn-secondary">Réinitialiser</a>
         </details>
 
@@ -147,11 +147,11 @@ renderHead('Export - Ma Collection');
                 Si vous avez coché des livres ci-dessus, seuls ceux-ci seront exportés. Sinon, l'export portera sur l'ensemble des <span id="formatSectionTotal"><?= number_format($totalResultats) ?></span> résultat(s) filtré(s).
             </p>
             <div class="export-format-choices" id="formatButtonsWrap" style="<?= $totalResultats > 0 ? '' : 'display:none;' ?>">
-                <button type="submit" name="format" value="html" class="btn-secondary"><span class="export-icon">📄</span> HTML</button>
-                <button type="submit" name="format" value="excel" class="btn-secondary"><span class="export-icon">📊</span> Excel</button>
-                <button type="submit" name="format" value="csv" class="btn-secondary"><span class="export-icon">📋</span> CSV</button>
-                <button type="submit" name="format" value="json" class="btn-secondary"><span class="export-icon">🔧</span> JSON</button>
-                <button type="submit" name="format" value="txt" class="btn-secondary"><span class="export-icon">📝</span> TXT</button>
+                <button type="submit" name="format" value="html" class="btn-secondary"><span class="export-icon"><?= icone('note') ?></span> HTML</button>
+                <button type="submit" name="format" value="excel" class="btn-secondary"><span class="export-icon"><?= icone('histogramme') ?></span> Excel</button>
+                <button type="submit" name="format" value="csv" class="btn-secondary"><span class="export-icon"><?= icone('presse-papier') ?></span> CSV</button>
+                <button type="submit" name="format" value="json" class="btn-secondary"><span class="export-icon"><?= icone('accolades') ?></span> JSON</button>
+                <button type="submit" name="format" value="txt" class="btn-secondary"><span class="export-icon"><?= icone('note') ?></span> TXT</button>
             </div>
             <p id="formatNoBooksMsg" style="color:#999; <?= $totalResultats > 0 ? 'display:none;' : '' ?>">Aucun livre à exporter avec ces critères.</p>
         </div>

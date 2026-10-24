@@ -111,7 +111,7 @@ class Schema {
         if ($result->rowCount() == 0) {
             $alterSql = "ALTER TABLE livres ADD COLUMN couverture TEXT AFTER auteur";
             $this->pdo->exec($alterSql);
-            echo "<div class='message success'>✅ Colonne 'couverture' ajoutée avec succès à la base de données !</div>";
+            echo "<div class='message success'>Colonne 'couverture' ajoutée avec succès à la base de données !</div>";
         }
         
         // Vérifier et ajouter les nouvelles colonnes
@@ -135,7 +135,7 @@ class Schema {
             
             if ($result->rowCount() == 0) {
                 $this->pdo->exec($alterSql);
-                echo "<div class='message success'>✅ Colonne '$columnName' ajoutée avec succès !</div>";
+                echo "<div class='message success'>Colonne '$columnName' ajoutée avec succès !</div>";
             }
         }
         
@@ -146,7 +146,7 @@ class Schema {
         if ($result->rowCount() > 0) {
             $dropSql = "ALTER TABLE livres DROP COLUMN editeur";
             $this->pdo->exec($dropSql);
-            echo "<div class='message success'>✅ Colonne 'editeur' supprimée avec succès !</div>";
+            echo "<div class='message success'>Colonne 'editeur' supprimée avec succès !</div>";
         }
 
         // Anciennes bases : élargir la colonne isbn (nouvelles bases : déjà à 40). Les ISBN temporaires générés pour la saisie
@@ -154,7 +154,7 @@ class Schema {
         $isbnColumn = $this->pdo->query("SHOW COLUMNS FROM livres LIKE 'isbn'")->fetch(PDO::FETCH_ASSOC);
         if ($isbnColumn && preg_match('/varchar\((\d+)\)/i', $isbnColumn['Type'], $matches) && (int)$matches[1] < 40) {
             $this->pdo->exec("ALTER TABLE livres MODIFY COLUMN isbn VARCHAR(40) NOT NULL");
-            echo "<div class='message success'>✅ Colonne 'isbn' élargie avec succès !</div>";
+            echo "<div class='message success'>Colonne 'isbn' élargie avec succès !</div>";
         }
 
         // Migration ponctuelle : sur une très ancienne base qui n'a encore que les
@@ -166,7 +166,7 @@ class Schema {
         if (count($valeursSupport) < 3 && !in_array('Manga', $valeursSupport, true)) {
             $valeursSupport[] = 'Manga';
             $this->supports->setSupportEnumValues($valeursSupport);
-            echo "<div class='message success'>✅ Support 'Manga' ajouté avec succès !</div>";
+            echo "<div class='message success'>Support 'Manga' ajouté avec succès !</div>";
         }
     }
 

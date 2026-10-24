@@ -227,7 +227,7 @@ function exportTXT($meta, $books, $filename) {
 
     $counter = 1;
     foreach ($books as $book) {
-        echo "📚 Livre #" . $counter . "\n";
+        echo "Livre #" . $counter . "\n";
         echo "   Titre    : " . $book['titre'] . "\n";
         echo "   Auteur   : " . $book['auteur'] . "\n";
         if (!empty($book['serie'])) {
@@ -285,6 +285,8 @@ function exportHTML($meta, $books, $filename) {
     <meta charset="utf-8">
     <title>' . htmlspecialchars($meta['nom']) . '</title>
     <style>
+        svg.icon { width: 1.1em; height: 1.1em; vertical-align: -0.17em; }
+        svg.icon-fill { fill: currentColor; }
         @page { margin: 2cm; }
         body {
             font-family: Arial, sans-serif;
@@ -346,7 +348,7 @@ function exportHTML($meta, $books, $filename) {
 </head>
 <body>';
 
-    echo '<h1>📚 ' . htmlspecialchars($meta['nom']) . '</h1>';
+    echo '<h1>' . icone('livres') . ' ' . htmlspecialchars($meta['nom']) . '</h1>';
 
     echo '<div class="meta">';
     if (!empty($meta['description'])) {
@@ -389,7 +391,7 @@ function exportHTML($meta, $books, $filename) {
             echo ' • Tags : ' . htmlspecialchars($book['tags']);
         }
         if (!empty($book['note'])) {
-            echo '<br>Note : ' . str_repeat('⭐', (int)$book['note']);
+            echo '<br>Note : ' . str_repeat(icone('etoile', 'icon-fill'), (int)$book['note']);
         }
         if (!empty($book['commentaire'])) {
             echo '<br><em>' . nl2br(htmlspecialchars($book['commentaire'])) . '</em>';

@@ -20,16 +20,16 @@ renderHead('Outils - Ma Collection');
         ?>
 
         <div class="page-header">
-            <h1>🛠️ Outils</h1>
+            <h1><?= icone('outils') ?> Outils</h1>
             <p>Maintenance de la base de données, édition groupée et gestion des tags</p>
         </div>
 
         <div class="outils-tabs">
-            <a href="outils.php?section=bdd" class="outils-tab <?= $section === 'bdd' ? 'active' : '' ?>">🗄️ Base de données</a>
-            <a href="outils.php?section=edition" class="outils-tab <?= $section === 'edition' ? 'active' : '' ?>">✏️ Édition groupée</a>
-            <a href="outils.php?section=tags" class="outils-tab <?= $section === 'tags' ? 'active' : '' ?>">🏷️ Tags</a>
-            <a href="outils.php?section=supports" class="outils-tab <?= $section === 'supports' ? 'active' : '' ?>">📦 Supports</a>
-            <a href="outils.php?section=formats" class="outils-tab <?= $section === 'formats' ? 'active' : '' ?>">💾 Formats numériques</a>
+            <a href="outils.php?section=bdd" class="outils-tab <?= $section === 'bdd' ? 'active' : '' ?>"><?= icone('base') ?> Base de données</a>
+            <a href="outils.php?section=edition" class="outils-tab <?= $section === 'edition' ? 'active' : '' ?>"><?= icone('crayon') ?> Édition groupée</a>
+            <a href="outils.php?section=tags" class="outils-tab <?= $section === 'tags' ? 'active' : '' ?>"><?= icone('etiquette') ?> Tags</a>
+            <a href="outils.php?section=supports" class="outils-tab <?= $section === 'supports' ? 'active' : '' ?>"><?= icone('colis') ?> Supports</a>
+            <a href="outils.php?section=formats" class="outils-tab <?= $section === 'formats' ? 'active' : '' ?>"><?= icone('disquette') ?> Formats numériques</a>
         </div>
 
         <?php if ($section === 'bdd'): ?>
@@ -82,7 +82,7 @@ renderHead('Outils - Ma Collection');
                     <form method="POST" onsubmit="return confirm('Supprimer définitivement <?= $storageInfo['nb_orphelins'] ?> fichier(s) orphelin(s) ?');">
                         <input type="hidden" name="action" value="delete_orphans">
                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                        <button type="submit" class="btn-danger">🧹 Supprimer les fichiers orphelins</button>
+                        <button type="submit" class="btn-danger"><?= icone('gomme') ?> Supprimer les fichiers orphelins</button>
                     </form>
                 <?php endif; ?>
             </div>
@@ -92,10 +92,10 @@ renderHead('Outils - Ma Collection');
                 <form method="POST" style="display:inline-block; margin-right:10px;" onsubmit="return confirm('Optimiser toutes les tables ?');">
                     <input type="hidden" name="action" value="optimize_tables">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                    <button type="submit" class="btn-primary">🧹 Optimiser les tables</button>
+                    <button type="submit" class="btn-primary"><?= icone('gomme') ?> Optimiser les tables</button>
                 </form>
 
-                <a href="outils.php?section=bdd&export=backup" class="btn-secondary">📥 Télécharger une sauvegarde</a>
+                <a href="outils.php?section=bdd&export=backup" class="btn-secondary"><?= icone('telecharger') ?> Télécharger une sauvegarde</a>
                 <p style="color:#999; font-size:0.85em; margin-top:10px;">
                     La sauvegarde contient les données (livres, auteurs, listes, tags, formats), mais <strong>pas les images</strong> :
                     copiez aussi le dossier <code>uploads/</code>.
@@ -103,7 +103,7 @@ renderHead('Outils - Ma Collection');
             </div>
 
             <div class="search-section danger-zone">
-                <h3>⚠️ Restaurer une sauvegarde</h3>
+                <h3><?= icone('alerte') ?> Restaurer une sauvegarde</h3>
                 <p style="color:#666; margin-bottom: 15px;">
                     Cette opération remplace <strong>toutes</strong> les données actuelles (livres, listes, auteurs) par le contenu du fichier envoyé.
                     Une copie de l'état actuel est enregistrée automatiquement dans <code>backups/</code> avant la restauration,
@@ -252,7 +252,7 @@ renderHead('Outils - Ma Collection');
                         </div>
                     <?php endif; ?>
 
-                    <button type="submit" class="btn-primary">🔍 Filtrer</button>
+                    <button type="submit" class="btn-primary"><?= icone('loupe') ?> Filtrer</button>
                     <a href="outils.php?section=edition" class="btn-secondary">Réinitialiser</a>
                 </form>
             </details>
@@ -270,7 +270,7 @@ renderHead('Outils - Ma Collection');
                         <button type="button" onclick="selectAllVisibleBooks()" class="btn-secondary btn-small">Tout sélectionner</button>
                         <button type="button" onclick="deselectAllVisibleBooks()" class="btn-secondary btn-small">Tout désélectionner</button>
                         <div class="view-toggle" role="group" aria-label="Mode d'affichage">
-                            <button type="button" id="viewToggleList" onclick="setBooksView('list')" class="view-toggle-btn active">☰ Liste</button>
+                            <button type="button" id="viewToggleList" onclick="setBooksView('list')" class="view-toggle-btn active"><?= icone('liste') ?> Liste</button>
                             <button type="button" id="viewToggleGrid" onclick="setBooksView('grid')" class="view-toggle-btn">▦ Grille</button>
                         </div>
                     </div>
@@ -284,7 +284,7 @@ renderHead('Outils - Ma Collection');
                                     <img src="<?= h($imageUrl) ?>"
                                          alt="<?= h($book['titre']) ?>"
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div class="cover-placeholder-small" style="display:none;">📚</div>
+                                    <div class="cover-placeholder-small" style="display:none;"><?= icone('livres') ?></div>
                                 </div>
                                 <div class="book-item-info">
                                     <div class="book-item-title"><?= h($book['titre']) ?></div>

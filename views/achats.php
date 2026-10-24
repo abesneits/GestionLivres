@@ -3,7 +3,7 @@
 <?php
 include 'includes/head.php';
 renderHead('Achats à effectuer - Ma Collection');
-$libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
+$libellesPriorite = [1 => 'Haute', 2 => 'Normale', 3 => 'Basse'];
 ?>
 <body>
     <?php include 'includes/menu.php'; ?>
@@ -19,7 +19,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
         ?>
 
         <div class="page-header">
-            <h1>🛒 Achats à effectuer</h1>
+            <h1><?= icone('panier') ?> Achats à effectuer</h1>
             <p>Les livres que vous souhaitez acheter. Une fois achetés, validez-les pour les ajouter à votre collection.</p>
         </div>
 
@@ -39,13 +39,13 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                 </select>
             </form>
             <?php if (!empty($achats)): ?>
-                <a href="export_achats.php?tri=<?= h($tri) ?>" target="_blank" class="btn-secondary">🖨️ Version imprimable</a>
+                <a href="export_achats.php?tri=<?= h($tri) ?>" target="_blank" class="btn-secondary"><?= icone('imprimante') ?> Version imprimable</a>
             <?php endif; ?>
         </div>
 
         <?php if (empty($achats)): ?>
             <div class="empty-state">
-                <div class="empty-icon">🛒</div>
+                <div class="empty-icon"><?= icone('panier') ?></div>
                 <h3>Aucun achat prévu</h3>
                 <p>Ajoutez ci-dessus les livres que vous voulez acheter.</p>
             </div>
@@ -57,7 +57,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                         <?php if ($a['couverture']): ?>
                             <img src="<?= h(getImageUrl($a['couverture'])) ?>" alt="Couverture de <?= h($a['titre']) ?>">
                         <?php else: ?>
-                            <div class="cover-placeholder-small">📚</div>
+                            <div class="cover-placeholder-small"><?= icone('livres') ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="book-item-info">
@@ -69,9 +69,9 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                             <?php if ($a['isbn']): ?> · ISBN <?= h($a['isbn']) ?><?php endif; ?>
                             <?php if ($a['prix_estime'] !== null): ?> · <?= number_format((float)$a['prix_estime'], 2, ',', ' ') ?> €<?php endif; ?>
                             <?php if ($a['lieu_achat']): ?> · <?= h($a['lieu_achat']) ?><?php endif; ?>
-                            <?php if ($a['tags']): ?> · 🏷️ <?= h($a['tags']) ?><?php endif; ?>
+                            <?php if ($a['tags']): ?> · <?= icone('etiquette') ?> <?= h($a['tags']) ?><?php endif; ?>
                         </div>
-                        <?php if ($a['note']): ?><div class="book-item-meta">📝 <?= h($a['note']) ?></div><?php endif; ?>
+                        <?php if ($a['note']): ?><div class="book-item-meta"><?= icone('note') ?> <?= h($a['note']) ?></div><?php endif; ?>
                         <div class="liste-actions" style="margin-top:8px;">
                             <form method="POST" style="display:inline;" onsubmit="return confirm('Valider l\'achat et ajouter ce livre à la collection ?');">
                                 <input type="hidden" name="action" value="valider_achat">
@@ -82,14 +82,14 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                                     <option value="En cours">En cours</option>
                                     <option value="Lu">Lu</option>
                                 </select>
-                                <button type="submit" class="btn-primary">✅ Acheté</button>
+                                <button type="submit" class="btn-primary"><?= icone('valider') ?> Acheté</button>
                             </form>
-                            <a href="?edit=<?= (int)$a['id'] ?>#formulaire" class="btn-edit">✏️</a>
+                            <a href="?edit=<?= (int)$a['id'] ?>#formulaire" class="btn-edit" title="Éditer" aria-label="Éditer"><?= icone('crayon') ?></a>
                             <form method="POST" style="display:inline;" onsubmit="return confirm('Retirer ce livre des achats ?');">
                                 <input type="hidden" name="action" value="delete_achat">
                                 <input type="hidden" name="achat_id" value="<?= (int)$a['id'] ?>">
                                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                <button type="submit" class="btn-danger">🗑️</button>
+                                <button type="submit" class="btn-danger" title="Supprimer" aria-label="Supprimer"><?= icone('corbeille') ?></button>
                             </form>
                         </div>
                     </div>
@@ -100,7 +100,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
 
         <!-- Formulaire d'ajout / modification -->
         <div class="form-card" id="formulaire">
-            <h2><?= $editId ? '✏️ Modifier l\'achat' : '➕ Nouvel achat' ?></h2>
+            <h2><?= $editId ? icone('crayon') . ' Modifier l\'achat' : icone('plus') . ' Nouvel achat' ?></h2>
 
             <form method="POST" action="achats.php#formulaire" id="formRecherche" style="margin-bottom:15px;">
                 <input type="hidden" name="action" value="search_isbn">
@@ -113,7 +113,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                     <label for="isbn_recherche">ISBN (pré-remplit le formulaire)</label>
                     <input type="text" id="isbn_recherche" name="isbn" value="<?= h($form['isbn']) ?>" placeholder="978-2-07-061275-8">
                 </div>
-                <button type="submit" class="btn-secondary">🔍 Chercher par ISBN</button>
+                <button type="submit" class="btn-secondary"><?= icone('loupe') ?> Chercher par ISBN</button>
             </form>
 
             <form method="POST" action="achats.php#formulaire">
@@ -189,7 +189,7 @@ $libellesPriorite = [1 => '🔴 Haute', 2 => '🟠 Normale', 3 => '🟢 Basse'];
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-add-book"><?= $editId ? '💾 Enregistrer' : '➕ Ajouter aux achats' ?></button>
+                    <button type="submit" class="btn-add-book"><?= $editId ? icone('disquette') . ' Enregistrer' : icone('plus') . ' Ajouter aux achats' ?></button>
                     <?php if ($editId): ?>
                         <a href="achats.php#formulaire" class="btn-secondary">Annuler</a>
                     <?php endif; ?>

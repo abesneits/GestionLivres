@@ -3,6 +3,8 @@
  * Fonctions utilitaires partagées
  */
 
+require_once __DIR__ . '/icones.php';
+
 /**
  * Nombre entier à la française : 1 234 (et non 1,234).
  */

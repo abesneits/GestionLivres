@@ -18,13 +18,13 @@ renderHead('Auteurs - Ma Collection');
         ?>
 
         <div class="page-header">
-            <h1>🖋️ Auteurs</h1>
+            <h1><?= icone('plume') ?> Auteurs</h1>
             <p>Les auteurs présents dans votre bibliothèque</p>
         </div>
 
         <?php if (!empty($duplicateGroups)): ?>
             <div class="search-section duplicates-section">
-                <h3>🔍 Doublons potentiels détectés</h3>
+                <h3><?= icone('loupe') ?> Doublons potentiels détectés</h3>
                 <p class="duplicates-hint">Ces noms semblent désigner le même auteur (variantes de casse ou d'accents). Choisissez le nom à conserver puis fusionnez.</p>
                 <?php foreach ($duplicateGroups as $groupe): ?>
                     <form method="POST" class="duplicate-group">
@@ -104,7 +104,7 @@ renderHead('Auteurs - Ma Collection');
 
         <?php if (empty($authors)): ?>
             <div class="empty-state">
-                <div class="empty-icon">🖋️</div>
+                <div class="empty-icon"><?= icone('plume') ?></div>
                 <h3><?= ($search || $filterSupport || $filterTag || $bioManquante) ? 'Aucun auteur trouvé' : 'Aucun auteur pour le moment' ?></h3>
                 <p><?= ($search || $filterSupport || $filterTag || $bioManquante) ? 'Essayez d\'autres critères.' : 'Ajoutez des livres à votre collection pour voir apparaître leurs auteurs ici.' ?></p>
             </div>
@@ -114,7 +114,7 @@ renderHead('Auteurs - Ma Collection');
                 <a href="<?= h('auteurs.php?' . http_build_query(array_filter([
                     'q' => $search, 'filter' => $filterSupport, 'tag' => $filterTag, 'tri' => $tri,
                     'bio_manquante' => $bioManquante ? '1' : '', 'export' => 'csv'
-                ]))) ?>" class="btn-secondary btn-small auteur-export-link">📥 Exporter en CSV</a>
+                ]))) ?>" class="btn-secondary btn-small auteur-export-link"><?= icone('telecharger') ?> Exporter en CSV</a>
             </p>
 
             <div class="auteurs-grid">
@@ -124,7 +124,7 @@ renderHead('Auteurs - Ma Collection');
                             <?php if (!empty($auteur['image_url'])): ?>
                                 <img class="auteur-photo-small" src="<?= h($auteur['image_url']) ?>" alt="" loading="lazy">
                             <?php else: ?>
-                                <span class="auteur-photo-placeholder">🖋️</span>
+                                <span class="auteur-photo-placeholder"><?= icone('plume') ?></span>
                             <?php endif; ?>
                             <span class="auteur-nom"><?= h($auteur['nom']) ?></span>
                             <span class="auteur-count"><?= count($auteur['livres']) ?> livre<?= count($auteur['livres']) > 1 ? 's' : '' ?></span>
@@ -134,7 +134,7 @@ renderHead('Auteurs - Ma Collection');
                             <p class="auteur-bio-loading">Chargement de la biographie...</p>
                         </div>
 
-                        <button type="button" class="btn-edit-bio" data-nom="<?= h($auteur['nom']) ?>" onclick="openEditAuteurModal(this.dataset.nom)">✏️ Éditer la biographie</button>
+                        <button type="button" class="btn-edit-bio" data-nom="<?= h($auteur['nom']) ?>" onclick="openEditAuteurModal(this.dataset.nom)"><?= icone('crayon') ?> Éditer la biographie</button>
 
                         <div class="auteur-livres">
                             <?php foreach ($auteur['livres'] as $livre): ?>
@@ -143,7 +143,7 @@ renderHead('Auteurs - Ma Collection');
                                         <?php $imageUrl = getImageUrl($livre['couverture']); ?>
                                         <img src="<?= h($imageUrl) ?>"
                                              alt="Couverture de <?= h($livre['titre']) ?>"
-                                             onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;>📚</div>';">
+                                             onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                     </span>
                                     <span class="auteur-livre-titre"><?= h($livre['titre']) ?></span>
                                     <span class="book-card-statut <?= getStatusClass($livre['statut'] ?? 'À lire') ?>"><?= h($livre['statut'] ?? 'À lire') ?></span>
@@ -229,6 +229,18 @@ renderHead('Auteurs - Ma Collection');
     </div>
 
     <script>
+        // Icônes SVG utilisées par le code JavaScript (générées côté PHP)
+        const ICONE_NAISSANCE = <?= json_encode(icone('calendrier')) ?>;
+        const ICONE_NATIONALITE = <?= json_encode(icone('globe')) ?>;
+        const ICONE_ACTUALISER = <?= json_encode(icone('actualiser')) ?>;
+
+        // Échappe du texte avant de l'insérer dans du HTML
+        function echapper(texte) {
+            const div = document.createElement('div');
+            div.textContent = texte;
+            return div.innerHTML;
+        }
+
     document.querySelectorAll('.auteur-card').forEach(function(details) {
         details.addEventListener('toggle', function() {
             if (!details.open) return;
@@ -275,12 +287,12 @@ renderHead('Auteurs - Ma Collection');
                     meta.className = 'auteur-bio-meta';
                     const parts = [];
                     if (data.naissance) {
-                        parts.push('🎂 ' + data.naissance + (data.deces ? ' – ' + data.deces : ''));
+                        parts.push(ICONE_NAISSANCE + ' ' + echapper(data.naissance + (data.deces ? ' – ' + data.deces : '')));
                     }
                     if (data.nationalite) {
-                        parts.push('🌍 ' + data.nationalite);
+                        parts.push(ICONE_NATIONALITE + ' ' + echapper(data.nationalite));
                     }
-                    meta.textContent = parts.join(' · ');
+                    meta.innerHTML = parts.join(' · ');
                     infosWrap.appendChild(meta);
                 }
 
@@ -298,7 +310,7 @@ renderHead('Auteurs - Ma Collection');
                 const refreshBtn = document.createElement('button');
                 refreshBtn.type = 'button';
                 refreshBtn.className = 'btn-secondary btn-small btn-refresh-bio';
-                refreshBtn.textContent = '🔄 Relancer la recherche Wikipédia';
+                refreshBtn.innerHTML = ICONE_ACTUALISER + ' Relancer la recherche Wikipédia';
                 refreshBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     loadBiographie(bioDiv, nom, true);

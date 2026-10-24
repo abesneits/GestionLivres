@@ -17,7 +17,7 @@ renderHead('Statistiques - Ma Collection');
         ?>
         
         <div class="page-header">
-            <h1>📊 Statistiques de votre collection</h1>
+            <h1><?= icone('histogramme') ?> Statistiques de votre collection</h1>
             <p>Découvrez des informations détaillées sur vos livres</p>
         </div>
 
@@ -25,7 +25,7 @@ renderHead('Statistiques - Ma Collection');
 <!-- Statistiques générales -->
 <div class="stats-overview">
     <div class="stat-card-large">
-        <div class="stat-icon">📚</div>
+        <div class="stat-icon"><?= icone('livres') ?></div>
         <div class="stat-content">
             <div class="stat-number" style="color:white; font-size:2em;"><?= $stats['total'] ?></div>
             <div class="stat-label">Livres au total</div>
@@ -33,7 +33,7 @@ renderHead('Statistiques - Ma Collection');
     </div>
     
     <div class="stat-card-large">
-        <div class="stat-icon">📖</div>
+        <div class="stat-icon"><?= icone('livre-ouvert') ?></div>
         <div class="stat-content">
             <div class="stat-number" style="color:white; font-size:2em;"><?= $stats['lu'] ?></div>
             <div class="stat-label">Livres lus</div>
@@ -45,7 +45,7 @@ renderHead('Statistiques - Ma Collection');
     </div>
     
     <div class="stat-card-large">
-        <div class="stat-icon">⏳</div>
+        <div class="stat-icon"><?= icone('sablier') ?></div>
         <div class="stat-content">
             <div class="stat-number" style="color:white; font-size:2em;"><?= $stats['a_lire'] ?></div>
             <div class="stat-label">À lire</div>
@@ -57,7 +57,7 @@ renderHead('Statistiques - Ma Collection');
     </div>
     
     <div class="stat-card-large">
-        <div class="stat-icon">🚀</div>
+        <div class="stat-icon"><?= icone('fusee') ?></div>
         <div class="stat-content">
             <div class="stat-number" style="color:white; font-size:2em;"><?= $stats['en_cours'] ?></div>
             <div class="stat-label">En cours</div>
@@ -70,7 +70,7 @@ renderHead('Statistiques - Ma Collection');
             
             <!-- Répartition par statut -->
             <div class="stats-section">
-                <h3>📊 Répartition par statut de lecture</h3>
+                <h3><?= icone('histogramme') ?> Répartition par statut de lecture</h3>
                 <div class="chart-container">
                     <div class="progress-chart">
                         <div class="progress-item">
@@ -136,10 +136,10 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Support types -->
             <div class="stats-section">
-                <h3>📚 Répartition par support</h3>
+                <h3><?= icone('livres') ?> Répartition par support</h3>
                 <div class="support-stats">
                     <div class="support-item">
-                        <div class="support-icon">📖</div>
+                        <div class="support-icon"><?= icone('livre-ouvert') ?></div>
                         <div class="support-info">
                             <div class="support-name">Livres</div>
                             <div class="support-count"><?= formatNombre($stats['livres']) ?></div>
@@ -149,7 +149,7 @@ renderHead('Statistiques - Ma Collection');
                         </div>
                     </div>
                     <div class="support-item">
-                        <div class="support-icon">🎨</div>
+                        <div class="support-icon"><?= icone('palette') ?></div>
                         <div class="support-info">
                             <div class="support-name">Bandes Dessinées</div>
                             <div class="support-count"><?= formatNombre($stats['bd']) ?></div>
@@ -159,7 +159,7 @@ renderHead('Statistiques - Ma Collection');
                         </div>
                     </div>
                     <div class="support-item">
-                        <div class="support-icon">🇯🇵</div>
+                        <div class="support-icon"><?= icone('couches') ?></div>
                         <div class="support-info">
                             <div class="support-name">Mangas</div>
                             <div class="support-count"><?= formatNombre($stats['manga']) ?></div>
@@ -173,10 +173,10 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Papier vs Numérique -->
             <div class="stats-section">
-                <h3>💾 Papier vs Numérique</h3>
+                <h3><?= icone('disquette') ?> Papier vs Numérique</h3>
                 <div class="support-stats">
                     <div class="support-item">
-                        <div class="support-icon">📕</div>
+                        <div class="support-icon"><?= icone('livre') ?></div>
                         <div class="support-info">
                             <div class="support-name">Papier</div>
                             <div class="support-count"><?= formatNombre($stats['papier']) ?></div>
@@ -186,7 +186,7 @@ renderHead('Statistiques - Ma Collection');
                         </div>
                     </div>
                     <div class="support-item">
-                        <div class="support-icon">💾</div>
+                        <div class="support-icon"><?= icone('disquette') ?></div>
                         <div class="support-info">
                             <div class="support-name">Numérique</div>
                             <div class="support-count"><?= formatNombre($stats['numerique']) ?></div>
@@ -210,7 +210,7 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Ajouts mensuels -->
             <div class="stats-section">
-                <h3>📈 Évolution des ajouts (12 derniers mois)</h3>
+                <h3><?= icone('courbe') ?> Évolution des ajouts (12 derniers mois)</h3>
                 <div class="monthly-chart">
                     <?php if (!empty($monthlyStats)): ?>
                         <?php $maxCount = max(array_column($monthlyStats, 'count')); ?>
@@ -232,7 +232,7 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Top auteurs -->
             <div class="stats-section">
-                <h3>✍️ Auteurs les plus représentés</h3>
+                <h3><?= icone('plume') ?> Auteurs les plus représentés</h3>
                 <div class="top-list">
                     <?php if (!empty($authorStats)): ?>
                         <?php foreach ($authorStats as $index => $author): ?>
@@ -256,7 +256,7 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Top tags -->
             <div class="stats-section">
-                <h3>🏷️ Tags les plus utilisés</h3>
+                <h3><?= icone('etiquette') ?> Tags les plus utilisés</h3>
                 <div class="tags-cloud">
                     <?php if (!empty($topTags)): ?>
                         <?php $maxTagCount = $topTags[0]['count']; ?>
@@ -275,18 +275,18 @@ renderHead('Statistiques - Ma Collection');
 
             <!-- Activité récente -->
             <div class="stats-section full-width">
-                <h3>🕒 Activité récente</h3>
+                <h3><?= icone('horloge') ?> Activité récente</h3>
                 <div class="recent-activity">
                     <?php if (!empty($recentActivity)): ?>
                         <?php foreach ($recentActivity as $activity): ?>
                         <div class="activity-item">
                             <div class="activity-icon">
                                 <?php if ($activity['action'] === 'added'): ?>
-                                    ➕
+                                    <?= icone('plus') ?>
                                 <?php elseif ($activity['action'] === 'updated'): ?>
-                                    ✏️
+                                    <?= icone('crayon') ?>
                                 <?php else: ?>
-                                    📖
+                                    <?= icone('livre-ouvert') ?>
                                 <?php endif; ?>
                             </div>
                             <div class="activity-content">
@@ -319,10 +319,10 @@ renderHead('Statistiques - Ma Collection');
 
         <!-- Actions et export -->
         <div class="stats-actions">
-            <h3>📊 Actions</h3>
+            <h3><?= icone('histogramme') ?> Actions</h3>
             <div class="actions-grid">
                 <a href="export.php?format=csv" class="action-btn export-btn">
-                    <div class="action-icon">📋</div>
+                    <div class="action-icon"><?= icone('presse-papier') ?></div>
                     <div class="action-text">
                         <div class="action-title">Exporter en CSV</div>
                         <div class="action-desc">Télécharger toutes vos données</div>
@@ -330,7 +330,7 @@ renderHead('Statistiques - Ma Collection');
                 </a>
 
                 <a href="export.php" class="action-btn export-btn">
-                    <div class="action-icon">📤</div>
+                    <div class="action-icon"><?= icone('envoyer') ?></div>
                     <div class="action-text">
                         <div class="action-title">Export avancé</div>
                         <div class="action-desc">Filtrer, trier et choisir le format</div>
@@ -338,7 +338,7 @@ renderHead('Statistiques - Ma Collection');
                 </a>
                 
                 <a href="index.php" class="action-btn view-btn">
-                    <div class="action-icon">👁️</div>
+                    <div class="action-icon"><?= icone('oeil') ?></div>
                     <div class="action-text">
                         <div class="action-title">Voir la collection</div>
                         <div class="action-desc">Retour à votre bibliothèque</div>
@@ -346,7 +346,7 @@ renderHead('Statistiques - Ma Collection');
                 </a>
                 
                 <a href="ajouter.php" class="action-btn add-btn">
-                    <div class="action-icon">➕</div>
+                    <div class="action-icon"><?= icone('plus') ?></div>
                     <div class="action-text">
                         <div class="action-title">Ajouter un livre</div>
                         <div class="action-desc">Enrichir votre collection</div>

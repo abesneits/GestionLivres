@@ -52,8 +52,8 @@ renderHead('Ajouter un livre - Ma Collection');
                                    value="<?= h($_POST['isbn'] ?? '') ?>">
                             <small>Vous pouvez saisir l'ISBN avec ou sans tirets (10 ou 13 chiffres)</small>
                             <span id="isbn-error" class="form-validation-error" style="display: none;"></span>
-                            <button type="button" class="btn-secondary" id="scanBtn" style="display: none;" onclick="demarrerScan()">📷 Scanner avec la caméra</button>
-                            <button type="button" class="btn-secondary" id="photoBtn" style="display: none;" onclick="document.getElementById('photoIsbn').click()">📸 Photographier le code-barres</button>
+                            <button type="button" class="btn-secondary" id="scanBtn" style="display: none;" onclick="demarrerScan()"><?= icone('camera') ?> Scanner avec la caméra</button>
+                            <button type="button" class="btn-secondary" id="photoBtn" style="display: none;" onclick="document.getElementById('photoIsbn').click()"><?= icone('camera') ?> Photographier le code-barres</button>
                             <input type="file" id="photoIsbn" accept="image/*" capture="environment" style="display: none;" onchange="lirePhotoIsbn(this)">
                             <div id="scannerBox" style="display: none;">
                                 <video id="scanner" playsinline muted autoplay></video>

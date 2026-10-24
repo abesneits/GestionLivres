@@ -34,7 +34,9 @@ header('Content-Type: text/html; charset=utf-8');
     table { width: 100%; border-collapse: collapse; }
     tr { page-break-inside: avoid; }
     td { padding: 6px 4px; border-bottom: 1px solid #ccc; vertical-align: top; font-size: 0.95em; }
-    td.case { width: 22px; font-size: 1.3em; }
+    td.case { width: 22px; }
+    .case-box { display: inline-block; width: 14px; height: 14px; border: 1.5px solid #555; border-radius: 3px; vertical-align: middle; }
+    svg.icon { width: 1.1em; height: 1.1em; vertical-align: -0.17em; }
     td.prix { text-align: right; white-space: nowrap; }
     .petit { color: #555; font-size: 0.85em; }
     .total { text-align: right; font-weight: bold; margin-top: 15px; }
@@ -44,8 +46,8 @@ header('Content-Type: text/html; charset=utf-8');
 </style>
 </head>
 <body>
-    <div class="actions"><button onclick="window.print()">🖨️ Imprimer</button></div>
-    <h1>🛒 Achats à effectuer</h1>
+    <div class="actions"><button onclick="window.print()"><?= icone('imprimante') ?> Imprimer</button></div>
+    <h1><?= icone('panier') ?> Achats à effectuer</h1>
     <div class="meta"><?= count($achats) ?> livre<?= count($achats) > 1 ? 's' : '' ?> — <?= date('d/m/Y') ?></div>
 
     <?php if (empty($achats)): ?>
@@ -57,7 +59,7 @@ header('Content-Type: text/html; charset=utf-8');
         <table>
             <?php foreach ($livres as $a): ?>
                 <tr>
-                    <td class="case">☐</td>
+                    <td class="case"><span class="case-box"></span></td>
                     <td>
                         <strong><?= h($a['titre']) ?></strong><?= $a['serie'] ? ' — ' . h($a['serie']) . ($a['tome'] !== null ? ' T' . (int)$a['tome'] : '') : '' ?><br>
                         <?= h($a['auteur'] ?? '') ?>
@@ -65,7 +67,7 @@ header('Content-Type: text/html; charset=utf-8');
                             <?= h($a['support']) ?> · <?= h($a['type_livre']) ?>
                             <?php if ($a['isbn']): ?> · ISBN <?= h($a['isbn']) ?><?php endif; ?>
                             <?php if ($a['lieu_achat']): ?> · <?= h($a['lieu_achat']) ?><?php endif; ?>
-                            <?php if ($a['note']): ?><br>📝 <?= h($a['note']) ?><?php endif; ?>
+                            <?php if ($a['note']): ?><br><?= icone('note') ?> <?= h($a['note']) ?><?php endif; ?>
                         </div>
                     </td>
                     <td class="prix"><?= $a['prix_estime'] !== null ? number_format((float)$a['prix_estime'], 2, ',', ' ') . ' €' : '' ?></td>

@@ -18,19 +18,19 @@ renderHead('Mes Listes - Ma Collection');
         ?>
         
         <div class="page-header">
-            <h1>📋 Mes Listes de Lecture</h1>
+            <h1><?= icone('presse-papier') ?> Mes Listes de Lecture</h1>
             <p>Organisez vos livres en listes personnalisées</p>
         </div>
 
         <?php if (!$currentList): ?>
             <!-- Vue liste de toutes les listes -->
             <div class="actions-bar">
-                <button onclick="showCreateModal()" class="btn-primary">➕ Nouvelle liste</button>
+                <button onclick="showCreateModal()" class="btn-primary"><?= icone('plus') ?> Nouvelle liste</button>
             </div>
 
             <?php if (empty($listes)): ?>
                 <div class="empty-state">
-                    <div class="empty-icon">📚</div>
+                    <div class="empty-icon"><?= icone('livres') ?></div>
                     <h3>Aucune liste créée</h3>
                     <p>Créez votre première liste pour organiser vos livres par thème, humeur, ou tout autre critère !</p>
                     <button onclick="showCreateModal()" class="btn-primary">Créer ma première liste</button>
@@ -48,7 +48,7 @@ renderHead('Mes Listes - Ma Collection');
                                 </div>
                             <?php else: ?>
                                 <div class="liste-cover liste-cover-default">
-                                    <div class="liste-cover-icon">📚</div>
+                                    <div class="liste-cover-icon"><?= icone('livres') ?></div>
                                     <div class="liste-count-badge"><?= $liste['nb_livres'] ?> livre<?= $liste['nb_livres'] > 1 ? 's' : '' ?></div>
                                 </div>
                             <?php endif; ?>
@@ -63,13 +63,13 @@ renderHead('Mes Listes - Ma Collection');
                                 <?php endif; ?>
                                 
                                 <div class="liste-actions">
-                                    <a href="?view=<?= $liste['id'] ?>" class="btn-view">Voir les livres</a>
-                                    <a href="?edit=<?= $liste['id'] ?>" class="btn-edit">✏️</a>
+                                    <a href="?view=<?= $liste['id'] ?>" class="btn-view" title="Voir les livres" aria-label="Voir les livres"><?= icone('oeil') ?></a>
+                                    <a href="?edit=<?= $liste['id'] ?>" class="btn-edit" title="Éditer" aria-label="Éditer"><?= icone('crayon') ?></a>
                                     <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette liste ?');">
                                         <input type="hidden" name="action" value="delete_list">
                                         <input type="hidden" name="liste_id" value="<?= $liste['id'] ?>">
                                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                        <button type="submit" class="btn-danger">🗑️</button>
+                                        <button type="submit" class="btn-danger" title="Supprimer" aria-label="Supprimer"><?= icone('corbeille') ?></button>
                                     </form>
                                 </div>
                             </div>
@@ -82,31 +82,31 @@ renderHead('Mes Listes - Ma Collection');
             <!-- Vue détails d'une liste -->
             <div class="list-detail-header">
                 <div>
-                    <a href="listes.php" class="back-link">← Retour aux listes</a>
+                    <a href="listes.php" class="back-link"><?= icone('fleche-gauche') ?> Retour aux listes</a>
                     <h2><?= h($currentList['nom']) ?></h2>
                     <?php if ($currentList['description']): ?>
                         <p class="list-description"><?= h($currentList['description']) ?></p>
                     <?php endif; ?>
                 </div>
                 <div class="header-actions">
-                    <button onclick="showAddBooksModal(<?= $currentList['id'] ?>)" class="btn-primary">➕ Ajouter des livres</button>
+                    <button onclick="showAddBooksModal(<?= $currentList['id'] ?>)" class="btn-primary"><?= icone('plus') ?> Ajouter des livres</button>
                     <div class="dropdown">
-                        <button onclick="toggleExportMenu(event)" class="btn-secondary">📥 Exporter</button>
+                        <button onclick="toggleExportMenu(event)" class="btn-secondary"><?= icone('telecharger') ?> Exporter</button>
                         <div id="exportMenu" class="dropdown-content">
                             <a href="export_liste.php?liste_id=<?= $currentList['id'] ?>&format=html" target="_blank">
-                                <span class="export-icon">📄</span> HTML
+                                <span class="export-icon"><?= icone('note') ?></span> HTML
                             </a>
                             <a href="export_liste.php?liste_id=<?= $currentList['id'] ?>&format=excel" target="_blank">
-                                <span class="export-icon">📊</span> Excel
+                                <span class="export-icon"><?= icone('histogramme') ?></span> Excel
                             </a>
                             <a href="export_liste.php?liste_id=<?= $currentList['id'] ?>&format=csv" target="_blank">
-                                <span class="export-icon">📋</span> CSV
+                                <span class="export-icon"><?= icone('presse-papier') ?></span> CSV
                             </a>
                             <a href="export_liste.php?liste_id=<?= $currentList['id'] ?>&format=json" target="_blank">
-                                <span class="export-icon">🔧</span> JSON
+                                <span class="export-icon"><?= icone('accolades') ?></span> JSON
                             </a>
                             <a href="export_liste.php?liste_id=<?= $currentList['id'] ?>&format=txt" target="_blank">
-                                <span class="export-icon">📝</span> TXT
+                                <span class="export-icon"><?= icone('note') ?></span> TXT
                             </a>
                         </div>
                     </div>
@@ -127,7 +127,7 @@ renderHead('Mes Listes - Ma Collection');
                                     <?php $imageUrl = getImageUrl($book['couverture']); ?>
                                     <img src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>"
-                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;>📚</div>';">
+                                         onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                 </div>
                                 
                                 <div class="book-card-info">
@@ -272,7 +272,7 @@ renderHead('Mes Listes - Ma Collection');
                                 <img src="<?= h($imageUrl) ?>" 
                                      alt="<?= h($book['titre']) ?>"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="cover-placeholder-small" style="display:none;">📚</div>
+                                <div class="cover-placeholder-small" style="display:none;"><?= icone('livres') ?></div>
                             </div>
                             <div class="book-item-info">
                                 <div class="book-item-title"><?= h($book['titre']) ?></div>
@@ -582,6 +582,9 @@ renderHead('Mes Listes - Ma Collection');
             font-size: 0.9em;
             transition: background 0.3s ease;
             flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
         }
 
