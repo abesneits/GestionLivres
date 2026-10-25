@@ -37,7 +37,7 @@ Le document suit trois niveaux :
 |---|---|---|
 | **F1 Gestion des fiches livres** | Ajouter un livre (par ISBN ou à la main), le consulter, le modifier, le supprimer ; papier ou numérique ; séries et tomes. | S1 (simple), S3 (ISBN), S4, S5 (couverture, fichier numérique), S6, S7 |
 | **F2 Listes de lecture** | Créer, modifier, supprimer une liste ; y ajouter ou retirer des livres ; les ordonner par glisser-déposer. | S1 (simple, pour choisir les livres), S5 (couverture de liste), S6, S7 |
-| **F3 Auteurs** | Regrouper les livres par auteur, afficher et corriger la biographie, détecter et fusionner les doublons. | S3 (Wikipédia, Wikidata), S5 (photo), S6, S7 |
+| **F3 Auteurs** | Regrouper les livres par auteur (tri par nom de famille, index alphabétique), afficher et corriger la biographie, le prénom et le nom de famille, détecter et fusionner les doublons, repérer les noms à vérifier. | S3 (Wikipédia, Wikidata), S5 (photo), S6, S7 |
 | **F4 Statistiques** | Répartitions (support, statut, type, format), ajouts par mois, tags et auteurs les plus fréquents, activité récente. | S7 |
 | **F5 Export** | Exporter une liste ou le résultat d'une recherche en CSV, Excel, JSON, TXT ou HTML, avec sélection manuelle. | S1 (avancée), S6, S7 |
 | **F6 Paramétrage et maintenance** | Gérer les référentiels, corriger des livres en masse, sauvegarder et restaurer, optimiser la base, nettoyer `uploads/`. | S1 (avancée), S2, S4, S5, S6, S7 |
@@ -187,7 +187,7 @@ Le modèle est entièrement dans `src/`. `BookManager.php` n'en fait pas partie 
 |---|---|---|---|
 | `LivreRepository` | F1, F5, F6 ; S1, S2, S5 | Livres (`livres`) : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures personnalisées, envoi du fichier numérique. | `TagRepository`, `SupportRepository`, `FormatNumeriqueRepository` |
 | `ListeRepository` | F2, F5 | Listes de lecture (`listes_lecture`, `livres_listes`) : contenu et ordre. | — |
-| `AuteurRepository` | F3 ; S3, S5 | Auteurs (`auteurs`, `auteurs_doublons_ignores`) : biographies (Wikipédia, Wikidata), photos, regroupement, doublons, fusion. | — |
+| `AuteurRepository` | F3 ; S3, S5 | Auteurs (`auteurs`, `auteurs_doublons_ignores`) : biographies (Wikipédia, Wikidata), photos, regroupement et tri par nom de famille, doublons (variantes de casse, d'accents ou ordre inversé), noms à vérifier, fusion. | — |
 | `TagRepository` | S1, S4 | Tags (chaîne CSV dans `livres.tags`) et catalogue `tags_catalogue` ; conditions SQL sur les tags pour la recherche avancée. | — |
 | `SupportRepository` | S4 | Types de support, stockés dans l'`ENUM` de `livres.support`. | — |
 | `AchatRepository` | F7 | Achats à effectuer (`achats`) : liste, modification, suppression ; la validation ajoute le livre à `livres` via `LivreRepository::addBook()` puis supprime l'achat, dans une transaction. Table non couverte par la sauvegarde JSON. | `LivreRepository` |
@@ -205,8 +205,8 @@ Le modèle est décrit dans [`schema.sql`](../schema.sql). Il y a 7 tables :
 
 - `livres` : la collection ;
 - `listes_lecture` et `livres_listes` : les listes, en relation plusieurs-à-plusieurs, avec un ordre, et suppression en cascade ;
-- `auteurs` : cache des biographies. **Pas de clé étrangère** vers `livres` : le lien se fait par le nom, car `livres.auteur` est un texte libre qui peut contenir plusieurs noms séparés par des virgules ;
-- `auteurs_doublons_ignores` : mémorise les faux doublons d'auteurs ;
+- `auteurs` : cache des biographies, avec prénom et nom de famille corrigés à la main (à défaut, ils sont devinés à partir du nom complet). **Pas de clé étrangère** vers `livres` : le lien se fait par le nom, car `livres.auteur` est un texte libre qui peut contenir plusieurs noms séparés par des virgules ;
+- `auteurs_doublons_ignores` : mémorise les faux doublons d'auteurs et les noms confirmés corrects (clés préfixées par `verif:`) ;
 - `tags_catalogue` : suggestions de tags ;
 - `formats_numeriques` : catalogue des formats numériques (nom + extension), voir ci-dessous.
 

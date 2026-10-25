@@ -237,8 +237,8 @@ class BookManager {
         return $this->auteurs->exportAuthorsCSV($authors);
     }
 
-    public function setAuthorBiography($nom, $biographie, $imageUrl = null, $photoFile = null, $naissance = null, $deces = null, $nationalite = null) {
-        return $this->auteurs->setAuthorBiography($nom, $biographie, $imageUrl, $photoFile, $naissance, $deces, $nationalite);
+    public function setAuthorBiography($nom, $biographie, $imageUrl = null, $photoFile = null, $naissance = null, $deces = null, $nationalite = null, $prenom = null, $nomFamille = null) {
+        return $this->auteurs->setAuthorBiography($nom, $biographie, $imageUrl, $photoFile, $naissance, $deces, $nationalite, $prenom, $nomFamille);
     }
 
     public function getAuthorBiography($nom) {
@@ -247,6 +247,14 @@ class BookManager {
 
     public function findDuplicateAuthorGroups($authors = null) {
         return $this->auteurs->findDuplicateAuthorGroups($authors);
+    }
+
+    public function findSuspiciousAuthors($authors = null) {
+        return $this->auteurs->findSuspiciousAuthors($authors);
+    }
+
+    public function ignoreSuspiciousAuthor($nom) {
+        return $this->auteurs->ignoreSuspiciousAuthor($nom);
     }
 
     public function createIgnoredDuplicatesTable() {

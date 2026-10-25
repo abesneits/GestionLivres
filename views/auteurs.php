@@ -25,7 +25,7 @@ renderHead('Auteurs - Ma Collection');
         <?php if (!empty($duplicateGroups)): ?>
             <div class="search-section duplicates-section">
                 <h3><?= icone('loupe') ?> Doublons potentiels détectés</h3>
-                <p class="duplicates-hint">Ces noms semblent désigner le même auteur (variantes de casse ou d'accents). Choisissez le nom à conserver puis fusionnez.</p>
+                <p class="duplicates-hint">Ces noms semblent désigner le même auteur (variantes de casse ou d'accents, ou prénom et nom inversés). Choisissez le nom à conserver puis fusionnez.</p>
                 <?php foreach ($duplicateGroups as $groupe): ?>
                     <form method="POST" class="duplicate-group">
                         <input type="hidden" name="action" value="merge_authors">
@@ -49,6 +49,35 @@ renderHead('Auteurs - Ma Collection');
                     </form>
                 <?php endforeach; ?>
             </div>
+        <?php endif; ?>
+
+        <?php if (!empty($suspects)): ?>
+            <details class="search-section verif-section">
+                <summary><?= icone('loupe') ?> Noms à vérifier <span class="auteur-count"><?= count($suspects) ?></span></summary>
+                <p class="duplicates-hint">Ces noms ressemblent à une erreur de saisie (titre de livre, parenthèses, un seul mot...). Corrigez-les, ou confirmez qu'ils sont justes.</p>
+                <?php foreach ($suspects as $suspect): ?>
+                    <div class="verif-item">
+                        <div class="verif-info">
+                            <strong><?= h($suspect['nom']) ?></strong>
+                            <span class="auteur-count"><?= $suspect['nb_livres'] ?> livre<?= $suspect['nb_livres'] > 1 ? 's' : '' ?></span>
+                            <small><?= h(implode(' · ', $suspect['raisons'])) ?></small>
+                        </div>
+                        <form method="POST" class="verif-form" onsubmit="return confirmMergeOrRename(this, '<?= h(addslashes($suspect['nom'])) ?>');">
+                            <input type="hidden" name="action" value="merge_authors">
+                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                            <input type="hidden" name="sources[]" value="<?= h($suspect['nom']) ?>">
+                            <input type="text" name="target" list="auteur-names-list" value="<?= h($suspect['suggestion']) ?>" placeholder="Nom corrigé..." aria-label="Nom corrigé pour <?= h($suspect['nom']) ?>">
+                            <button type="submit" class="btn-primary btn-small">Corriger</button>
+                        </form>
+                        <form method="POST">
+                            <input type="hidden" name="action" value="ignore_suspect">
+                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                            <input type="hidden" name="nom" value="<?= h($suspect['nom']) ?>">
+                            <button type="submit" class="btn-secondary btn-small">Le nom est correct</button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            </details>
         <?php endif; ?>
 
         <div class="search-section">
@@ -81,7 +110,8 @@ renderHead('Auteurs - Ma Collection');
                 <div class="search-group">
                     <label>Trier par</label>
                     <select name="tri">
-                        <option value="alpha" <?= $tri === 'alpha' ? 'selected' : '' ?>>Alphabétique</option>
+                        <option value="alpha" <?= $tri === 'alpha' ? 'selected' : '' ?>>Nom de famille (A-Z)</option>
+                        <option value="prenom" <?= $tri === 'prenom' ? 'selected' : '' ?>>Prénom (A-Z)</option>
                         <option value="count_desc" <?= $tri === 'count_desc' ? 'selected' : '' ?>>Nombre de livres</option>
                         <option value="recent" <?= $tri === 'recent' ? 'selected' : '' ?>>Ajout récent</option>
                     </select>
@@ -117,8 +147,31 @@ renderHead('Auteurs - Ma Collection');
                 ]))) ?>" class="btn-secondary btn-small auteur-export-link"><?= icone('telecharger') ?> Exporter en CSV</a>
             </p>
 
+            <?php
+            // Index alphabétique : uniquement quand la liste est triée par nom ou par prénom
+            $avecIndex = in_array($tri, ['alpha', 'prenom'], true);
+            $champTri = $tri === 'prenom' ? 'cle_prenom' : 'cle_nom';
+            $initiales = [];
+            if ($avecIndex) {
+                foreach ($authors as $a) {
+                    $initiales[initialeAuteur($a[$champTri])] = true;
+                }
+            }
+            $lettreCourante = null;
+            ?>
+            <?php if ($avecIndex && count($initiales) > 1): ?>
+                <nav class="auteurs-index" aria-label="Index alphabétique">
+                    <?php foreach (array_keys($initiales) as $lettre): ?>
+                        <a href="#lettre-<?= h($lettre === '#' ? 'autre' : $lettre) ?>"><?= h($lettre) ?></a>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+
             <div class="auteurs-grid">
                 <?php foreach ($authors as $auteur): ?>
+                    <?php if ($avecIndex && ($lettre = initialeAuteur($auteur[$champTri])) !== $lettreCourante): $lettreCourante = $lettre; ?>
+                        <h2 class="auteur-lettre" id="lettre-<?= h($lettre === '#' ? 'autre' : $lettre) ?>"><?= h($lettre) ?></h2>
+                    <?php endif; ?>
                     <details class="auteur-card">
                         <summary class="auteur-summary">
                             <?php if (!empty($auteur['image_url'])): ?>
@@ -126,7 +179,11 @@ renderHead('Auteurs - Ma Collection');
                             <?php else: ?>
                                 <span class="auteur-photo-placeholder"><?= icone('plume') ?></span>
                             <?php endif; ?>
-                            <span class="auteur-nom"><?= h($auteur['nom']) ?></span>
+                            <?php
+                            // Met le nom de famille en gras dans le nom complet (qui reste affiché tel qu'il est enregistré)
+                            $posNom = $auteur['nom_famille'] !== '' ? mb_strrpos($auteur['nom'], $auteur['nom_famille']) : false;
+                            ?>
+                            <span class="auteur-nom"><?php if ($posNom !== false): ?><?= h(mb_substr($auteur['nom'], 0, $posNom)) ?><strong class="auteur-nom-famille"><?= h($auteur['nom_famille']) ?></strong><?= h(mb_substr($auteur['nom'], $posNom + mb_strlen($auteur['nom_famille']))) ?><?php else: ?><?= h($auteur['nom']) ?><?php endif; ?></span>
                             <span class="auteur-count"><?= count($auteur['livres']) ?> livre<?= count($auteur['livres']) > 1 ? 's' : '' ?></span>
                         </summary>
 
@@ -134,7 +191,7 @@ renderHead('Auteurs - Ma Collection');
                             <p class="auteur-bio-loading">Chargement de la biographie...</p>
                         </div>
 
-                        <button type="button" class="btn-edit-bio" data-nom="<?= h($auteur['nom']) ?>" onclick="openEditAuteurModal(this.dataset.nom)"><?= icone('crayon') ?> Éditer la biographie</button>
+                        <button type="button" class="btn-edit-bio" data-nom="<?= h($auteur['nom']) ?>" onclick="openEditAuteurModal(this.dataset.nom)"><?= icone('crayon') ?> Éditer l'auteur</button>
 
                         <div class="auteur-livres">
                             <?php foreach ($auteur['livres'] as $livre): ?>
@@ -178,13 +235,25 @@ renderHead('Auteurs - Ma Collection');
         <div class="modal-content">
             <button type="button" onclick="closeEditAuteurModal()" class="modal-close">×</button>
 
-            <h3>Éditer la biographie</h3>
+            <h3>Éditer l'auteur</h3>
             <p id="editAuteurNomLabel" class="edit-auteur-nom"></p>
 
             <form method="POST" id="editAuteurForm" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="update_biographie">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <input type="hidden" name="nom" id="editAuteurNom" value="">
+
+                <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label for="editAuteurPrenom">Prénom :</label>
+                        <input type="text" id="editAuteurPrenom" name="prenom" maxlength="150">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label for="editAuteurNomFamille">Nom de famille :</label>
+                        <input type="text" id="editAuteurNomFamille" name="nom_famille" maxlength="150">
+                    </div>
+                </div>
+                <small class="edit-auteur-aide">Utilisés pour trier les auteurs par nom de famille. Déterminés automatiquement à partir du nom complet ; corrigez-les si besoin.</small>
 
                 <div class="form-group">
                     <label for="editAuteurBio">Biographie :</label>
@@ -370,6 +439,8 @@ renderHead('Auteurs - Ma Collection');
         document.getElementById('editAuteurNaissance').value = '';
         document.getElementById('editAuteurDeces').value = '';
         document.getElementById('editAuteurNationalite').value = '';
+        document.getElementById('editAuteurPrenom').value = '';
+        document.getElementById('editAuteurNomFamille').value = '';
 
         fetch('get_biographie.php?nom=' + encodeURIComponent(nom))
             .then(function(r) { return r.json(); })
@@ -380,6 +451,8 @@ renderHead('Auteurs - Ma Collection');
                     document.getElementById('editAuteurNaissance').value = data.naissance || '';
                     document.getElementById('editAuteurDeces').value = data.deces || '';
                     document.getElementById('editAuteurNationalite').value = data.nationalite || '';
+                    document.getElementById('editAuteurPrenom').value = data.prenom || '';
+                    document.getElementById('editAuteurNomFamille').value = data.nom_famille || '';
                 }
             })
             .catch(function() {});

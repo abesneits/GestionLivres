@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS `livres_listes` (
 CREATE TABLE IF NOT EXISTS `auteurs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nom` varchar(255) NOT NULL,
+  -- Prénom et nom de famille : renseignés seulement après correction manuelle ;
+  -- sinon l'application les devine à partir de `nom` (« Prénom Nom »)
+  `prenom` varchar(150) DEFAULT NULL,
+  `nom_famille` varchar(150) DEFAULT NULL,
   `biographie` text,
   `image_url` varchar(500) DEFAULT NULL,
   `naissance` varchar(10) DEFAULT NULL,
@@ -104,7 +108,8 @@ CREATE TABLE IF NOT EXISTS `auteurs` (
   UNIQUE KEY `nom` (`nom`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Groupes de doublons d'auteurs écartés (faux positifs) par l'utilisateur
+-- Groupes de doublons d'auteurs écartés (faux positifs) par l'utilisateur ;
+-- les noms confirmés corrects (section « Noms à vérifier ») y sont aussi, préfixés par « verif: »
 CREATE TABLE IF NOT EXISTS `auteurs_doublons_ignores` (
   `id` int NOT NULL AUTO_INCREMENT,
   `cle_normalisee` varchar(255) NOT NULL,

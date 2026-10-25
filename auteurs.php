@@ -5,6 +5,12 @@
 
 require_once 'includes/bootstrap.php';
 
+// Initiale (A-Z) d'une clé de tri d'auteur, « # » pour tout autre caractère
+function initialeAuteur($cle) {
+    $initiale = strtoupper(substr($cle, 0, 1));
+    return ctype_alpha($initiale) ? $initiale : '#';
+}
+
 $message = '';
 $messageType = '';
 $flashMessage = getFlashMessage();
@@ -40,6 +46,22 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'ignore_duplicate'
     }
 }
 
+// Confirmer qu'un nom signalé « à vérifier » est correct
+if ($_POST && isset($_POST['action']) && $_POST['action'] === 'ignore_suspect') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = "Token de sécurité invalide.";
+        $messageType = 'error';
+    } else {
+        try {
+            $bookManager->ignoreSuspiciousAuthor($_POST['nom'] ?? '');
+            redirectWithMessage('auteurs.php', "Ce nom ne sera plus signalé.", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+
 // Éditer manuellement la biographie d'un auteur
 if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_biographie') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -55,7 +77,9 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_biographie
                 $photoFile,
                 $_POST['naissance'] ?? '',
                 $_POST['deces'] ?? '',
-                $_POST['nationalite'] ?? ''
+                $_POST['nationalite'] ?? '',
+                $_POST['prenom'] ?? '',
+                $_POST['nom_famille'] ?? ''
             );
             redirectWithMessage('auteurs.php', "Biographie mise à jour.", 'success');
         } catch (Exception $e) {
@@ -68,7 +92,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_biographie
 $search = trim($_GET['q'] ?? '');
 $filterSupport = trim($_GET['filter'] ?? '');
 $filterTag = trim($_GET['tag'] ?? '');
-$tri = in_array($_GET['tri'] ?? '', ['alpha', 'count_desc', 'recent']) ? $_GET['tri'] : 'alpha';
+$tri = in_array($_GET['tri'] ?? '', ['alpha', 'prenom', 'count_desc', 'recent']) ? $_GET['tri'] : 'alpha';
 $bioManquante = isset($_GET['bio_manquante']) && $_GET['bio_manquante'] === '1';
 
 // La liste complète est calculée UNE seule fois, puis réutilisée (noms, doublons, et affichage s'il n'y a pas de filtre)
@@ -88,4 +112,5 @@ $allTags = $bookManager->getAllTags();
 $allAuthorNames = array_column($tousLesAuteurs, 'nom');
 sort($allAuthorNames, SORT_NATURAL | SORT_FLAG_CASE);
 $duplicateGroups = $bookManager->findDuplicateAuthorGroups($tousLesAuteurs);
+$suspects = $bookManager->findSuspiciousAuthors($tousLesAuteurs);
 require 'views/auteurs.php';

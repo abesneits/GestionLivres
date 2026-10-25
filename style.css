@@ -2440,6 +2440,99 @@ textarea:focus {
     font-size: 1.05em;
 }
 
+.auteur-nom-famille {
+    font-weight: 700;
+}
+
+/* Index alphabétique et séparateurs de lettres */
+.auteurs-index {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 15px;
+}
+
+.auteurs-index a {
+    min-width: 32px;
+    padding: 5px 8px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9em;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auteurs-index a:hover {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.auteur-lettre {
+    grid-column: 1 / -1;
+    margin: 10px 0 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 1.3em;
+    color: var(--text);
+    scroll-margin-top: 70px;
+}
+
+/* Noms d'auteurs à vérifier */
+.verif-section summary {
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.verif-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+}
+
+.verif-info {
+    flex: 1 1 260px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+}
+
+.verif-info small {
+    flex-basis: 100%;
+    color: var(--text-muted);
+}
+
+.verif-form {
+    display: flex;
+    gap: 8px;
+    flex: 1 1 280px;
+}
+
+.verif-form input[type="text"] {
+    flex: 1;
+    min-width: 140px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.edit-auteur-aide {
+    display: block;
+    color: var(--text-muted);
+    margin: -6px 0 14px;
+}
+
 .auteur-photo-small,
 .auteur-photo-placeholder {
     width: 40px;

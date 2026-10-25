@@ -6,6 +6,9 @@
  * uniquement par le champ texte livres.auteur (pas de clé étrangère).
  */
 class AuteurRepository {
+    // Particules qui font partie du nom de famille (« de Saint-Exupéry », « Le Guin »)
+    private const PARTICULES = ['de', 'du', 'des', 'le', 'la', 'les', 'van', 'von', 'der', 'den', 'ten', 'ter', 'da', 'di', 'del', 'della', 'dos', 'das', 'do', 'el', 'al', 'bin', 'ben', 'ibn', "d'", 'd’'];
+
     private $pdo;
     private $tags;
 
@@ -27,9 +30,12 @@ class AuteurRepository {
         )";
         $this->pdo->exec($sql);
 
-        // Métadonnées enrichies (Wikidata) : naissance/décès/nationalité
+        // Prénom / nom de famille (corrections manuelles ; à défaut ils sont devinés à partir de « nom »)
+        // et métadonnées enrichies (Wikidata) : naissance/décès/nationalité
         $newColumns = [
-            'naissance' => "ALTER TABLE auteurs ADD COLUMN naissance VARCHAR(10) AFTER image_url",
+            'prenom' => "ALTER TABLE auteurs ADD COLUMN prenom VARCHAR(150) AFTER nom",
+            'nom_famille' => "ALTER TABLE auteurs ADD COLUMN nom_famille VARCHAR(150) AFTER prenom",
+            'naissance' =>"ALTER TABLE auteurs ADD COLUMN naissance VARCHAR(10) AFTER image_url",
             'deces' => "ALTER TABLE auteurs ADD COLUMN deces VARCHAR(10) AFTER naissance",
             'nationalite' => "ALTER TABLE auteurs ADD COLUMN nationalite VARCHAR(150) AFTER deces",
         ];
@@ -98,11 +104,26 @@ class AuteurRepository {
                 ->fetchAll(PDO::FETCH_COLUMN);
             $biosPresentes = array_flip($biosPresentes);
 
+            // Prénom / nom de famille corrigés à la main ; sinon ils sont devinés
+            $nomsSaisis = [];
+            foreach ($this->pdo->query("SELECT nom, prenom, nom_famille FROM auteurs WHERE nom_famille IS NOT NULL AND nom_famille != ''")->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+                $nomsSaisis[$ligne['nom']] = $ligne;
+            }
+
             foreach ($authors as $nom => &$auteur) {
                 if (isset($photos[$nom])) {
                     $auteur['image_url'] = $photos[$nom];
                 }
                 $auteur['a_une_biographie'] = isset($biosPresentes[$nom]);
+
+                $parties = isset($nomsSaisis[$nom])
+                    ? ['prenom' => (string)$nomsSaisis[$nom]['prenom'], 'nom_famille' => $nomsSaisis[$nom]['nom_famille']]
+                    : $this->devinerPrenomNom($nom);
+                $auteur['prenom'] = $parties['prenom'];
+                $auteur['nom_famille'] = $parties['nom_famille'];
+                $auteur['cle_nom'] = $this->cleTriNom($parties['nom_famille']);
+                // Sans prénom (« Voltaire »), le nom unique sert de repère pour le tri par prénom
+                $auteur['cle_prenom'] = $this->normalizeAuthorName($parties['prenom'] !== '' ? $parties['prenom'] : $parties['nom_famille']);
             }
             unset($auteur);
         }
@@ -124,11 +145,71 @@ class AuteurRepository {
                     return strcmp($dateB, $dateA);
                 });
                 break;
+            case 'prenom':
+                uasort($authors, function ($a, $b) {
+                    return strnatcmp($a['cle_prenom'], $b['cle_prenom']) ?: strnatcmp($a['cle_nom'], $b['cle_nom']);
+                });
+                break;
             default:
-                ksort($authors, SORT_NATURAL | SORT_FLAG_CASE);
+                // Par nom de famille, puis par prénom
+                uasort($authors, function ($a, $b) {
+                    return strnatcmp($a['cle_nom'], $b['cle_nom']) ?: strnatcmp($a['cle_prenom'], $b['cle_prenom']);
+                });
         }
 
         return array_values($authors);
+    }
+
+    /**
+     * Deviner prénom et nom de famille à partir d'un nom complet « Prénom Nom ».
+     * Le dernier mot est le nom de famille, précédé de ses éventuelles particules
+     * (« Antoine de Saint-Exupéry » -> « Antoine » / « de Saint-Exupéry »).
+     * Un nom d'un seul mot (« Voltaire ») n'a pas de prénom. Heuristique : l'utilisateur
+     * corrige les cas particuliers (noms composés, auteurs collectifs...) dans la fenêtre d'édition.
+     */
+    private function devinerPrenomNom($nom) {
+        $mots = preg_split('/\s+/u', trim($nom), -1, PREG_SPLIT_NO_EMPTY);
+        if (count($mots) <= 1) {
+            return ['prenom' => '', 'nom_famille' => trim($nom)];
+        }
+
+        $debutNom = count($mots) - 1;
+        while ($debutNom > 0 && in_array(mb_strtolower($mots[$debutNom - 1], 'UTF-8'), self::PARTICULES, true)) {
+            $debutNom--;
+        }
+
+        return [
+            'prenom' => implode(' ', array_slice($mots, 0, $debutNom)),
+            'nom_famille' => implode(' ', array_slice($mots, $debutNom))
+        ];
+    }
+
+    /**
+     * Clé de tri d'un nom de famille : sans accents ni casse, et sans les particules écrites
+     * en minuscules (« de Saint-Exupéry » se range à S, mais « De Gaulle » reste à D).
+     */
+    private function cleTriNom($nomFamille) {
+        $mots = preg_split('/\s+/u', trim($nomFamille), -1, PREG_SPLIT_NO_EMPTY);
+        while (count($mots) > 1 && in_array($mots[0], self::PARTICULES, true)) {
+            array_shift($mots);
+        }
+        $nom = implode(' ', $mots);
+        $nom = preg_replace('/^d[\'’]/u', '', $nom);
+        return $this->normalizeAuthorName($nom);
+    }
+
+    /**
+     * Prénom et nom de famille d'un auteur : valeurs saisies si elles existent, sinon devinées.
+     */
+    private function getAuthorNameParts($nom) {
+        $stmt = $this->pdo->prepare("SELECT prenom, nom_famille FROM auteurs WHERE nom = :nom");
+        $stmt->execute([':nom' => $nom]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row && $row['nom_famille'] !== null && $row['nom_famille'] !== '') {
+            return ['prenom' => (string)$row['prenom'], 'nom_famille' => $row['nom_famille']];
+        }
+        return $this->devinerPrenomNom($nom);
     }
 
     /**
@@ -147,7 +228,7 @@ class AuteurRepository {
         // BOM UTF-8 pour Excel
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        fputcsv($output, ['Nom', 'Nombre de livres', 'Naissance', 'Décès', 'Nationalité', 'Biographie', 'Titres possédés'], ';');
+        fputcsv($output, ['Nom', 'Prénom', 'Nom de famille', 'Nombre de livres', 'Naissance', 'Décès', 'Nationalité', 'Biographie', 'Titres possédés'], ';');
 
         // Une seule requête pour toutes les fiches, indexées par nom (au lieu d'une requête par auteur)
         $metas = [];
@@ -163,6 +244,8 @@ class AuteurRepository {
             // csvSafe neutralise les cellules qui commenceraient par = + - @ (injection de formule)
             fputcsv($output, array_map('csvSafe', [
                 $auteur['nom'],
+                $auteur['prenom'] ?? '',
+                $auteur['nom_famille'] ?? '',
                 count($auteur['livres']),
                 $meta['naissance'] ?? '',
                 $meta['deces'] ?? '',
@@ -179,7 +262,7 @@ class AuteurRepository {
     /**
      * Définir manuellement la biographie d'un auteur (complète ou remplace le résultat de Wikipédia)
      */
-    public function setAuthorBiography($nom, $biographie, $imageUrl = null, $photoFile = null, $naissance = null, $deces = null, $nationalite = null) {
+    public function setAuthorBiography($nom, $biographie, $imageUrl = null, $photoFile = null, $naissance = null, $deces = null, $nationalite = null, $prenom = null, $nomFamille = null) {
         $nom = trim($nom);
         if ($nom === '') {
             throw new Exception("Nom d'auteur invalide.");
@@ -202,10 +285,19 @@ class AuteurRepository {
         $naissance = trim($naissance ?? '');
         $deces = trim($deces ?? '');
         $nationalite = trim($nationalite ?? '');
+        $prenom = trim($prenom ?? '');
+        $nomFamille = trim($nomFamille ?? '');
 
-        $sql = "INSERT INTO auteurs (nom, biographie, image_url, naissance, deces, nationalite)
-                VALUES (:nom, :bio, :image, :naissance, :deces, :nationalite)
+        // Si le nom de famille est vidé, on revient à la détection automatique (prénom ignoré aussi)
+        if ($nomFamille === '') {
+            $prenom = '';
+        }
+
+        $sql = "INSERT INTO auteurs (nom, prenom, nom_famille, biographie, image_url, naissance, deces, nationalite)
+                VALUES (:nom, :prenom, :nom_famille, :bio, :image, :naissance, :deces, :nationalite)
                 ON DUPLICATE KEY UPDATE
+                    prenom = VALUES(prenom),
+                    nom_famille = VALUES(nom_famille),
                     biographie = VALUES(biographie),
                     image_url = VALUES(image_url),
                     naissance = VALUES(naissance),
@@ -215,6 +307,8 @@ class AuteurRepository {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             ':nom' => $nom,
+            ':prenom' => $prenom !== '' ? $prenom : null,
+            ':nom_famille' => $nomFamille !== '' ? $nomFamille : null,
             ':bio' => trim($biographie ?? ''),
             ':image' => $imageUrl !== '' ? $imageUrl : null,
             ':naissance' => $naissance !== '' ? $naissance : null,
@@ -278,16 +372,18 @@ class AuteurRepository {
 
         // Biographie déjà en cache (même une recherche infructueuse, stockée comme chaîne vide)
         if ($row && $row['biographie'] !== null) {
-            return [
+            $data = [
                 'biographie' => $row['biographie'],
                 'image_url' => $row['image_url'],
                 'naissance' => $row['naissance'],
                 'deces' => $row['deces'],
                 'nationalite' => $row['nationalite']
             ];
+        } else {
+            $data = $this->fetchAndCacheAuthorMetadata($nom);
         }
 
-        return $this->fetchAndCacheAuthorMetadata($nom);
+        return $data + $this->getAuthorNameParts($nom);
     }
 
     /**
@@ -452,14 +548,120 @@ class AuteurRepository {
 
         $ignores = $this->pdo->query("SELECT cle_normalisee FROM auteurs_doublons_ignores")->fetchAll(PDO::FETCH_COLUMN);
 
-        $doublons = [];
+        // Rapproche aussi les noms qui ne diffèrent que par l'ordre des mots (« Hugo Victor » / « Victor Hugo »)
+        $parOrdre = [];
         foreach ($groups as $cle => $membres) {
-            if (count($membres) > 1 && !in_array($cle, $ignores, true)) {
-                $doublons[] = ['cle' => $cle, 'auteurs' => $membres];
+            $mots = explode(' ', $cle);
+            sort($mots);
+            $parOrdre[implode(' ', $mots)][$cle] = $membres;
+        }
+
+        $doublons = [];
+        foreach ($parOrdre as $cleOrdre => $sousGroupes) {
+            $membres = array_merge(...array_values($sousGroupes));
+            if (count($membres) < 2) {
+                continue;
+            }
+            // Un groupe de simples variantes garde sa clé d'origine (les groupes déjà ignorés le restent)
+            $cle = count($sousGroupes) === 1 ? array_key_first($sousGroupes) : $cleOrdre;
+            if (!in_array((string)$cle, $ignores, true)) {
+                $doublons[] = ['cle' => (string)$cle, 'auteurs' => $membres];
             }
         }
 
         return $doublons;
+    }
+
+    /**
+     * Repérer les noms d'auteurs qui ressemblent à une erreur de saisie ou d'import
+     * (titre de livre, parenthèses, majuscules, un seul mot...). Chaque résultat indique
+     * les raisons et, quand c'est possible, une correction proposée.
+     * Les noms que l'utilisateur a choisi d'ignorer sont mémorisés avec le préfixe « verif: ».
+     */
+    public function findSuspiciousAuthors($authors = null) {
+        $authors = $authors ?? $this->getAllAuthorsWithBooks();
+        $ignores = array_flip($this->pdo->query("SELECT cle_normalisee FROM auteurs_doublons_ignores WHERE cle_normalisee LIKE 'verif:%'")->fetchAll(PDO::FETCH_COLUMN));
+
+        $suspects = [];
+        foreach ($authors as $auteur) {
+            $nom = $auteur['nom'];
+            if (isset($ignores['verif:' . $nom])) {
+                continue;
+            }
+
+            $mots = preg_split('/\s+/u', $nom, -1, PREG_SPLIT_NO_EMPTY);
+            $raisons = [];
+
+            if (preg_match('/\d/', $nom)) {
+                $raisons[] = "contient un chiffre";
+            }
+            if (count($mots) >= 5) {
+                $raisons[] = "nom très long (titre de livre ?)";
+            }
+            if (preg_match('/[:;()\/\[\]!?"]/u', $nom)) {
+                $raisons[] = "ponctuation inhabituelle";
+            }
+            if (preg_match('/[\'’]\s/u', $nom) || preg_match('/\s{2,}/u', $nom)) {
+                $raisons[] = "espaces en trop";
+            }
+            if (preg_match('/\b\p{Lu}{3,}\b/u', $nom)) {
+                $raisons[] = "mot en majuscules";
+            }
+            if (preg_match('/^\p{Ll}/u', $nom)) {
+                $raisons[] = "commence par une minuscule";
+            }
+            foreach ($auteur['livres'] as $livre) {
+                if (mb_strtolower(trim($livre['titre']), 'UTF-8') === mb_strtolower($nom, 'UTF-8')) {
+                    $raisons[] = "identique au titre d'un de ses livres";
+                    break;
+                }
+            }
+            if (preg_match('/collectif|éditions?|editions?|magazine|studio|rédaction|anonyme|inconnu|unknown|équipe|auteurs/iu', $nom)) {
+                $raisons[] = "auteur collectif ou organisme ?";
+            }
+            if (count($mots) === 1) {
+                $raisons[] = "un seul mot (prénom ou nom manquant ?)";
+            }
+
+            if ($raisons) {
+                $suspects[] = [
+                    'nom' => $nom,
+                    'nb_livres' => count($auteur['livres']),
+                    'raisons' => $raisons,
+                    'suggestion' => $this->proposerNomCorrige($nom)
+                ];
+            }
+        }
+
+        return $suspects;
+    }
+
+    /**
+     * Nom corrigé proposé pour un nom suspect : parenthèses et ponctuation finale retirées,
+     * espaces et apostrophes réparés, majuscules ramenées à une casse normale.
+     * Chaîne vide si rien n'est à corriger.
+     */
+    private function proposerNomCorrige($nom) {
+        $corrige = preg_replace('/\s*[\(\[].*$/u', '', $nom);
+        $corrige = preg_replace('/[\s.)\]]+$/u', '', $corrige);
+        $corrige = preg_replace('/(\b[dDlL][\'’])\s+/u', '$1', $corrige);
+        $corrige = preg_replace('/\s+/u', ' ', trim($corrige));
+        $corrige = preg_replace_callback('/\b\p{Lu}{3,}\b/u', function ($m) {
+            return mb_convert_case($m[0], MB_CASE_TITLE, 'UTF-8');
+        }, $corrige);
+
+        return ($corrige !== $nom && $corrige !== '') ? $corrige : '';
+    }
+
+    /**
+     * Mémoriser qu'un nom signalé « à vérifier » est correct (il ne sera plus signalé).
+     */
+    public function ignoreSuspiciousAuthor($nom) {
+        $nom = trim($nom);
+        if ($nom === '') {
+            throw new Exception("Nom d'auteur invalide.");
+        }
+        $this->ignoreDuplicateGroup('verif:' . $nom);
     }
 
     /**
@@ -516,7 +718,7 @@ class AuteurRepository {
      * cache, et met à jour la biographie mise en cache avec le résultat.
      */
     public function refreshAuthorBiography($nom) {
-        return $this->fetchAndCacheAuthorMetadata($nom);
+        return $this->fetchAndCacheAuthorMetadata($nom) + $this->getAuthorNameParts($nom);
     }
 
     /**

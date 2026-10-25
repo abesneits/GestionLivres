@@ -25,7 +25,7 @@ L'objectif est de répondre à quelques questions simples :
 | **Suivre une série** | Rattachement d'un livre à une série avec son numéro de tome ; filtre par série et tri par série puis par tome. | Ma collection, Édition |
 | **Préparer mes achats** | Liste d'achats avec priorité, prix estimé et lieu ; validation d'un achat = ajout automatique à la collection ; version imprimable avec cases à cocher. | Achats |
 | **Préparer des lectures** | Listes de lecture nommées, dont l'ordre se change par glisser-déposer. | Listes |
-| **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; détection et fusion des doublons dus à la casse ou aux accents (« victor hugo » / « Victor Hugo »). | Auteurs |
+| **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; tri par nom de famille avec index alphabétique ; détection et fusion des doublons dus à la casse, aux accents ou à l'ordre prénom/nom (« victor hugo » / « Hugo Victor ») ; liste des noms à vérifier (parenthèses, titres pris pour des auteurs, noms d'un seul mot). | Auteurs |
 | **Avoir une vue d'ensemble** | Répartition par support et par statut, ajouts par mois, tags et auteurs les plus fréquents. | Statistiques |
 | **Emporter une liste hors connexion** | Export de toute la collection ou d'une liste au format CSV, Excel, JSON, TXT ou HTML, avec recherche avancée et sélection manuelle des livres. | Export, Listes |
 | **Corriger beaucoup de livres d'un coup** | Édition en masse du support, du statut et des tags sur le résultat d'une recherche. | Outils |

@@ -30,5 +30,7 @@ jsonResponse([
     'image_url' => $data['image_url'],
     'naissance' => $data['naissance'] ?? null,
     'deces' => $data['deces'] ?? null,
-    'nationalite' => $data['nationalite'] ?? null
+    'nationalite' => $data['nationalite'] ?? null,
+    'prenom' => $data['prenom'] ?? '',
+    'nom_famille' => $data['nom_famille'] ?? ''
 ]);
