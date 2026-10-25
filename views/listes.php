@@ -506,7 +506,8 @@ renderHead('Mes Listes - Ma Collection');
 
         .liste-cover-icon {
             font-size: 60px;
-            opacity: 0.3;
+            opacity: 0.45;
+            color: white;
         }
 
         .liste-cover-overlay {
