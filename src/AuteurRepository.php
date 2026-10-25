@@ -765,13 +765,7 @@ class AuteurRepository {
                 }
             }
 
-            // Nettoyer le cache de biographies des anciens noms fusionnés
-            $delStmt = $this->pdo->prepare("DELETE FROM auteurs WHERE nom = :nom");
-            foreach ($sourceNames as $nom) {
-                if ($nom !== $targetName) {
-                    $delStmt->execute([':nom' => $nom]);
-                }
-            }
+            $this->transfererFicheAuteur($sourceNames, $targetName);
 
         $this->pdo->commit();
         } catch (Exception $e) {
@@ -782,5 +776,69 @@ class AuteurRepository {
         }
 
         return $livresModifies;
+    }
+
+    /**
+     * Après un renommage ou une fusion, garde une seule fiche (biographie, photo, métadonnées)
+     * sous le nom cible : celle du nom cible si elle existe déjà, sinon celle d'un ancien nom
+     * (de préférence une fiche qui a une biographie), qui est alors renommée au lieu d'être perdue.
+     * Les autres fiches des anciens noms sont supprimées.
+     * Appelée dans la transaction de mergeAuthors().
+     */
+    private function transfererFicheAuteur(array $sourceNames, $targetName) {
+        $cherche = $this->pdo->prepare("SELECT id, biographie FROM auteurs WHERE nom = :nom");
+
+        // Fiche du nom cible (la comparaison de MySQL ignore la casse : « victor hugo » = « Victor Hugo »)
+        $cherche->execute([':nom' => $targetName]);
+        $ficheCible = $cherche->fetch(PDO::FETCH_ASSOC);
+        $idGarde = $ficheCible ? (int)$ficheCible['id'] : null;
+
+        // Fiches des anciens noms
+        $fichesSources = [];
+        foreach ($sourceNames as $nom) {
+            if ($nom === $targetName) {
+                continue;
+            }
+            $cherche->execute([':nom' => $nom]);
+            $fiche = $cherche->fetch(PDO::FETCH_ASSOC);
+            if ($fiche) {
+                $fichesSources[(int)$fiche['id']] = $fiche;
+            }
+        }
+
+        if ($idGarde === null && $fichesSources) {
+            // Pas de fiche sous le nouveau nom : on récupère celle d'un ancien nom, de préférence avec biographie
+            foreach ($fichesSources as $id => $fiche) {
+                if ($idGarde === null || (trim((string)$fiche['biographie']) !== '' && trim((string)$fichesSources[$idGarde]['biographie']) === '')) {
+                    $idGarde = $id;
+                }
+            }
+        }
+
+        // Supprimer les fiches en trop
+        $supprime = $this->pdo->prepare("DELETE FROM auteurs WHERE id = :id");
+        foreach (array_keys($fichesSources) as $id) {
+            if ($id !== $idGarde) {
+                $supprime->execute([':id' => $id]);
+            }
+        }
+
+        if ($idGarde === null) {
+            return;
+        }
+
+        // La fiche conservée prend exactement le nom cible (casse comprise)
+        $stmt = $this->pdo->prepare("UPDATE auteurs SET nom = :nom WHERE id = :id");
+        $stmt->execute([':nom' => $targetName, ':id' => $idGarde]);
+
+        // Un prénom / nom de famille corrigé à la main ne vaut plus s'il ne figure plus dans le nom :
+        // on revient alors à la détection automatique
+        $stmt = $this->pdo->prepare("SELECT nom_famille FROM auteurs WHERE id = :id");
+        $stmt->execute([':id' => $idGarde]);
+        $nomFamille = (string)$stmt->fetchColumn();
+        if ($nomFamille !== '' && mb_strpos($targetName, $nomFamille, 0, 'UTF-8') === false) {
+            $stmt = $this->pdo->prepare("UPDATE auteurs SET prenom = NULL, nom_famille = NULL WHERE id = :id");
+            $stmt->execute([':id' => $idGarde]);
+        }
     }
 }
