@@ -42,11 +42,11 @@ class BookManager {
         $this->auteurs = new AuteurRepository($this->pdo, $this->tags);
         $this->supports = new SupportRepository($this->pdo);
         $this->formats = new FormatNumeriqueRepository($this->pdo);
-        $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports, $this->formats);
+        $this->livres = new LivreRepository($this->pdo, $this->tags, $this->supports, $this->formats, $this->auteurs);
         $this->achats = new AchatRepository($this->pdo, $this->livres);
         $this->stats = new Stats($this->pdo, [$this->livres, 'countBooks']);
-        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags, $this->formats, $this->achats);
-        $this->maintenance = new Maintenance($this->pdo);
+        $this->maintenance = new Maintenance($this->pdo, $this->auteurs);
+        $this->schema = new Schema($this->pdo, $this->supports, $this->listes, $this->auteurs, $this->tags, $this->formats, $this->achats, $this->maintenance);
     }
     
     /**
@@ -267,6 +267,10 @@ class BookManager {
 
     public function authorExists($nom) {
         return $this->auteurs->authorExists($nom);
+    }
+
+    public function isSameAuthor($nomA, $nomB) {
+        return $this->auteurs->isSameAuthor($nomA, $nomB);
     }
 
     public function refreshAuthorBiography($nom) {

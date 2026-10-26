@@ -187,7 +187,7 @@ Le modèle est entièrement dans `src/`. `BookManager.php` n'en fait pas partie 
 |---|---|---|---|
 | `LivreRepository` | F1, F5, F6 ; S1, S2, S5 | Livres (`livres`) : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures personnalisées, envoi du fichier numérique. | `TagRepository`, `SupportRepository`, `FormatNumeriqueRepository` |
 | `ListeRepository` | F2, F5 | Listes de lecture (`listes_lecture`, `livres_listes`) : contenu et ordre. | — |
-| `AuteurRepository` | F3 ; S3, S5 | Auteurs (`auteurs`, `auteurs_doublons_ignores`) : biographies (Wikipédia, Wikidata), photos, regroupement et tri par nom de famille, doublons (variantes de casse, d'accents ou ordre inversé), noms à vérifier, fusion. | — |
+| `AuteurRepository` | F3 ; S3, S5 | Auteurs (`auteurs`, `auteurs_doublons_ignores`, `livres_auteurs`) : biographies (Wikipédia, Wikidata), photos, regroupement et tri par nom de famille, doublons (variantes de casse, d'accents ou ordre inversé), noms à vérifier, fusion. | — |
 | `TagRepository` | S1, S4 | Tags (chaîne CSV dans `livres.tags`) et catalogue `tags_catalogue` ; conditions SQL sur les tags pour la recherche avancée. | — |
 | `SupportRepository` | S4 | Types de support, stockés dans l'`ENUM` de `livres.support`. | — |
 | `AchatRepository` | F7 | Achats à effectuer (`achats`) : liste, modification, suppression ; la validation ajoute le livre à `livres` via `LivreRepository::addBook()` puis supprime l'achat, dans une transaction. Table non couverte par la sauvegarde JSON. | `LivreRepository` |
@@ -205,7 +205,8 @@ Le modèle est décrit dans [`schema.sql`](../schema.sql). Il y a 7 tables :
 
 - `livres` : la collection ;
 - `listes_lecture` et `livres_listes` : les listes, en relation plusieurs-à-plusieurs, avec un ordre, et suppression en cascade ;
-- `auteurs` : cache des biographies, avec prénom et nom de famille corrigés à la main (à défaut, ils sont devinés à partir du nom complet). **Pas de clé étrangère** vers `livres` : le lien se fait par le nom, car `livres.auteur` est un texte libre qui peut contenir plusieurs noms séparés par des virgules ;
+- `auteurs` : une ligne par auteur (nom unique, la comparaison de MySQL ignore casse et accents), avec biographie, photo, métadonnées, et prénom / nom de famille corrigés à la main (à défaut, ils sont devinés à partir du nom complet) ;
+- `livres_auteurs` : liaison plusieurs-à-plusieurs entre livres et auteurs (avec l'ordre des auteurs), suppression en cascade des deux côtés. C'est le **seul** stockage des auteurs d'un livre : il n'y a plus de colonne `livres.auteur`. `AuteurRepository::setBookAuthors()` définit les auteurs à partir d'un texte « Nom1, Nom2 » (auteurs existants réutilisés quelle que soit la casse ou les accents, nouveaux créés), et les requêtes qui ont besoin du texte l'obtiennent par jointure (`AuteurRepository::sqlTexteAuteurs()`) sous le nom `auteur`, si bien que les pages ne voient pas la différence. Renommer ou fusionner des auteurs déplace simplement les liens et conserve la fiche. Une base créée avec une ancienne version est migrée automatiquement au premier chargement : les livres sont reliés à leurs auteurs d'après l'ancien texte, une copie de ce texte est enregistrée dans `backups/`, puis la colonne est supprimée ;
 - `auteurs_doublons_ignores` : mémorise les faux doublons d'auteurs et les noms confirmés corrects (clés préfixées par `verif:`) ;
 - `tags_catalogue` : suggestions de tags ;
 - `formats_numeriques` : catalogue des formats numériques (nom + extension), voir ci-dessous.

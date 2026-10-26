@@ -34,8 +34,6 @@ CREATE TABLE IF NOT EXISTS `livres` (
   `format_numerique` varchar(50) DEFAULT NULL,
   -- Chemin du fichier envoyé (uploads/ebooks/...), uniquement pour un livre numérique
   `fichier_numerique` varchar(500) DEFAULT NULL,
-  -- Un ou plusieurs auteurs, séparés par des virgules
-  `auteur` varchar(255) DEFAULT NULL,
   -- Série (ex. « Cycle de Fondation ») et numéro de tome dans cette série
   `serie` varchar(255) DEFAULT NULL,
   `tome` int DEFAULT NULL,
@@ -87,9 +85,9 @@ CREATE TABLE IF NOT EXISTS `livres_listes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------------------------------------------------------
--- Auteurs : biographies récupérées sur Wikipédia et mises en cache.
--- Pas de clé étrangère vers livres : le lien se fait par le nom, présent dans
--- la colonne livres.auteur (qui peut contenir plusieurs noms).
+-- Auteurs : une ligne par auteur (nom unique), avec sa biographie récupérée sur
+-- Wikipédia, sa photo et ses métadonnées. Le lien avec les livres passe par la
+-- table livres_auteurs ci-dessous.
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `auteurs` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -106,6 +104,19 @@ CREATE TABLE IF NOT EXISTS `auteurs` (
   `date_maj` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Liaison livres <-> auteurs : un livre peut avoir plusieurs auteurs, dans un ordre.
+-- C'est le seul endroit où les auteurs d'un livre sont stockés ; le texte « Nom1, Nom2 » affiché par
+-- l'application est calculé par une jointure.
+CREATE TABLE IF NOT EXISTS `livres_auteurs` (
+  `livre_id` int NOT NULL,
+  `auteur_id` int NOT NULL,
+  `ordre` smallint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`livre_id`,`auteur_id`),
+  KEY `idx_livres_auteurs_auteur` (`auteur_id`),
+  CONSTRAINT `fk_livres_auteurs_livre` FOREIGN KEY (`livre_id`) REFERENCES `livres` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_livres_auteurs_auteur` FOREIGN KEY (`auteur_id`) REFERENCES `auteurs` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Groupes de doublons d'auteurs écartés (faux positifs) par l'utilisateur ;

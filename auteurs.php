@@ -24,7 +24,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'merge_authors') {
         try {
             $sources = array_filter(array_map('trim', (array)($_POST['sources'] ?? [])));
             $target = trim($_POST['target'] ?? '');
-            $cibleExistaitDeja = count($sources) === 1 && $bookManager->authorExists($target) && !in_array($target, $sources, true);
+            $cibleExistaitDeja = count($sources) === 1 && $bookManager->authorExists($target) && !$bookManager->isSameAuthor($sources[0] ?? '', $target);
             $count = $bookManager->mergeAuthors($sources, $target);
             $verbe = $cibleExistaitDeja ? "Fusion effectuée avec l'auteur existant" : "Auteur renommé en";
             redirectWithMessage('auteurs.php', "$verbe « " . $target . " » : $count livre(s) mis à jour.", 'success');

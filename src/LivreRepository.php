@@ -9,28 +9,36 @@ class LivreRepository {
     private $tags;
     private $supports;
     private $formats;
+    private $auteurs;
     private $itemsPerPage = 20; // Pour la pagination
 
-    public function __construct(PDO $pdo, TagRepository $tags, SupportRepository $supports, FormatNumeriqueRepository $formats) {
+    public function __construct(PDO $pdo, TagRepository $tags, SupportRepository $supports, FormatNumeriqueRepository $formats, AuteurRepository $auteurs) {
         $this->pdo = $pdo;
         $this->tags = $tags;
         $this->supports = $supports;
         $this->formats = $formats;
+        $this->auteurs = $auteurs;
     }
 
     /**
      * Ajouter un livre à la collection avec statut
      */
     public function addBook($bookInfo) {
+        // Livre + liens avec ses auteurs : tout ou rien (on rejoint la transaction en cours, ex. validation d'un achat)
+        $propreTransaction = !$this->pdo->inTransaction();
         try {
+            if ($propreTransaction) {
+                $this->pdo->beginTransaction();
+            }
+
             $type_livre = $bookInfo['type_livre'] ?? 'Papier';
             $format_numerique = $type_livre === 'Numérique' ? ($bookInfo['format_numerique'] ?? null) : null;
             if ($format_numerique !== null && $this->formats->getFormatExtension($format_numerique) === null) {
                 throw new Exception("Format numérique invalide.");
             }
 
-            $sql = "INSERT INTO livres (isbn, titre, support, type_livre, format_numerique, fichier_numerique, auteur, serie, tome, couverture, description, date_publication, statut, tags)
-                    VALUES (:isbn, :titre, :support, :type_livre, :format_numerique, :fichier_numerique, :auteur, :serie, :tome, :couverture, :description, :date_publication, :statut, :tags)";
+            $sql = "INSERT INTO livres (isbn, titre, support, type_livre, format_numerique, fichier_numerique, serie, tome, couverture, description, date_publication, statut, tags)
+                    VALUES (:isbn, :titre, :support, :type_livre, :format_numerique, :fichier_numerique, :serie, :tome, :couverture, :description, :date_publication, :statut, :tags)";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
@@ -40,7 +48,6 @@ class LivreRepository {
                 ':type_livre' => $type_livre,
                 ':format_numerique' => $format_numerique,
                 ':fichier_numerique' => $bookInfo['fichier_numerique'] ?? null,
-                ':auteur' => $bookInfo['auteur'],
                 ':serie' => $this->normalizeSerie($bookInfo['serie'] ?? null),
                 ':tome' => $this->normalizeTome($bookInfo['tome'] ?? null),
                 ':couverture' => $bookInfo['couverture'],
@@ -50,12 +57,26 @@ class LivreRepository {
                 ':tags' => $bookInfo['tags'] ?? ''
             ]);
 
+            // Les auteurs passent par le point d'entrée unique (liens + texte livres.auteur)
+            $this->auteurs->setBookAuthors($this->pdo->lastInsertId(), $bookInfo['auteur']);
+
+            if ($propreTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (PDOException $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             if ($e->getCode() == 23000) { // Code pour duplicate entry
                 throw new Exception("Ce livre est déjà dans votre collection !");
             }
             throw new Exception("Erreur lors de l'ajout : " . $e->getMessage());
+        } catch (Exception $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
         }
     }
     
@@ -64,7 +85,7 @@ class LivreRepository {
      * pour la fenêtre « Ajouter des livres » d'une liste de lecture.
      */
     public function getBooksForPicker() {
-        $sql = "SELECT id, titre, auteur, couverture, support, type_livre FROM livres ORDER BY titre ASC";
+        $sql = "SELECT l.id, l.titre, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur, l.couverture, l.support, l.type_livre FROM livres l ORDER BY l.titre ASC";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -75,7 +96,7 @@ class LivreRepository {
         $limit = $limit ?? $this->itemsPerPage;
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT * FROM livres WHERE 1=1";
+        $sql = "SELECT l.*, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur FROM livres l WHERE 1=1";
         $params = [];
 
         if ($serie) {
@@ -94,7 +115,7 @@ class LivreRepository {
         }
 
         if ($search) {
-            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
+            $sql .= " AND (titre LIKE :search OR " . AuteurRepository::sqlRechercheAuteur(':search') . " OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
         }
         
@@ -131,7 +152,7 @@ class LivreRepository {
      * Compter le nombre total de livres (pour pagination)
      */
     public function countBooks($support = null, $search = null, $tag = null, $statut = null, $serie = null, $type = null) {
-        $sql = "SELECT COUNT(*) FROM livres WHERE 1=1";
+        $sql = "SELECT COUNT(*) FROM livres l WHERE 1=1";
         $params = [];
 
         if ($serie) {
@@ -150,7 +171,7 @@ class LivreRepository {
         }
 
         if ($search) {
-            $sql .= " AND (titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
+            $sql .= " AND (titre LIKE :search OR " . AuteurRepository::sqlRechercheAuteur(':search') . " OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $search . '%';
         }
         
@@ -315,12 +336,6 @@ class LivreRepository {
             $params[':titre'] = $titre;
         }
         
-        // Ajouter l'auteur si fourni
-        if ($auteur !== null) {
-            $sql .= ", auteur = :auteur";
-            $params[':auteur'] = $auteur;
-        }
-
         // Série et tome : null = ne pas toucher, chaîne vide = effacer
         if ($serie !== null) {
             $sql .= ", serie = :serie";
@@ -332,9 +347,31 @@ class LivreRepository {
         }
         
         $sql .= " WHERE id = :id";
-        
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
+
+        // Les auteurs passent par le point d'entrée unique (liens + texte livres.auteur),
+        // dans la même transaction que le reste de la modification
+        $propreTransaction = !$this->pdo->inTransaction();
+        if ($propreTransaction) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $resultat = $stmt->execute($params);
+
+            if ($auteur !== null) {
+                $this->auteurs->setBookAuthors($id, $auteur);
+            }
+
+            if ($propreTransaction) {
+                $this->pdo->commit();
+            }
+            return $resultat;
+        } catch (Exception $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
     }
     
     /**
@@ -434,7 +471,7 @@ class LivreRepository {
      * Obtenir un livre par ID
      */
     public function getBookById($id) {
-        $sql = "SELECT * FROM livres WHERE id = :id";
+        $sql = "SELECT l.*, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur FROM livres l WHERE l.id = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -461,7 +498,7 @@ class LivreRepository {
      * Obtenir les livres récents
      */
     public function getRecentBooks($limit = 5) {
-        $stmt = $this->pdo->prepare("SELECT * FROM livres ORDER BY date_ajout DESC, id DESC LIMIT :limit");
+        $stmt = $this->pdo->prepare("SELECT l.*, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur FROM livres l ORDER BY l.date_ajout DESC, l.id DESC LIMIT :limit");
         $stmt->bindValue(':limit', max(1, (int)$limit), PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -522,7 +559,7 @@ class LivreRepository {
         $params = [];
 
         if (!empty($criteres['search'])) {
-            $conditions[] = "(titre LIKE :search OR auteur LIKE :search OR isbn LIKE :search OR serie LIKE :search)";
+            $conditions[] = "(titre LIKE :search OR " . AuteurRepository::sqlRechercheAuteur(':search') . " OR isbn LIKE :search OR serie LIKE :search)";
             $params[':search'] = '%' . $criteres['search'] . '%';
         }
 
@@ -624,7 +661,7 @@ class LivreRepository {
         $where = $this->buildAdvancedWhere($criteres);
         $sort = $this->advancedSortClause($criteres['sort'] ?? 'titre_asc');
 
-        $sql = "SELECT * FROM livres WHERE {$where['sql']} ORDER BY $sort LIMIT :limit OFFSET :offset";
+        $sql = "SELECT l.*, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur FROM livres l WHERE {$where['sql']} ORDER BY $sort LIMIT :limit OFFSET :offset";
         $stmt = $this->pdo->prepare($sql);
         foreach ($where['params'] as $key => $value) {
             $stmt->bindValue($key, $value);
@@ -640,7 +677,7 @@ class LivreRepository {
      */
     public function countBooksAdvanced(array $criteres) {
         $where = $this->buildAdvancedWhere($criteres);
-        $sql = "SELECT COUNT(*) FROM livres WHERE {$where['sql']}";
+        $sql = "SELECT COUNT(*) FROM livres l WHERE {$where['sql']}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($where['params']);
         return (int)$stmt->fetchColumn();

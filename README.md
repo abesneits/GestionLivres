@@ -133,7 +133,7 @@ Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la c
 |---|---|
 | `LivreRepository` | livres : ajout, modification, suppression, recherche simple et avancée, édition en masse, séries, pagination, couvertures |
 | `ListeRepository` | listes de lecture et ordre des livres |
-| `AuteurRepository` | biographies (Wikipédia / Wikidata), photos, regroupement par auteur, doublons et fusion |
+| `AuteurRepository` | biographies (Wikipédia / Wikidata), photos, liaison livres-auteurs (`livres_auteurs`), regroupement, doublons et fusion |
 | `TagRepository` | tags et catalogue de tags |
 | `SupportRepository` | types de support (Livre, Bande dessinée, Manga…) |
 | `AchatRepository` | achats à effectuer : liste, validation (ajout à la collection) |

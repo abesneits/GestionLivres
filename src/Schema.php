@@ -3,7 +3,7 @@
  * Schéma de la base : création des tables et migrations idempotentes
  * (CREATE TABLE IF NOT EXISTS + ALTER TABLE gardés), index.
  * ensureSchema() est appelé sur chaque page par includes/bootstrap.php.
- * Les tables listes, auteurs et tags sont créées par leurs propres repositories.
+ * Les tables listes, auteurs (et leur liaison avec les livres) et tags sont créées par leurs propres repositories.
  */
 class Schema {
     private $pdo;
@@ -13,8 +13,9 @@ class Schema {
     private $tags;
     private $formats;
     private $achats;
+    private $maintenance;
 
-    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags, FormatNumeriqueRepository $formats, AchatRepository $achats) {
+    public function __construct(PDO $pdo, SupportRepository $supports, ListeRepository $listes, AuteurRepository $auteurs, TagRepository $tags, FormatNumeriqueRepository $formats, AchatRepository $achats, Maintenance $maintenance) {
         $this->pdo = $pdo;
         $this->supports = $supports;
         $this->listes = $listes;
@@ -22,6 +23,7 @@ class Schema {
         $this->tags = $tags;
         $this->formats = $formats;
         $this->achats = $achats;
+        $this->maintenance = $maintenance;
     }
 
     /**
@@ -50,7 +52,20 @@ class Schema {
         $this->formats->createFormatsCatalogTable();
         $this->achats->createAchatsTable();
 
-        $this->markUpToDate($version);
+        // Liaison livres <-> auteurs, puis migration de l'ancienne colonne livres.auteur (idempotente). En cas d'échec, l'erreur est seulement journalisée
+        // pour ne pas bloquer toutes les pages, et la version n'est pas mémorisée : tout est
+        // retenté à la page suivante.
+        $liaisonPrete = false;
+        try {
+            $this->auteurs->createBookAuthorsTable();
+            $liaisonPrete = $this->migrerColonneAuteur();
+        } catch (Exception $e) {
+            error_log("Table livres_auteurs impossible à créer : " . $e->getMessage());
+        }
+
+        if ($liaisonPrete) {
+            $this->markUpToDate($version);
+        }
     }
 
     /**
@@ -89,6 +104,43 @@ class Schema {
     }
 
     /**
+     * Migration de l'ancien stockage des auteurs : le texte libre livres.auteur est remplacé par la
+     * table de liaison livres_auteurs. Tant que la colonne existe : on relie les livres qui n'ont pas
+     * encore de lien d'après leur texte, on vérifie qu'aucun nom n'est perdu, on enregistre une copie
+     * des textes dans backups/, puis on supprime la colonne. Sans copie ou sans lien complet, la colonne
+     * est conservée et tout sera retenté. Idempotent. Retourne false si la migration n'est pas terminée.
+     */
+    private function migrerColonneAuteur() {
+        if ($this->pdo->query("SHOW COLUMNS FROM livres LIKE 'auteur'")->rowCount() === 0) {
+            return true;
+        }
+
+        if (!$this->auteurs->backfillBookAuthors()) {
+            return false;
+        }
+
+        $manquants = $this->auteurs->countBooksWithUnlinkedAuthorText();
+        if ($manquants > 0) {
+            error_log("Colonne livres.auteur conservée : $manquants livre(s) ne sont pas reliés à leurs auteurs.");
+            return false;
+        }
+
+        try {
+            $textes = $this->pdo->query("SELECT id, auteur FROM livres WHERE auteur IS NOT NULL AND auteur != ''")->fetchAll(PDO::FETCH_KEY_PAIR);
+            $this->maintenance->writeBackupFile('colonne_auteur_' . date('Y-m-d_H-i-s') . '.json', [
+                'meta' => ['description' => "Copie du texte de livres.auteur avant suppression de la colonne (id du livre => texte)", 'date' => date('c')],
+                'livres_auteur' => $textes,
+            ]);
+        } catch (Exception $e) {
+            error_log("Colonne livres.auteur conservée : copie de sécurité impossible (" . $e->getMessage() . ")");
+            return false;
+        }
+
+        $this->pdo->exec("ALTER TABLE livres DROP COLUMN auteur");
+        return true;
+    }
+
+    /**
      * Créer la table si elle n'existe pas et vérifier/ajouter les nouvelles colonnes
      */
     public function createTable() {
@@ -98,7 +150,6 @@ class Schema {
             isbn VARCHAR(40) UNIQUE NOT NULL,
             titre VARCHAR(255) NOT NULL,
             support ENUM('Livre', 'Bande dessinée', 'Manga') NOT NULL,
-            auteur VARCHAR(255),
             date_publication VARCHAR(20),
             date_ajout TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )";
@@ -109,7 +160,7 @@ class Schema {
         $result = $this->pdo->query($checkColumn);
         
         if ($result->rowCount() == 0) {
-            $alterSql = "ALTER TABLE livres ADD COLUMN couverture TEXT AFTER auteur";
+            $alterSql = "ALTER TABLE livres ADD COLUMN couverture TEXT AFTER titre";
             $this->pdo->exec($alterSql);
             echo "<div class='message success'>Colonne 'couverture' ajoutée avec succès à la base de données !</div>";
         }
@@ -120,7 +171,7 @@ class Schema {
             'note_personnelle' => "ALTER TABLE livres ADD COLUMN note_personnelle TEXT AFTER description",
             'tags' => "ALTER TABLE livres ADD COLUMN tags VARCHAR(500) AFTER note_personnelle",
             'statut' => "ALTER TABLE livres ADD COLUMN statut ENUM('À lire', 'En cours', 'Lu', 'Abandonné') DEFAULT 'À lire' AFTER tags",
-            'serie' => "ALTER TABLE livres ADD COLUMN serie VARCHAR(255) NULL AFTER auteur",
+            'serie' => "ALTER TABLE livres ADD COLUMN serie VARCHAR(255) NULL AFTER titre",
             'tome' => "ALTER TABLE livres ADD COLUMN tome INT NULL AFTER serie",
             // Papier/Numérique : DEFAULT 'Papier' fait que MySQL affecte automatiquement
             // cette valeur à tous les livres existants dès l'ajout de la colonne.

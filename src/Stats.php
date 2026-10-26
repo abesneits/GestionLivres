@@ -175,31 +175,25 @@ class Stats {
     }
     
     /**
-     * Obtenir les statistiques par auteur.
-     * Le champ livres.auteur peut contenir plusieurs noms séparés par des virgules :
-     * chaque nom est compté séparément (comme sur la page des auteurs), et un
-     * livre écrit à deux compte pour chacun de ses auteurs.
+     * Obtenir les statistiques par auteur (via la table de liaison livres_auteurs) :
+     * un livre écrit à deux compte pour chacun de ses auteurs.
      */
     public function getAuthorStats($limit = 10) {
-        $sql = "SELECT auteur, COUNT(*) as count FROM livres WHERE auteur IS NOT NULL AND auteur != '' GROUP BY auteur";
-        $comptes = [];
-        foreach ($this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $noms = array_unique(array_filter(array_map('trim', explode(',', $row['auteur'])), 'strlen'));
-            foreach ($noms as $nom) {
-                $comptes[$nom] = ($comptes[$nom] ?? 0) + (int)$row['count'];
-            }
-        }
-
-        $resultat = [];
-        foreach ($comptes as $nom => $nb) {
-            $resultat[] = ['auteur' => (string)$nom, 'count' => $nb];
-        }
         // Plus de livres d'abord, puis ordre alphabétique à égalité
-        usort($resultat, function ($a, $b) {
-            return [$b['count'], mb_strtolower($a['auteur'])] <=> [$a['count'], mb_strtolower($b['auteur'])];
-        });
+        $stmt = $this->pdo->prepare(
+            "SELECT a.nom AS auteur, COUNT(*) AS count
+             FROM livres_auteurs la
+             JOIN auteurs a ON a.id = la.auteur_id
+             GROUP BY a.id, a.nom
+             ORDER BY count DESC, a.nom ASC
+             LIMIT :limite"
+        );
+        $stmt->bindValue(':limite', max(1, (int)$limit), PDO::PARAM_INT);
+        $stmt->execute();
 
-        return array_slice($resultat, 0, (int)$limit);
+        return array_map(function ($row) {
+            return ['auteur' => (string)$row['auteur'], 'count' => (int)$row['count']];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -208,13 +202,13 @@ class Stats {
     public function getRecentActivity($limit = 10) {
         $sql = "
             SELECT 
-                id,
-                titre,
-                auteur,
-                date_ajout as date,
+                l.id,
+                l.titre,
+                " . AuteurRepository::sqlTexteAuteurs() . " AS auteur,
+                l.date_ajout as date,
                 'added' as action
-            FROM livres 
-            ORDER BY date_ajout DESC 
+            FROM livres l
+            ORDER BY l.date_ajout DESC 
             LIMIT :limit
         ";
         

@@ -2785,6 +2785,25 @@ textarea:focus {
     gap: 15px;
 }
 
+/* Tuile en colonne : un nom de table long (livres_auteurs) ne doit pas faire déborder le contenu */
+.db-table-list .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 15px 18px;
+    min-width: 0;
+}
+
+.db-table-list .stat-card .stat-number {
+    font-size: 2em;
+    white-space: nowrap;
+}
+
+.db-table-list .stat-card .stat-label {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
 .danger-zone {
     border: 2px solid #dc3545;
     background: #fff5f5;

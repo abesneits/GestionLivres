@@ -161,7 +161,7 @@ class ListeRepository {
      * Obtenir les livres d'une liste (triés par ordre)
      */
     public function getBooksInList($listeId) {
-        $sql = "SELECT l.*, ll.ordre as ordre_liste, ll.date_ajout as date_ajout_liste 
+        $sql = "SELECT l.*, " . AuteurRepository::sqlTexteAuteurs() . " AS auteur, ll.ordre as ordre_liste, ll.date_ajout as date_ajout_liste 
                 FROM livres l 
                 INNER JOIN livres_listes ll ON l.id = ll.livre_id 
                 WHERE ll.liste_id = :liste_id 

@@ -2,8 +2,9 @@
 /**
  * Auteurs : biographies (Wikipédia / Wikidata), photos, regroupement par auteur,
  * détection des doublons et fusion.
- * Tables : auteurs et auteurs_doublons_ignores. Le lien avec les livres se fait
- * uniquement par le champ texte livres.auteur (pas de clé étrangère).
+ * Tables : auteurs, auteurs_doublons_ignores et livres_auteurs (liaison avec les livres,
+ * avec clés étrangères). livres.auteur reste un texte d'affichage « Nom1, Nom2 », régénéré
+ * par setBookAuthors(), le seul point d'écriture des auteurs d'un livre.
  */
 class AuteurRepository {
     // Particules qui font partie du nom de famille (« de Saint-Exupéry », « Le Guin »)
@@ -48,17 +49,205 @@ class AuteurRepository {
     }
 
     /**
-     * Regrouper tous les livres de la collection par auteur
-     * (le champ auteur est un texte libre, éventuellement plusieurs noms séparés par des virgules)
+     * Créer la table de liaison livres <-> auteurs (un livre peut avoir plusieurs auteurs,
+     * dans un ordre). À appeler après la création des tables livres et auteurs.
+     * Les liens sont supprimés automatiquement avec le livre ou l'auteur.
+     */
+    public function createBookAuthorsTable() {
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS livres_auteurs (
+            livre_id INT NOT NULL,
+            auteur_id INT NOT NULL,
+            ordre SMALLINT NOT NULL DEFAULT 0,
+            PRIMARY KEY (livre_id, auteur_id),
+            KEY idx_livres_auteurs_auteur (auteur_id),
+            CONSTRAINT fk_livres_auteurs_livre FOREIGN KEY (livre_id) REFERENCES livres(id) ON DELETE CASCADE,
+            CONSTRAINT fk_livres_auteurs_auteur FOREIGN KEY (auteur_id) REFERENCES auteurs(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB");
+    }
+
+    /**
+     * Expression SQL du texte d'affichage « Nom1, Nom2 » des auteurs d'un livre (dans l'ordre),
+     * à utiliser comme colonne : « SELECT l.*, <expression> AS auteur FROM livres l ».
+     * $alias est l'alias de la table livres dans la requête. Chaîne vide si le livre n'a pas d'auteur.
+     */
+    public static function sqlTexteAuteurs($alias = 'l') {
+        return "COALESCE((SELECT GROUP_CONCAT(a.nom ORDER BY la.ordre SEPARATOR ', ')
+                          FROM livres_auteurs la JOIN auteurs a ON a.id = la.auteur_id
+                          WHERE la.livre_id = $alias.id), '')";
+    }
+
+    /**
+     * Condition SQL « un des auteurs du livre contient le motif $parametre » (ex. ':search'),
+     * pour les recherches textuelles ; ignore casse et accents comme le reste de la base.
+     */
+    public static function sqlRechercheAuteur($parametre, $alias = 'l') {
+        return "EXISTS (SELECT 1 FROM livres_auteurs la JOIN auteurs a ON a.id = la.auteur_id
+                        WHERE la.livre_id = $alias.id AND a.nom LIKE $parametre)";
+    }
+
+    /**
+     * Migration depuis l'ancien stockage : relie les livres qui n'ont encore aucun lien à leurs
+     * auteurs d'après le texte de la colonne livres.auteur (noms séparés par des virgules).
+     * Ne sert que tant que cette colonne existe (voir Schema::migrerColonneAuteur()). Idempotent.
+     * Retourne false en cas d'erreur (rien n'est alors modifié).
+     */
+    public function backfillBookAuthors() {
+        try {
+            $livres = $this->pdo->query(
+                "SELECT l.id, l.auteur FROM livres l
+                 WHERE l.auteur IS NOT NULL AND l.auteur != ''
+                   AND NOT EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.livre_id = l.id)"
+            )->fetchAll(PDO::FETCH_KEY_PAIR);
+
+            $this->linkBooksFromTexts($livres);
+            return true;
+        } catch (Exception $e) {
+            error_log("Reprise des auteurs des livres impossible : " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Relie des livres à leurs auteurs d'après des textes « Nom1, Nom2 » (id du livre => texte).
+     * Sert à la migration et à la restauration d'une sauvegarde qui n'a pas de liens.
+     * Tout ou rien (rejoint la transaction en cours, sinon en ouvre une).
+     */
+    public function linkBooksFromTexts(array $textesParLivre) {
+        if (!$textesParLivre) {
+            return;
+        }
+
+        $propreTransaction = !$this->pdo->inTransaction();
+        if ($propreTransaction) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            foreach ($textesParLivre as $livreId => $texte) {
+                $this->linkBookToAuthors($livreId, $this->parseAuthorNames($texte));
+            }
+            if ($propreTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (Exception $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Nombre de livres dont le texte livres.auteur contient des noms mais qui n'ont aucun lien
+     * (0 = la table de liaison est complète : la colonne peut être supprimée sans perte).
+     */
+    public function countBooksWithUnlinkedAuthorText() {
+        $livres = $this->pdo->query(
+            "SELECT l.id, l.auteur FROM livres l
+             WHERE l.auteur IS NOT NULL AND l.auteur != ''
+               AND NOT EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.livre_id = l.id)"
+        )->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $nb = 0;
+        foreach ($livres as $texte) {
+            if ($this->parseAuthorNames($texte)) {
+                $nb++;
+            }
+        }
+        return $nb;
+    }
+
+    /**
+     * Point d'entrée UNIQUE pour définir les auteurs d'un livre : tout ajout ou modification
+     * d'un livre passe par ici. Remplace les liens du livre par ceux du texte « Nom1, Nom2 »
+     * (dans l'ordre saisi) ; les auteurs inconnus sont créés, les connus réutilisés quelle que
+     * soit la casse ou les accents. Un texte sans nom exploitable (vide, « Auteur non
+     * disponible ») laisse le livre sans auteur.
+     * S'intègre à la transaction en cours, sinon en ouvre une.
+     */
+    public function setBookAuthors($livreId, $texte) {
+        $propreTransaction = !$this->pdo->inTransaction();
+        if ($propreTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $this->linkBookToAuthors($livreId, $this->parseAuthorNames($texte));
+
+            if ($propreTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (Exception $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Découpe un texte « Nom1, Nom2 » en noms d'auteurs (espaces de bord retirés, doublons
+     * et valeur de remplacement « Auteur non disponible » écartés).
+     */
+    private function parseAuthorNames($texte) {
+        $noms = [];
+        foreach (explode(',', (string)$texte) as $nom) {
+            $nom = trim($nom);
+            if ($nom === '' || mb_strtolower($nom, 'UTF-8') === 'auteur non disponible') {
+                continue;
+            }
+            $noms[] = $nom;
+        }
+        return $noms;
+    }
+
+    /**
+     * Remplace les liens d'un livre par ceux de la liste de noms (les auteurs inconnus sont créés).
+     * Retourne les noms enregistrés, dans l'ordre, sans doublon (la comparaison de la base ignore
+     * casse et accents : « eric schmitt » et « Éric Schmitt » désignent le même auteur).
+     */
+    private function linkBookToAuthors($livreId, array $noms) {
+        $this->pdo->prepare("DELETE FROM livres_auteurs WHERE livre_id = :id")->execute([':id' => $livreId]);
+
+        $cherche = $this->pdo->prepare("SELECT id, nom FROM auteurs WHERE nom = :nom");
+        $cree = $this->pdo->prepare("INSERT INTO auteurs (nom) VALUES (:nom)");
+        $lie = $this->pdo->prepare("INSERT INTO livres_auteurs (livre_id, auteur_id, ordre) VALUES (:livre, :auteur, :ordre)");
+
+        $vus = [];
+        $nomsEnregistres = [];
+        foreach ($noms as $nom) {
+            $cherche->execute([':nom' => $nom]);
+            $auteur = $cherche->fetch(PDO::FETCH_ASSOC);
+            if (!$auteur) {
+                $cree->execute([':nom' => $nom]);
+                $auteur = ['id' => $this->pdo->lastInsertId(), 'nom' => $nom];
+            }
+            if (isset($vus[$auteur['id']])) {
+                continue;
+            }
+            $vus[$auteur['id']] = true;
+            $lie->execute([':livre' => $livreId, ':auteur' => $auteur['id'], ':ordre' => count($nomsEnregistres)]);
+            $nomsEnregistres[] = $auteur['nom'];
+        }
+
+        return $nomsEnregistres;
+    }
+
+    /**
+     * Regrouper tous les livres de la collection par auteur (via la table de liaison livres_auteurs)
      */
     public function getAllAuthorsWithBooks($search = null, $support = null, $tag = null, $sort = 'alpha', $missingBioOnly = false) {
-        $sql = "SELECT id, titre, auteur, couverture, statut, support, tags, date_ajout
-                FROM livres
-                WHERE auteur IS NOT NULL AND auteur != ''";
+        $sql = "SELECT l.id, l.titre, l.couverture, l.statut, l.support, l.tags, l.date_ajout,
+                       a.id AS auteur_id, a.nom AS auteur_nom, a.image_url AS auteur_image,
+                       a.prenom AS auteur_prenom, a.nom_famille AS auteur_nom_famille,
+                       (a.biographie IS NOT NULL AND a.biographie != '') AS auteur_a_bio
+                FROM livres_auteurs la
+                JOIN livres l ON l.id = la.livre_id
+                JOIN auteurs a ON a.id = la.auteur_id
+                WHERE 1=1";
         $params = [];
 
         if ($support) {
-            $sql .= " AND support = :support";
+            $sql .= " AND l.support = :support";
             $params[':support'] = $support;
         }
 
@@ -69,25 +258,36 @@ class AuteurRepository {
             $params = array_merge($params, $cond['params']);
         }
 
-        $sql .= " ORDER BY titre ASC";
+        $sql .= " ORDER BY l.titre ASC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $colonnesLivre = array_flip(['id', 'titre', 'couverture', 'statut', 'support', 'tags', 'date_ajout']);
         $authors = [];
-        foreach ($books as $book) {
-            $noms = array_filter(array_map('trim', explode(',', $book['auteur'])));
-            foreach ($noms as $nom) {
-                if (!isset($authors[$nom])) {
-                    $authors[$nom] = [
-                        'nom' => $nom,
-                        'livres' => [],
-                        'image_url' => null,
-                    ];
-                }
-                $authors[$nom]['livres'][] = $book;
+        foreach ($lignes as $ligne) {
+            $nom = $ligne['auteur_nom'];
+            if (!isset($authors[$nom])) {
+                // Prénom / nom de famille corrigés à la main ; sinon ils sont devinés
+                $parties = ($ligne['auteur_nom_famille'] !== null && $ligne['auteur_nom_famille'] !== '')
+                    ? ['prenom' => (string)$ligne['auteur_prenom'], 'nom_famille' => $ligne['auteur_nom_famille']]
+                    : $this->devinerPrenomNom($nom);
+
+                $authors[$nom] = [
+                    'id' => (int)$ligne['auteur_id'],
+                    'nom' => $nom,
+                    'livres' => [],
+                    'image_url' => $ligne['auteur_image'] !== null && $ligne['auteur_image'] !== '' ? $ligne['auteur_image'] : null,
+                    'a_une_biographie' => (bool)$ligne['auteur_a_bio'],
+                    'prenom' => $parties['prenom'],
+                    'nom_famille' => $parties['nom_famille'],
+                    // Sans prénom (« Voltaire »), le nom unique sert de repère pour le tri par prénom
+                    'cle_nom' => $this->cleTriNom($parties['nom_famille']),
+                    'cle_prenom' => $this->normalizeAuthorName($parties['prenom'] !== '' ? $parties['prenom'] : $parties['nom_famille']),
+                ];
             }
+            $authors[$nom]['livres'][] = array_intersect_key($ligne, $colonnesLivre);
         }
 
         if ($search) {
@@ -95,37 +295,6 @@ class AuteurRepository {
             $authors = array_filter($authors, function($a) use ($search) {
                 return mb_strpos(mb_strtolower($a['nom'], 'UTF-8'), $search) !== false;
             });
-        }
-
-        if (!empty($authors)) {
-            $photos = $this->pdo->query("SELECT nom, image_url FROM auteurs WHERE image_url IS NOT NULL AND image_url != ''")
-                ->fetchAll(PDO::FETCH_KEY_PAIR);
-            $biosPresentes = $this->pdo->query("SELECT nom FROM auteurs WHERE biographie IS NOT NULL AND biographie != ''")
-                ->fetchAll(PDO::FETCH_COLUMN);
-            $biosPresentes = array_flip($biosPresentes);
-
-            // Prénom / nom de famille corrigés à la main ; sinon ils sont devinés
-            $nomsSaisis = [];
-            foreach ($this->pdo->query("SELECT nom, prenom, nom_famille FROM auteurs WHERE nom_famille IS NOT NULL AND nom_famille != ''")->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
-                $nomsSaisis[$ligne['nom']] = $ligne;
-            }
-
-            foreach ($authors as $nom => &$auteur) {
-                if (isset($photos[$nom])) {
-                    $auteur['image_url'] = $photos[$nom];
-                }
-                $auteur['a_une_biographie'] = isset($biosPresentes[$nom]);
-
-                $parties = isset($nomsSaisis[$nom])
-                    ? ['prenom' => (string)$nomsSaisis[$nom]['prenom'], 'nom_famille' => $nomsSaisis[$nom]['nom_famille']]
-                    : $this->devinerPrenomNom($nom);
-                $auteur['prenom'] = $parties['prenom'];
-                $auteur['nom_famille'] = $parties['nom_famille'];
-                $auteur['cle_nom'] = $this->cleTriNom($parties['nom_famille']);
-                // Sans prénom (« Voltaire »), le nom unique sert de repère pour le tri par prénom
-                $auteur['cle_prenom'] = $this->normalizeAuthorName($parties['prenom'] !== '' ? $parties['prenom'] : $parties['nom_famille']);
-            }
-            unset($auteur);
         }
 
         if ($missingBioOnly) {
@@ -691,7 +860,8 @@ class AuteurRepository {
     }
 
     /**
-     * Indique si un auteur de ce nom existe déjà dans la collection.
+     * Indique si un auteur de ce nom existe dans la collection (au moins un livre lui est rattaché).
+     * La comparaison ignore la casse et les accents, comme l'unicité des noms en base.
      */
     public function authorExists($nom) {
         $nom = trim($nom);
@@ -699,18 +869,22 @@ class AuteurRepository {
             return false;
         }
 
-        // La base ne garde que les livres dont le texte « auteur » contient ce nom ;
-        // PHP vérifie ensuite la correspondance exacte, nom par nom.
-        $stmt = $this->pdo->prepare("SELECT auteur FROM livres WHERE auteur LIKE :motif");
-        $stmt->execute([':motif' => '%' . addcslashes($nom, '\\%_') . '%']);
-        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $texte) {
-            foreach (array_map('trim', explode(',', $texte)) as $candidat) {
-                if ($candidat === $nom) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM auteurs a JOIN livres_auteurs la ON la.auteur_id = a.id WHERE a.nom = :nom LIMIT 1"
+        );
+        $stmt->execute([':nom' => $nom]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Deux noms désignent-ils le même auteur en base ? (« victor hugo » et « Victor Hugo » : oui)
+     */
+    public function isSameAuthor($nomA, $nomB) {
+        $stmt = $this->pdo->prepare(
+            "SELECT (SELECT id FROM auteurs WHERE nom = :a) = (SELECT id FROM auteurs WHERE nom = :b)"
+        );
+        $stmt->execute([':a' => trim($nomA), ':b' => trim($nomB)]);
+        return (bool)$stmt->fetchColumn();
     }
 
     /**
@@ -722,8 +896,11 @@ class AuteurRepository {
     }
 
     /**
-     * Fusionner un ou plusieurs noms d'auteur vers un nom canonique
-     * Met à jour le champ auteur de tous les livres concernés
+     * Renommer ou fusionner des auteurs : tous les livres des anciens noms sont rattachés
+     * à l'auteur cible, qui garde sa fiche (biographie, photo, métadonnées).
+     * - si l'auteur cible existe déjà, sa fiche est conservée et celles des anciens noms sont supprimées ;
+     * - sinon la fiche d'un ancien nom (de préférence avec biographie) est renommée au lieu d'être perdue.
+     * Retourne le nombre de livres rattachés aux anciens noms (ceux dont l'auteur change ou est renommé).
      */
     public function mergeAuthors($sourceNames, $targetName) {
         $sourceNames = array_values(array_filter(array_map('trim', (array)$sourceNames)));
@@ -733,41 +910,77 @@ class AuteurRepository {
             throw new Exception("Noms invalides pour la fusion.");
         }
 
-        $stmt = $this->pdo->query("SELECT id, auteur FROM livres WHERE auteur IS NOT NULL AND auteur != ''");
-        $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $update = $this->pdo->prepare("UPDATE livres SET auteur = :auteur WHERE id = :id");
-        $livresModifies = 0;
+        $cherche = $this->pdo->prepare("SELECT id, biographie FROM auteurs WHERE nom = :nom");
 
         // Tout ou rien : une erreur au milieu ne laisse pas des auteurs à moitié fusionnés
         $this->pdo->beginTransaction();
         try {
-            foreach ($books as $book) {
-                $noms = array_filter(array_map('trim', explode(',', $book['auteur'])));
-                $nouveauxNoms = [];
+            $cherche->execute([':nom' => $targetName]);
+            $cible = $cherche->fetch(PDO::FETCH_ASSOC);
+            $idCible = $cible ? (int)$cible['id'] : null;
 
-                foreach ($noms as $nom) {
-                    if (in_array($nom, $sourceNames, true)) {
-                        $nom = $targetName;
-                    }
-                    $nouveauxNoms[] = $nom;
-                }
-
-                $nouveauxNoms = array_values(array_unique($nouveauxNoms));
-                $nouvelAuteur = implode(', ', $nouveauxNoms);
-
-                if ($nouvelAuteur !== $book['auteur']) {
-                    $update->execute([
-                        ':auteur' => $nouvelAuteur,
-                        ':id' => $book['id']
-                    ]);
-                    $livresModifies++;
+            // Fiches des anciens noms (la comparaison de MySQL ignore la casse : « victor hugo » = « Victor Hugo »)
+            $fichesSources = [];
+            foreach ($sourceNames as $nom) {
+                $cherche->execute([':nom' => $nom]);
+                $fiche = $cherche->fetch(PDO::FETCH_ASSOC);
+                if ($fiche) {
+                    $fichesSources[(int)$fiche['id']] = $fiche;
                 }
             }
 
-            $this->transfererFicheAuteur($sourceNames, $targetName);
+            // Fiche conservée : celle du nom cible, sinon la meilleure fiche d'un ancien nom
+            $idGarde = $idCible;
+            if ($idGarde === null) {
+                foreach ($fichesSources as $id => $fiche) {
+                    if ($idGarde === null || (trim((string)$fiche['biographie']) !== '' && trim((string)$fichesSources[$idGarde]['biographie']) === '')) {
+                        $idGarde = $id;
+                    }
+                }
+            }
+            if ($idGarde === null) {
+                $this->pdo->commit();
+                return 0;
+            }
 
-        $this->pdo->commit();
+            // Livres concernés (comptés avant le rattachement)
+            $livresModifies = 0;
+            if ($fichesSources) {
+                $marqueurs = implode(',', array_fill(0, count($fichesSources), '?'));
+                $stmt = $this->pdo->prepare("SELECT COUNT(DISTINCT livre_id) FROM livres_auteurs WHERE auteur_id IN ($marqueurs)");
+                $stmt->execute(array_keys($fichesSources));
+                $livresModifies = (int)$stmt->fetchColumn();
+            }
+
+            // Rattacher les livres des autres fiches à la fiche conservée, puis les supprimer
+            // (INSERT IGNORE : un livre qui avait déjà les deux auteurs n'en garde qu'un)
+            $rattache = $this->pdo->prepare(
+                "INSERT IGNORE INTO livres_auteurs (livre_id, auteur_id, ordre)
+                 SELECT livre_id, :garde, ordre FROM livres_auteurs WHERE auteur_id = :source"
+            );
+            $supprime = $this->pdo->prepare("DELETE FROM auteurs WHERE id = :id");
+            foreach (array_keys($fichesSources) as $idSource) {
+                if ($idSource !== $idGarde) {
+                    $rattache->execute([':garde' => $idGarde, ':source' => $idSource]);
+                    $supprime->execute([':id' => $idSource]);
+                }
+            }
+
+            // La fiche conservée prend exactement le nom cible (casse comprise)
+            $stmt = $this->pdo->prepare("UPDATE auteurs SET nom = :nom WHERE id = :id");
+            $stmt->execute([':nom' => $targetName, ':id' => $idGarde]);
+
+            // Un prénom / nom de famille corrigé à la main ne vaut plus s'il ne figure plus dans le nom :
+            // on revient alors à la détection automatique
+            $stmt = $this->pdo->prepare("SELECT nom_famille FROM auteurs WHERE id = :id");
+            $stmt->execute([':id' => $idGarde]);
+            $nomFamille = (string)$stmt->fetchColumn();
+            if ($nomFamille !== '' && mb_strpos($targetName, $nomFamille, 0, 'UTF-8') === false) {
+                $stmt = $this->pdo->prepare("UPDATE auteurs SET prenom = NULL, nom_famille = NULL WHERE id = :id");
+                $stmt->execute([':id' => $idGarde]);
+            }
+
+            $this->pdo->commit();
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
@@ -776,69 +989,5 @@ class AuteurRepository {
         }
 
         return $livresModifies;
-    }
-
-    /**
-     * Après un renommage ou une fusion, garde une seule fiche (biographie, photo, métadonnées)
-     * sous le nom cible : celle du nom cible si elle existe déjà, sinon celle d'un ancien nom
-     * (de préférence une fiche qui a une biographie), qui est alors renommée au lieu d'être perdue.
-     * Les autres fiches des anciens noms sont supprimées.
-     * Appelée dans la transaction de mergeAuthors().
-     */
-    private function transfererFicheAuteur(array $sourceNames, $targetName) {
-        $cherche = $this->pdo->prepare("SELECT id, biographie FROM auteurs WHERE nom = :nom");
-
-        // Fiche du nom cible (la comparaison de MySQL ignore la casse : « victor hugo » = « Victor Hugo »)
-        $cherche->execute([':nom' => $targetName]);
-        $ficheCible = $cherche->fetch(PDO::FETCH_ASSOC);
-        $idGarde = $ficheCible ? (int)$ficheCible['id'] : null;
-
-        // Fiches des anciens noms
-        $fichesSources = [];
-        foreach ($sourceNames as $nom) {
-            if ($nom === $targetName) {
-                continue;
-            }
-            $cherche->execute([':nom' => $nom]);
-            $fiche = $cherche->fetch(PDO::FETCH_ASSOC);
-            if ($fiche) {
-                $fichesSources[(int)$fiche['id']] = $fiche;
-            }
-        }
-
-        if ($idGarde === null && $fichesSources) {
-            // Pas de fiche sous le nouveau nom : on récupère celle d'un ancien nom, de préférence avec biographie
-            foreach ($fichesSources as $id => $fiche) {
-                if ($idGarde === null || (trim((string)$fiche['biographie']) !== '' && trim((string)$fichesSources[$idGarde]['biographie']) === '')) {
-                    $idGarde = $id;
-                }
-            }
-        }
-
-        // Supprimer les fiches en trop
-        $supprime = $this->pdo->prepare("DELETE FROM auteurs WHERE id = :id");
-        foreach (array_keys($fichesSources) as $id) {
-            if ($id !== $idGarde) {
-                $supprime->execute([':id' => $id]);
-            }
-        }
-
-        if ($idGarde === null) {
-            return;
-        }
-
-        // La fiche conservée prend exactement le nom cible (casse comprise)
-        $stmt = $this->pdo->prepare("UPDATE auteurs SET nom = :nom WHERE id = :id");
-        $stmt->execute([':nom' => $targetName, ':id' => $idGarde]);
-
-        // Un prénom / nom de famille corrigé à la main ne vaut plus s'il ne figure plus dans le nom :
-        // on revient alors à la détection automatique
-        $stmt = $this->pdo->prepare("SELECT nom_famille FROM auteurs WHERE id = :id");
-        $stmt->execute([':id' => $idGarde]);
-        $nomFamille = (string)$stmt->fetchColumn();
-        if ($nomFamille !== '' && mb_strpos($targetName, $nomFamille, 0, 'UTF-8') === false) {
-            $stmt = $this->pdo->prepare("UPDATE auteurs SET prenom = NULL, nom_famille = NULL WHERE id = :id");
-            $stmt->execute([':id' => $idGarde]);
-        }
     }
 }

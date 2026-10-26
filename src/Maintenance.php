@@ -5,9 +5,11 @@
  */
 class Maintenance {
     private $pdo;
+    private $auteurs;
 
-    public function __construct(PDO $pdo) {
+    public function __construct(PDO $pdo, AuteurRepository $auteurs) {
         $this->pdo = $pdo;
+        $this->auteurs = $auteurs;
     }
 
     /**
@@ -37,6 +39,7 @@ class Maintenance {
             'meta' => ['version' => 1, 'date' => date('c')],
             'auteurs' => $this->pdo->query("SELECT * FROM auteurs")->fetchAll(PDO::FETCH_ASSOC),
             'livres' => $this->pdo->query("SELECT * FROM livres")->fetchAll(PDO::FETCH_ASSOC),
+            'livres_auteurs' => $this->pdo->query("SELECT * FROM livres_auteurs")->fetchAll(PDO::FETCH_ASSOC),
             'listes_lecture' => $this->pdo->query("SELECT * FROM listes_lecture")->fetchAll(PDO::FETCH_ASSOC),
             'livres_listes' => $this->pdo->query("SELECT * FROM livres_listes")->fetchAll(PDO::FETCH_ASSOC),
             'tags_catalogue' => $this->pdo->query("SELECT * FROM tags_catalogue")->fetchAll(PDO::FETCH_ASSOC),
@@ -45,26 +48,40 @@ class Maintenance {
     }
 
     /**
-     * Enregistre sur le serveur une copie de l'état actuel (dossier backups/, interdit
-     * d'accès depuis le web) juste avant une restauration, et ne garde que les 10 plus
-     * récentes. Retourne le nom du fichier créé.
+     * Écrit un fichier JSON dans le dossier backups/ (créé au besoin, interdit d'accès depuis le web).
+     * Lève une exception si le dossier ou le fichier ne peut pas être écrit.
      */
-    private function saveSafetyBackup() {
+    public function writeBackupFile($nom, array $data) {
         $dossier = 'backups';
         if (!is_dir($dossier) && !mkdir($dossier, 0755, true)) {
-            throw new Exception("Impossible de créer le dossier de sauvegarde de sécurité : restauration annulée.");
+            throw new Exception("Impossible de créer le dossier de sauvegarde backups/.");
         }
         $htaccess = $dossier . '/.htaccess';
         if (!file_exists($htaccess)) {
             file_put_contents($htaccess, "# Sauvegardes : jamais accessibles depuis le web\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>\n");
         }
 
-        $nom = 'avant_restauration_' . date('Y-m-d_H-i-s') . '.json';
-        $json = json_encode($this->buildBackupData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         if ($json === false || file_put_contents($dossier . '/' . $nom, $json, LOCK_EX) === false) {
-            throw new Exception("Impossible d'enregistrer la sauvegarde de sécurité : restauration annulée.");
+            throw new Exception("Impossible d'enregistrer la sauvegarde $nom.");
+        }
+        return $nom;
+    }
+
+    /**
+     * Enregistre sur le serveur une copie de l'état actuel (dossier backups/, interdit
+     * d'accès depuis le web) juste avant une restauration, et ne garde que les 10 plus
+     * récentes. Retourne le nom du fichier créé.
+     */
+    private function saveSafetyBackup() {
+        $nom = 'avant_restauration_' . date('Y-m-d_H-i-s') . '.json';
+        try {
+            $this->writeBackupFile($nom, $this->buildBackupData());
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage() . " Restauration annulée.");
         }
 
+        $dossier = 'backups';
         $anciennes = glob($dossier . '/avant_restauration_*.json');
         sort($anciennes);
         foreach (array_slice($anciennes, 0, max(0, count($anciennes) - 10)) as $ancienne) {
@@ -96,6 +113,7 @@ class Maintenance {
 
             // Ordre enfants -> parents pour respecter les contraintes de clé étrangère
             $this->pdo->exec("DELETE FROM livres_listes");
+            $this->pdo->exec("DELETE FROM livres_auteurs");
             $this->pdo->exec("DELETE FROM livres");
             $this->pdo->exec("DELETE FROM listes_lecture");
             $this->pdo->exec("DELETE FROM auteurs");
@@ -103,6 +121,21 @@ class Maintenance {
             // Ordre parents -> enfants pour la réinsertion
             $this->insertRows('auteurs', $data['auteurs']);
             $this->insertRows('livres', $data['livres']);
+
+            // Liens livres <-> auteurs : repris du fichier. Une ancienne sauvegarde qui n'en a pas
+            // (la colonne texte livres.auteur n'existe plus, insertRows() l'ignore) : les liens sont
+            // reconstruits d'après ce texte.
+            if (isset($data['livres_auteurs']) && is_array($data['livres_auteurs'])) {
+                $this->insertRows('livres_auteurs', $data['livres_auteurs']);
+            } else {
+                $textes = [];
+                foreach ($data['livres'] as $livre) {
+                    if (isset($livre['id']) && trim((string)($livre['auteur'] ?? '')) !== '') {
+                        $textes[$livre['id']] = $livre['auteur'];
+                    }
+                }
+                $this->auteurs->linkBooksFromTexts($textes);
+            }
             $this->insertRows('listes_lecture', $data['listes_lecture']);
             $this->insertRows('livres_listes', $data['livres_listes']);
 
@@ -171,7 +204,7 @@ class Maintenance {
      * Lance OPTIMIZE TABLE sur chacune des tables de l'application.
      */
     public function optimizeTables() {
-        $tables = ['livres', 'listes_lecture', 'livres_listes', 'auteurs'];
+        $tables = ['livres', 'listes_lecture', 'livres_listes', 'auteurs', 'livres_auteurs'];
         $resultats = [];
 
         foreach ($tables as $table) {
@@ -188,7 +221,7 @@ class Maintenance {
      * version du serveur, index existants) pour la page outils.
      */
     public function getDatabaseInfo() {
-        $tables = ['livres', 'listes_lecture', 'livres_listes', 'auteurs'];
+        $tables = ['livres', 'listes_lecture', 'livres_listes', 'auteurs', 'livres_auteurs'];
         $info = [
             'version' => $this->pdo->query("SELECT VERSION()")->fetchColumn(),
             'tables' => [],
