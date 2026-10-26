@@ -93,7 +93,7 @@ renderHead('Supprimer un livre - Ma Collection');
                             <tr class="delete-row">
                                 <td class="cover-cell">
                                     <?php $imageUrl = getImageUrl($book['couverture']); ?>
-                                    <img src="<?= h($imageUrl) ?>" 
+                                    <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>"
                                          class="cover-image-small"
                                          onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder-small&quot;><?= h(icone('livres')) ?></div>';">

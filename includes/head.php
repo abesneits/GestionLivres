@@ -24,7 +24,7 @@ function renderHead($title = "Ma Collection de Livres", $description = "Gérez v
             if (localStorage.getItem('menu') === 'reduit') document.documentElement.setAttribute('data-menu', 'reduit');
         } catch (e) {}
     </script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="<?= urlAsset("style.css") ?>">
 </head>
 <?php
 }

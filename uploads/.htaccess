@@ -46,3 +46,10 @@
     AddType image/gif .gif
     AddType image/webp .webp
 </IfModule>
+
+# Cache : le nom d'un fichier envoyé (couverture, photo) ne change jamais de contenu
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+</IfModule>

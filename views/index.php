@@ -151,7 +151,7 @@ renderHead('Ma Collection');
                         <div class="book-card-header">
                             <div class="book-card-cover">
                                 <?php $imageUrl = getImageUrl($book['couverture']); ?>
-                                <img src="<?= h($imageUrl) ?>" 
+                                <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>" 
                                      alt="Couverture de <?= h($book['titre']) ?>"
                                      onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                             </div>
@@ -230,7 +230,7 @@ renderHead('Ma Collection');
                             <tr>
                                 <td>
                                     <?php $imageUrl = getImageUrl($book['couverture']); ?>
-                                    <img src="<?= h($imageUrl) ?>" 
+                                    <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>" 
                                          class="cover-image"
                                          onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
@@ -472,8 +472,8 @@ renderHead('Ma Collection');
         </div>
     <?php endif; ?>
     
-    <script src="tag-input.js"></script>
-    <script src="auteur-input.js"></script>
+    <script src="<?= urlAsset("tag-input.js") ?>"></script>
+    <script src="<?= urlAsset("auteur-input.js") ?>"></script>
     <script>initAuteurInput(document.getElementById('auteur'), <?= json_encode($allAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, <?= json_encode($rolesAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);</script>
     <script>
         // Gestion de la modal

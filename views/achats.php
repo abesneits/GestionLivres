@@ -55,7 +55,7 @@ $libellesPriorite = [1 => 'Haute', 2 => 'Normale', 3 => 'Basse'];
                 <div class="book-item">
                     <div class="book-item-cover">
                         <?php if ($a['couverture']): ?>
-                            <img src="<?= h(getImageUrl($a['couverture'])) ?>" alt="Couverture de <?= h($a['titre']) ?>">
+                            <img loading="lazy" decoding="async" src="<?= h(getImageUrl($a['couverture'])) ?>" alt="Couverture de <?= h($a['titre']) ?>">
                         <?php else: ?>
                             <div class="cover-placeholder-small"><?= icone('livres') ?></div>
                         <?php endif; ?>
@@ -199,8 +199,8 @@ $libellesPriorite = [1 => 'Haute', 2 => 'Normale', 3 => 'Basse'];
         </div>
     </div>
 
-    <script src="tag-input.js"></script>
-    <script src="auteur-input.js"></script>
+    <script src="<?= urlAsset("tag-input.js") ?>"></script>
+    <script src="<?= urlAsset("auteur-input.js") ?>"></script>
     <script>initAuteurInput(document.getElementById('auteur'), <?= json_encode($allAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, <?= json_encode($rolesAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);</script>
     <script>
         const allTags = <?= json_encode($allTags, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;

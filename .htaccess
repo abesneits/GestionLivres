@@ -18,3 +18,22 @@ Options -Indexes
     # Code interne : jamais appelé directement depuis le navigateur
     RedirectMatch 403 (^|/)(src|includes|views|backups)/
 </IfModule>
+
+# Compression des pages, styles et scripts
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+
+# Cache navigateur : style.css et les .js portent un « ?v=date » (voir urlAsset()), donc ils changent d'adresse
+# à chaque modification ; les images et icônes ne changent pas pour une même adresse.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 month"
+</IfModule>

@@ -31,6 +31,15 @@ define('LOGIN_LOCK_SECONDS', 300);  // durée du blocage (5 minutes), et durée 
 define('JOURNAL_TAILLE_MAX', 1048576); // 1 Mo : au-delà, le journal est archivé en « .1 » (voir ecrireJournal())
 
 /**
+ * Adresse d'une ressource statique (CSS, JS) suivie de sa date de modification : le navigateur peut
+ * la garder longtemps en cache (voir .htaccess), et la recharge dès que le fichier change.
+ */
+function urlAsset($fichier) {
+    $chemin = __DIR__ . '/../' . $fichier;
+    return $fichier . (is_file($chemin) ? '?v=' . filemtime($chemin) : '');
+}
+
+/**
  * En-têtes HTTP de sécurité, envoyés depuis PHP (et non par .htaccess) car mod_headers
  * est souvent absent des hébergements mutualisés.
  *

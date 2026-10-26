@@ -184,7 +184,7 @@ renderHead('Auteurs - Ma Collection');
                     <details class="auteur-card">
                         <summary class="auteur-summary">
                             <?php if (!empty($auteur['image_url'])): ?>
-                                <img class="auteur-photo-small" src="<?= h($auteur['image_url']) ?>" alt="" loading="lazy">
+                                <img class="auteur-photo-small" src="<?= h($auteur['image_url']) ?>" alt="" loading="lazy" decoding="async">
                             <?php else: ?>
                                 <span class="auteur-photo-placeholder"><?= icone('plume') ?></span>
                             <?php endif; ?>
@@ -207,7 +207,7 @@ renderHead('Auteurs - Ma Collection');
                                 <a href="index.php?edit=<?= $livre['id'] ?>" class="auteur-livre-card">
                                     <span class="auteur-livre-cover">
                                         <?php $imageUrl = getImageUrl($livre['couverture']); ?>
-                                        <img src="<?= h($imageUrl) ?>"
+                                        <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>"
                                              alt="Couverture de <?= h($livre['titre']) ?>"
                                              onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                     </span>

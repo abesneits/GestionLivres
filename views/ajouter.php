@@ -308,8 +308,8 @@ renderHead('Ajouter un livre - Ma Collection');
         </div>
     </div>
 
-    <script src="tag-input.js"></script>
-    <script src="auteur-input.js"></script>
+    <script src="<?= urlAsset("tag-input.js") ?>"></script>
+    <script src="<?= urlAsset("auteur-input.js") ?>"></script>
     <script>initAuteurInput(document.getElementById('auteur'), <?= json_encode($allAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, <?= json_encode($rolesAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);</script>
     <?php if ($step === 1): ?>
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>

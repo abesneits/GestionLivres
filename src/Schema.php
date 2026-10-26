@@ -75,7 +75,10 @@ class Schema {
     private function computeVersion() {
         $empreinte = '';
         foreach (['Schema', 'SupportRepository', 'ListeRepository', 'AuteurRepository', 'TagRepository', 'FormatNumeriqueRepository', 'AchatRepository'] as $classe) {
-            $empreinte .= (string)@md5_file(__DIR__ . '/' . $classe . '.php');
+            // Date de modification + taille (un simple stat) plutôt qu'un hachage du contenu : cette
+            // fonction est appelée à chaque page, et tout remplacement du fichier change la date.
+            $chemin = __DIR__ . '/' . $classe . '.php';
+            $empreinte .= $classe . ':' . (int)@filemtime($chemin) . ':' . (int)@filesize($chemin) . ';';
         }
         return md5($empreinte);
     }

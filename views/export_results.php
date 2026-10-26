@@ -19,7 +19,7 @@
                     <input type="checkbox" name="livres_ids[]" value="<?= $book['id'] ?>" onchange="updateExportSelectionCount(this)">
                     <div class="book-item-cover">
                         <?php $imageUrl = getImageUrl($book['couverture'] ?? null); ?>
-                        <img src="<?= h($imageUrl) ?>"
+                        <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>"
                              alt="<?= h($book['titre']) ?>"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <div class="cover-placeholder-small" style="display:none;"><?= icone('livres') ?></div>

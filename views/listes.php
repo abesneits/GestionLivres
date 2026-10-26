@@ -41,7 +41,7 @@ renderHead('Mes Listes - Ma Collection');
                         <div class="liste-card">
                             <?php if ($liste['couverture'] && file_exists($liste['couverture'])): ?>
                                 <div class="liste-cover">
-                                    <img src="<?= h($liste['couverture']) ?>" alt="Couverture de <?= h($liste['nom']) ?>">
+                                    <img loading="lazy" decoding="async" src="<?= h($liste['couverture']) ?>" alt="Couverture de <?= h($liste['nom']) ?>">
                                     <div class="liste-cover-overlay">
                                         <div class="liste-count-badge"><?= $liste['nb_livres'] ?> livre<?= $liste['nb_livres'] > 1 ? 's' : '' ?></div>
                                     </div>
@@ -125,7 +125,7 @@ renderHead('Mes Listes - Ma Collection');
                             <div class="book-card-header">
                                 <div class="book-card-cover">
                                     <?php $imageUrl = getImageUrl($book['couverture']); ?>
-                                    <img src="<?= h($imageUrl) ?>" 
+                                    <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>" 
                                          alt="Couverture de <?= h($book['titre']) ?>"
                                          onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                 </div>
@@ -269,7 +269,7 @@ renderHead('Mes Listes - Ma Collection');
                                    onchange="updateSelectionCount()">
                             <div class="book-item-cover">
                                 <?php $imageUrl = getImageUrl($book['couverture']); ?>
-                                <img src="<?= h($imageUrl) ?>" 
+                                <img loading="lazy" decoding="async" src="<?= h($imageUrl) ?>" 
                                      alt="<?= h($book['titre']) ?>"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <div class="cover-placeholder-small" style="display:none;"><?= icone('livres') ?></div>
