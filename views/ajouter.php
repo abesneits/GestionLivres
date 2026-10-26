@@ -344,38 +344,65 @@ renderHead('Ajouter un livre - Ma Collection');
             document.getElementById('scanBtn').style.display = 'none';
             document.getElementById('scannerBox').style.display = '';
 
-            // ZXing : lecteur de codes-barres 1D bien plus fiable que html5-qrcode, notamment sur iPhone
             const hints = new Map();
             hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13]);
             hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-            scanneur = new ZXing.BrowserMultiFormatReader(hints, 100);
+            const lecteur = new ZXing.MultiFormatReader();
+            lecteur.setHints(hints);
+            const video = document.getElementById('scanner');
+            const canvas = document.createElement('canvas');
+            const session = {};
+            scanneur = session;
 
-            scanneur.decodeFromConstraints(
-                {
-                    audio: false,
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
-                },
-                document.getElementById('scanner'),
-                function (resultat) {
-                    if (!resultat) {
-                        return; // aucun code lu sur cette image : on continue
-                    }
-                    const code = resultat.getText();
-                    // Un ISBN-13 commence par 978 ou 979 ; les autres codes-barres sont ignorés
-                    if (!/^97[89]\d{10}$/.test(code)) {
+            // Même méthode que pour la photo : on prélève des images du flux et on les décode nous-mêmes
+            navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+            }).then(function (flux) {
+                if (scanneur !== session) { // annulé entre-temps
+                    flux.getTracks().forEach(function (p) { p.stop(); });
+                    return;
+                }
+                session.flux = flux;
+                // Mise au point continue quand l'appareil la propose
+                const piste = flux.getVideoTracks()[0];
+                try { piste.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {}); } catch (e) {}
+                // iOS n'affiche le flux que si la vidéo est bien muette et en lecture « inline »
+                video.muted = true;
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.srcObject = flux;
+                video.onloadedmetadata = function () { video.play().catch(function () {}); };
+                video.play().catch(function () {});
+
+                let compteur = 0;
+                session.minuteur = setInterval(function () {
+                    if (video.readyState < 2 || !video.videoWidth) {
                         return;
                     }
-                    arreterScan();
-                    const input = document.getElementById('isbn');
-                    input.value = code;
-                    input.dispatchEvent(new Event('input'));
-                    document.getElementById('searchForm').requestSubmit();
-                }
-            ).catch(function () {
+                    const rotation = (compteur++ % 4 === 3) ? 90 : 0; // surtout horizontal, parfois vertical
+                    const l = video.videoWidth;
+                    const h = video.videoHeight;
+                    canvas.width = rotation ? h : l;
+                    canvas.height = rotation ? l : h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    if (rotation) {
+                        ctx.translate(canvas.width, 0);
+                        ctx.rotate(Math.PI / 2);
+                    }
+                    ctx.drawImage(video, 0, 0, l, h);
+                    try {
+                        const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+                        const code = lecteur.decode(bitmap).getText();
+                        if (/^97[89]\d{10}$/.test(code)) {
+                            arreterScan();
+                            validerIsbnScanne(code);
+                        }
+                    } catch (e) { /* rien lu sur cette image : on continue */ }
+                }, 300);
+            }).catch(function () {
                 arreterScan();
                 afficherErreurIsbn('Impossible d\'accéder à la caméra. Vérifiez l\'autorisation du navigateur.');
             });
@@ -410,11 +437,28 @@ renderHead('Ajouter un livre - Ma Collection');
                 const lecteur = new ZXing.MultiFormatReader();
                 lecteur.setHints(hints);
 
-                // On réduit la photo (12 Mpx trop lourd) et on essaie en horizontal puis en vertical
-                const echelle = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
-                const l = Math.round(img.naturalWidth * echelle);
-                const h = Math.round(img.naturalHeight * echelle);
-                for (const rotation of [0, 90]) {
+                // Le code-barres est petit sur une photo de couverture entière : on tente plusieurs
+                // tailles (la plus grande d'abord), en horizontal puis en vertical
+                const tailles = [3000, 2000, 1400, 900].filter(function (t, i, tab) {
+                    return t <= Math.max(img.naturalWidth, img.naturalHeight) || i === tab.length - 1;
+                });
+                const essais = [];
+                tailles.forEach(function (t) { [0, 90].forEach(function (r) { essais.push([t, r]); }); });
+
+                const messageSpan = document.getElementById('isbn-error');
+                messageSpan.textContent = 'Lecture de la photo en cours…';
+                messageSpan.style.display = 'block';
+
+                function essayer(i) {
+                    if (i >= essais.length) {
+                        afficherErreurIsbn('Code-barres non reconnu sur la photo. Rapprochez-vous pour que le code-barres de l\'ISBN remplisse la moitié de la largeur de la photo.');
+                        return;
+                    }
+                    const taille = essais[i][0];
+                    const rotation = essais[i][1];
+                    const echelle = Math.min(1, taille / Math.max(img.naturalWidth, img.naturalHeight));
+                    const l = Math.round(img.naturalWidth * echelle);
+                    const h = Math.round(img.naturalHeight * echelle);
                     const canvas = document.createElement('canvas');
                     canvas.width = rotation ? h : l;
                     canvas.height = rotation ? l : h;
@@ -429,12 +473,14 @@ renderHead('Ajouter un livre - Ma Collection');
                         const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
                         const code = lecteur.decode(bitmap).getText();
                         if (/^97[89]\d{10}$/.test(code)) {
+                            messageSpan.style.display = 'none';
                             validerIsbnScanne(code);
                             return;
                         }
-                    } catch (e) { /* rien lu dans cette orientation */ }
+                    } catch (e) { /* rien lu avec cet essai */ }
+                    setTimeout(function () { essayer(i + 1); }, 0);
                 }
-                afficherErreurIsbn('Code-barres non reconnu sur la photo. Reprenez-la en cadrant bien le code-barres de l\'ISBN.');
+                setTimeout(function () { essayer(0); }, 0);
             };
             img.onerror = function () {
                 afficherErreurIsbn('Impossible de lire cette photo.');
@@ -448,7 +494,11 @@ renderHead('Ajouter un livre - Ma Collection');
             const courant = scanneur;
             scanneur = null;
             if (courant) {
-                courant.reset();
+                clearInterval(courant.minuteur);
+                if (courant.flux) {
+                    courant.flux.getTracks().forEach(function (p) { p.stop(); });
+                }
+                document.getElementById('scanner').srcObject = null;
             }
             return Promise.resolve();
         }

@@ -5,6 +5,7 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 ## Fonctionnalités
 
 - **Ajout par ISBN** : récupération automatique du titre, de l'auteur, de la description et de la couverture via Google Books, avec repli sur Open Library puis sur la BnF
+- **Scan de l'ISBN au smartphone** : lecture du code-barres en direct avec la caméra, ou à partir d'une photo (bibliothèque ZXing, HTTPS requis)
 - **Ajout manuel** et envoi de couvertures personnalisées
 - **Listes de lecture** réordonnables par glisser-déposer
 - **Achats à effectuer** : liste de livres à acheter (priorité, prix estimé), validation qui les ajoute à la collection, version imprimable

@@ -14,6 +14,7 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 | Manifeste web | `site.webmanifest` complet (nom, langue, URL de démarrage, couleurs, icônes) et chemins relatifs, y compris pour les icônes de `includes/head.php` : le site peut donc être installé dans un sous-dossier et ajouté à l'écran d'accueil d'un téléphone (selon les navigateurs, HTTPS est exigé). Le fonctionnement hors connexion reste à faire (ci-dessous). |
 | Séparer les vues du traitement | Chaque page à la racine est un contrôleur qui se termine par `require 'views/<page>.php'` ; la vue ne contient que du HTML (voir [architecture.md](architecture.md)). |
 | Support papier / numérique | Distinction papier / numérique par livre (migration automatique : la collection existante passe en papier), catalogue de formats numériques extensible (PDF, Epub, ...), envoi et téléchargement authentifié du fichier (voir [architecture.md](architecture.md)). |
+| Scan de code-barres | Page d'ajout : lecture de l'ISBN-13 à la caméra (images du flux décodées avec ZXing, chargé depuis un CDN) ou à partir d'une photo de l'appareil natif (essais à plusieurs échelles et orientations). HTTPS requis. |
 
 ## Données et recherche
 
@@ -21,7 +22,6 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 |---|---|---|
 | **Enrichir les fiches** : éditeur, langue, nombre de pages, collection, format (poche / grand format) | Moyen | Les sources interrogées (Google Books, Open Library, BnF) fournissent généralement une partie de ces champs (à vérifier source par source). Il faut de nouvelles colonnes, déclarées dans `src/Schema.php` et `schema.sql`, l'affichage dans l'édition, et de nouvelles statistiques (par langue, par éditeur). |
 | **Recherche par titre / auteur** quand il n'y a pas d'ISBN | Moyen | Interroger les mêmes sources par titre, afficher une liste de résultats et laisser choisir. Point d'attention : les résultats approximatifs demandent de la validation manuelle. |
-| **Scanner de code-barres** avec l'appareil photo du téléphone | Élevé | Lecture en JavaScript dans la page d'ajout. Nécessite HTTPS et une compatibilité navigateur à vérifier. |
 | **Rapprochement de doublons sans ISBN** | Moyen | Aujourd'hui seuls les ISBN sont uniques ; deux saisies manuelles du même livre ne sont pas détectées. |
 
 ## Suivi de la collection

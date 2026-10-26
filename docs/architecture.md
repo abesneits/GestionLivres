@@ -48,7 +48,7 @@ Le document suit trois niveaux :
 |---|---|---|
 | **S1 Recherche** | Deux variantes indépendantes : *simple* (un champ texte et des filtres) et *avancée* (tags en ET/OU, dates, tri, critères « sans couverture » / « sans note »). Voir [Deux chemins de recherche](#deux-chemins-de-recherche). | F1, F2 (simple) ; F5, F6 (avancée) |
 | **S2 Édition en masse** | Applique un même changement (support, statut, tags) à tous les livres sélectionnés par une recherche avancée. | F6 |
-| **S3 Import externe** | Fiche livre depuis un ISBN (Google Books, puis Open Library, puis BnF) ; biographie, dates et nationalité d'un auteur (Wikipédia en français, Wikidata). | F1, F3 |
+| **S3 Import externe** | Fiche livre depuis un ISBN, saisi, scanné à la caméra ou lu sur une photo (ZXing côté navigateur ; Google Books, puis Open Library, puis BnF) ; biographie, dates et nationalité d'un auteur (Wikipédia en français, Wikidata). | F1, F3 |
 | **S4 Référentiels** | Valeurs autorisées et extensibles : types de support (`ENUM` réécrit), tags (catalogue de suggestions), formats numériques (catalogue avec extension attendue). Ils valident les saisies et alimentent les filtres. | F1, F6 (et les filtres de F2, F3, F5) |
 | **S5 Fichiers envoyés** | Contrôle et stockage des couvertures, photos d'auteurs et fichiers numériques dans `uploads/` ; téléchargement protégé des fichiers numériques ; détection des fichiers orphelins. | F1, F2, F3, F6 |
 | **S6 Sécurité** | Authentification, session, jeton CSRF, échappement HTML, restrictions d'accès aux fichiers. Voir [Sécurité](#sécurité). | Toutes |
