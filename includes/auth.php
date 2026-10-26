@@ -6,7 +6,8 @@
 // Tant que l'application n'est pas configurée (config.php absent), on renvoie
 // vers l'assistant d'installation s'il est présent.
 $configFile = __DIR__ . '/../config.php';
-if (!file_exists($configFile)) {
+$configPresent = file_exists($configFile);
+if (!$configPresent && PHP_SAPI !== 'cli') {
     if (is_dir(__DIR__ . '/../install')) {
         header('Location: install/');
     } else {
@@ -18,10 +19,11 @@ if (!file_exists($configFile)) {
 
 // Le hash (bcrypt) du mot de passe administrateur et le sel de session ne sont pas dans le code :
 // ils viennent de config.php (clés admin_password_hash et session_salt), hors dépôt Git.
-$authConfig = require $configFile;
+// (en ligne de commande, par exemple pour tests/run.php, un config.php absent n'est pas une erreur)
+$authConfig = $configPresent ? require $configFile : [];
 define('ADMIN_PASSWORD_HASH', $authConfig['admin_password_hash'] ?? '');
 define('SESSION_SALT', $authConfig['session_salt'] ?? '');
-unset($authConfig, $configFile);
+unset($authConfig, $configFile, $configPresent);
 
 define('SESSION_TIMEOUT', 3600); // 1 heure en secondes
 

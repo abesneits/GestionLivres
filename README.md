@@ -102,8 +102,18 @@ Sans clé, la recherche par ISBN partage un quota gratuit très limité. Pour en
 
 - `config.php` contient vos identifiants : il est ignoré par git et bloqué par `.htaccess`. Ne le publiez jamais.
 - **Supprimez `install/`** après l'installation.
-- Sous Nginx (ou si `.htaccess` est désactivé), interdisez l'accès web à `config.php`, `logs/`, l'exécution de PHP dans `uploads/`, et tout accès direct à `uploads/ebooks/` (les fichiers numériques ne doivent être servis que par `telecharger_ebook.php`, après authentification).
-- Utilisez HTTPS. Les sessions expirent après 1 h d'inactivité, 5 échecs de connexion bloquent l'accès 5 minutes.
+- Sous Nginx (ou si `.htaccess` est désactivé), interdisez l'accès web à `config.php`, `logs/`, `backups/`, au code interne, à `uploads/ebooks/` (les fichiers numériques ne doivent être servis que par `telecharger_ebook.php`, après authentification) et l'exécution de PHP dans `uploads/`. Exemple, à placer **avant** le bloc `location ~ \.php$` de PHP-FPM :
+
+```nginx
+location ~ /\.(?!well-known) { deny all; }
+location ~ ^/(src|includes|views|backups|logs|tests)/ { deny all; }
+location ~ ^/(config(\.example)?\.php|schema\.sql)$ { deny all; }
+location ~ ^/uploads/ebooks/ { deny all; }
+location ~ ^/uploads/.*\.(php|phtml|phar)$ { deny all; }
+```
+
+  (Ne bloquez `install/` qu'après l'installation, ou supprimez-le.)
+- Utilisez HTTPS. Les sessions expirent après 1 h d'inactivité, 5 échecs de connexion bloquent l'accès 5 minutes. L'application envoie des en-têtes de sécurité (CSP, `X-Frame-Options`, `nosniff`, HSTS en HTTPS…) depuis PHP, sans dépendre d'Apache.
 - Application conçue pour **un seul utilisateur** (un mot de passe unique).
 
 ## Documentation
@@ -146,6 +156,14 @@ Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la c
 | `Maintenance` | sauvegarde et restauration JSON, optimisation, diagnostic de la base et du dossier `uploads/` |
 
 Pour ajouter une fonctionnalité qui touche la base : écrivez la méthode dans la classe de `src/` concernée, puis ajoutez une méthode d'une ligne dans `BookManager` qui l'appelle. Pour faire évoluer le schéma, complétez les migrations de `src/Schema.php` : elles sont rejouables et s'exécutent au chargement des pages, sans script de migration à lancer.
+
+## Tests
+
+Petits tests automatiques, sans dépendance ni base de données (nettoyage des paramètres, redirections, chemins de fichiers, découpage des auteurs et des tags) :
+
+```bash
+php tests/run.php
+```
 
 ## Licence
 

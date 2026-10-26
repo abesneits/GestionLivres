@@ -16,7 +16,7 @@ Options -Indexes
 <IfModule mod_alias.c>
     RedirectMatch 404 /\.(git|claude)(/|$)
     # Code interne : jamais appelé directement depuis le navigateur
-    RedirectMatch 403 (^|/)(src|includes|views|backups)/
+    RedirectMatch 403 (^|/)(src|includes|views|backups|tests)/
 </IfModule>
 
 # Compression des pages, styles et scripts

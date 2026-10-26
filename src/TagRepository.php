@@ -91,7 +91,8 @@ class TagRepository {
      * Découpe une chaîne de tags CSV en tags exacts (trim, sans entrées vides).
      */
     public function splitTagsExact($tagsString) {
-        return array_values(array_filter(array_map('trim', explode(',', $tagsString ?? ''))));
+        // 'strlen' : un filtre sans fonction supprimerait aussi un tag « 0 »
+        return array_values(array_filter(array_map('trim', explode(',', $tagsString ?? '')), 'strlen'));
     }
 
     /**
