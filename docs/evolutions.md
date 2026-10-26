@@ -14,9 +14,9 @@ Effort estimé : **faible** (quelques heures), **moyen** (une à plusieurs soir�
 | Manifeste web | `site.webmanifest` complet (nom, langue, URL de démarrage, couleurs, icônes) et chemins relatifs, y compris pour les icônes de `includes/head.php` : le site peut donc être installé dans un sous-dossier et ajouté à l'écran d'accueil d'un téléphone (selon les navigateurs, HTTPS est exigé). Le fonctionnement hors connexion reste à faire (ci-dessous). |
 | Séparer les vues du traitement | Chaque page à la racine est un contrôleur qui se termine par `require 'views/<page>.php'` ; la vue ne contient que du HTML (voir [architecture.md](architecture.md)). |
 | Support papier / numérique | Distinction papier / numérique par livre (migration automatique : la collection existante passe en papier), catalogue de formats numériques extensible (PDF, Epub, ...), envoi et téléchargement authentifié du fichier (voir [architecture.md](architecture.md)). |
-| Durcissement de la sécurité | En-têtes HTTP (CSP, `nosniff`, …), secrets dans `config.php`, journaux sans clé API ni injection de lignes, erreurs SQL masquées, messages échappés, chemins de fichiers contrôlés (`Fichiers`), cache HTTP et compression. |
+| Durcissement de la sécurité | En-têtes HTTP (CSP sans script tiers, `nosniff`, …), ZXing et SortableJS hébergés localement (`assets/js/`), secrets dans `config.php`, journaux sans clé API ni injection de lignes, erreurs SQL masquées, messages échappés, chemins de fichiers contrôlés (`Fichiers`), cache HTTP et compression. |
 | Tests automatiques de base | `php tests/run.php` : fonctions pures, sans dépendance ni base de données. |
-| Scan de code-barres | Page d'ajout : lecture de l'ISBN-13 à la caméra (images du flux décodées avec ZXing, chargé depuis un CDN) ou à partir d'une photo de l'appareil natif (essais à plusieurs échelles et orientations). HTTPS requis. |
+| Scan de code-barres | Page d'ajout : lecture de l'ISBN-13 à la caméra (images du flux décodées avec ZXing, hébergé dans `assets/js/`) ou à partir d'une photo de l'appareil natif (essais à plusieurs échelles et orientations). HTTPS requis. |
 
 ## Données et recherche
 

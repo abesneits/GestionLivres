@@ -55,7 +55,7 @@ function envoyerEnTetesSecurite() {
         return;
     }
     $csp = "default-src 'self'; "
-        . "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+        . "script-src 'self' 'unsafe-inline'; "
         . "style-src 'self' 'unsafe-inline'; "
         . "img-src 'self' https: data: blob:; "
         . "connect-src 'self'; "

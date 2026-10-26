@@ -295,7 +295,7 @@ renderHead('Mes Listes - Ma Collection');
     </div>
 
     <?php if ($currentList): ?>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="assets/js/Sortable-1.15.0.min.js"></script>
     <?php endif; ?>
 
     <script>
