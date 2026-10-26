@@ -3257,3 +3257,32 @@ summary:focus-visible {
     justify-content: center;
     gap: 6px;
 }
+
+/* Champ Auteur : suggestions d'auteurs existants et aide au format */
+.auteur-champ {
+    position: relative;
+}
+
+.auteur-aide {
+    display: block;
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 0.85em;
+}
+
+.auteur-aide.attention {
+    padding: 6px 10px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.auteur-champ .tag-suggestions {
+    top: auto;
+    margin-top: 0;
+}
+
+.auteur-champ .tag-suggestion-item.actif {
+    background: var(--border);
+    color: var(--text);
+}

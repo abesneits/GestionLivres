@@ -133,7 +133,8 @@ renderHead('Ajouter un livre - Ma Collection');
                                            value="<?= h($bookData['auteur'] ?? '') ?>" 
                                            required
                                            maxlength="255"
-                                           placeholder="Nom de l'auteur">
+                                           placeholder="Prénom Nom (ex. : Victor Hugo)">
+                                    <small class="auteur-aide">Écrivez « Prénom Nom ». Plusieurs auteurs : séparez-les par une virgule.</small>
                                 </div>
 
                                 <div class="form-group">
@@ -308,6 +309,8 @@ renderHead('Ajouter un livre - Ma Collection');
     </div>
 
     <script src="tag-input.js"></script>
+    <script src="auteur-input.js"></script>
+    <script>initAuteurInput(document.getElementById('auteur'), <?= json_encode($allAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);</script>
     <?php if ($step === 1): ?>
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
     <?php endif; ?>

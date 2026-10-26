@@ -140,4 +140,5 @@ if ($form['support'] !== '' && !in_array($form['support'], $supportsDispo, true)
     $supportsDispo[] = $form['support'];
 }
 
+$allAuteurs = $bookManager->getAuthorNames();
 require 'views/achats.php';

@@ -877,6 +877,17 @@ class AuteurRepository {
     }
 
     /**
+     * Noms de tous les auteurs qui ont au moins un livre (triés), pour les suggestions de saisie.
+     */
+    public function getAuthorNames() {
+        return $this->pdo->query(
+            "SELECT a.nom FROM auteurs a
+             WHERE EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.auteur_id = a.id)
+             ORDER BY a.nom ASC"
+        )->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
      * Deux noms désignent-ils le même auteur en base ? (« victor hugo » et « Victor Hugo » : oui)
      */
     public function isSameAuthor($nomA, $nomB) {

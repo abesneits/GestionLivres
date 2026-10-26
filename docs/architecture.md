@@ -79,7 +79,7 @@ CONTRÔLEUR   pages à la racine : index.php, ajouter.php, listes.php, …
    ▼
 VUE          views/<page>.php : HTML et affichage des variables, via h()
              includes/head.php, includes/menu.php, includes/icones.php : parties communes
-             style.css, tag-input.js : présentation
+             style.css, tag-input.js, auteur-input.js : présentation et widgets de saisie
 ```
 
 **Modèle** — `BookManager.php` et `src/`. `BookManager` n'est qu'un point d'entrée : il crée une connexion PDO unique, instancie les classes de `src/` en leur passant cette connexion et leurs dépendances, et chaque méthode publique se contente d'appeler la classe responsable (une ligne). Les règles métier, le SQL et les appels aux sites externes sont tous dans `src/` (voir le tableau [Les classes du modèle](#les-classes-du-modèle)). Les données circulent sous forme de tableaux associatifs : il n'y a pas d'objets métier (`Livre`, `Liste`, …).

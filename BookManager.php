@@ -269,6 +269,10 @@ class BookManager {
         return $this->auteurs->authorExists($nom);
     }
 
+    public function getAuthorNames() {
+        return $this->auteurs->getAuthorNames();
+    }
+
     public function isSameAuthor($nomA, $nomB) {
         return $this->auteurs->isSameAuthor($nomA, $nomB);
     }

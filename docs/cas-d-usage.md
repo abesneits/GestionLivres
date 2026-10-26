@@ -16,7 +16,7 @@ L'objectif est de répondre à quelques questions simples :
 
 | Besoin | Comment l'application y répond | Où |
 |---|---|---|
-| **Ajouter un livre rapidement** | Saisie de l'ISBN : titre, auteur, description, couverture et date sont récupérés automatiquement (Google Books, puis Open Library, puis BnF). | Ajouter |
+| **Ajouter un livre rapidement** | Saisie de l'ISBN : titre, auteur, description, couverture et date sont récupérés automatiquement (Google Books, puis Open Library, puis BnF). Le champ auteur propose les auteurs déjà présents (format « Prénom Nom », virgule entre plusieurs auteurs). | Ajouter |
 | **Ajouter un livre sans ISBN** | Saisie manuelle de tous les champs. Un identifiant temporaire (`TEMP_…`) est généré à la place de l'ISBN. | Ajouter |
 | **Retrouver un livre** | Recherche par titre, auteur, ISBN ou série ; filtres par support, statut, tag et série ; pagination. | Ma collection |
 | **Éviter les doublons** | L'ISBN est unique : ajouter deux fois le même livre est refusé avec un message clair. | Ajouter |

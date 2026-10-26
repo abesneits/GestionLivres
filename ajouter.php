@@ -306,6 +306,13 @@ try {
     $allTags = [];
 }
 
+// Auteurs existants pour les suggestions de saisie
+try {
+    $allAuteurs = $bookManager->getAuthorNames();
+} catch (Exception $e) {
+    $allAuteurs = [];
+}
+
 // Formats numériques disponibles (pour le champ Type = Numérique)
 try {
     $allFormatsNumeriques = $bookManager->getFormatsNumeriquesWithCounts();

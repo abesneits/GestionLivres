@@ -135,7 +135,8 @@ $libellesPriorite = [1 => 'Haute', 2 => 'Normale', 3 => 'Basse'];
                 </div>
                 <div class="form-group">
                     <label for="auteur">Auteur</label>
-                    <input type="text" id="auteur" name="auteur" value="<?= h($form['auteur']) ?>">
+                    <input type="text" id="auteur" name="auteur" value="<?= h($form['auteur']) ?>" placeholder="Prénom Nom (ex. : Victor Hugo)">
+                    <small class="auteur-aide">Écrivez « Prénom Nom ». Plusieurs auteurs : séparez-les par une virgule.</small>
                 </div>
                 <div class="form-group">
                     <label for="support">Support</label>
@@ -199,6 +200,8 @@ $libellesPriorite = [1 => 'Haute', 2 => 'Normale', 3 => 'Basse'];
     </div>
 
     <script src="tag-input.js"></script>
+    <script src="auteur-input.js"></script>
+    <script>initAuteurInput(document.getElementById('auteur'), <?= json_encode($allAuteurs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);</script>
     <script>
         const allTags = <?= json_encode($allTags, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         document.addEventListener('DOMContentLoaded', function () {
