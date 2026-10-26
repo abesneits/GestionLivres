@@ -34,7 +34,10 @@ class BookManager {
             $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            die("Erreur de connexion : " . $e->getMessage());
+            // Le détail (hôte, base, utilisateur) va dans le journal du serveur, jamais dans la page
+            error_log("BookManager : connexion à la base impossible : " . $e->getMessage());
+            http_response_code(500);
+            die("Erreur de connexion à la base de données. Vérifiez config.php et que le serveur MySQL est démarré.");
         }
         $this->isbnLookup = new IsbnLookup($googleBooksApiKey);
         $this->listes = new ListeRepository($this->pdo);

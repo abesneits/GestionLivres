@@ -79,7 +79,7 @@ class IsbnLookup {
         }
 
         if (function_exists('logMessage')) {
-            logMessage("Trying Google Books API: " . $url, 'DEBUG');
+            logMessage("Trying Google Books API for ISBN: " . $isbn, 'DEBUG');
         }
         
         $ch = curl_init();
@@ -341,7 +341,7 @@ class IsbnLookup {
         }
 
         if (function_exists('logMessage')) {
-            logMessage("Trying file_get_contents fallback: " . $url, 'DEBUG');
+            logMessage("Trying file_get_contents fallback for ISBN: " . $isbn, 'DEBUG');
         }
         
         $context = stream_context_create([

@@ -27,7 +27,7 @@ if ($_POST && isset($_POST['action'])) {
             $resultats = $bookManager->optimizeTables();
             redirectWithMessage('outils.php?section=bdd', "Optimisation effectuée sur " . count($resultats) . " table(s).", 'success');
         } catch (Exception $e) {
-            $message = "Erreur lors de l'optimisation : " . $e->getMessage();
+            $message = "Erreur lors de l'optimisation : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'restore_backup') {
@@ -47,7 +47,7 @@ if ($_POST && isset($_POST['action'])) {
                     'success'
                 );
             } catch (Exception $e) {
-                $message = "Erreur lors de la restauration : " . $e->getMessage();
+                $message = "Erreur lors de la restauration : " . messageErreur($e);
                 $messageType = 'error';
             }
         }
@@ -72,7 +72,7 @@ if ($_POST && isset($_POST['action'])) {
             $retourQs = $_POST['return_qs'] ?? '';
             redirectWithMessage('outils.php?section=edition' . ($retourQs ? '&' . $retourQs : ''), $msg, 'success');
         } catch (Exception $e) {
-            $message = "Erreur lors de la mise à jour : " . $e->getMessage();
+            $message = "Erreur lors de la mise à jour : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'create_tag') {
@@ -80,7 +80,7 @@ if ($_POST && isset($_POST['action'])) {
             $bookManager->addTagToCatalog($_POST['nom'] ?? '');
             redirectWithMessage('outils.php?section=tags', "Tag créé.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'add_support') {
@@ -88,7 +88,7 @@ if ($_POST && isset($_POST['action'])) {
             $bookManager->addSupportType($_POST['nom'] ?? '');
             redirectWithMessage('outils.php?section=supports', "Support ajouté.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'rename_support') {
@@ -96,7 +96,7 @@ if ($_POST && isset($_POST['action'])) {
             $count = $bookManager->renameSupportType($_POST['old_support'] ?? '', $_POST['new_support_name'] ?? '');
             redirectWithMessage('outils.php?section=supports', "Support renommé : $count livre(s) mis à jour.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'add_format') {
@@ -104,7 +104,7 @@ if ($_POST && isset($_POST['action'])) {
             $bookManager->addFormatNumerique($_POST['nom'] ?? '', $_POST['extension'] ?? '');
             redirectWithMessage('outils.php?section=formats', "Format ajouté.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'rename_format') {
@@ -112,7 +112,7 @@ if ($_POST && isset($_POST['action'])) {
             $count = $bookManager->renameFormatNumerique($_POST['old_format'] ?? '', $_POST['new_format_name'] ?? '');
             redirectWithMessage('outils.php?section=formats', "Format renommé : $count livre(s) mis à jour.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'delete_format') {
@@ -120,7 +120,7 @@ if ($_POST && isset($_POST['action'])) {
             $bookManager->deleteFormatNumerique($_POST['nom'] ?? '');
             redirectWithMessage('outils.php?section=formats', "Format supprimé.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'rename_tag') {
@@ -132,7 +132,7 @@ if ($_POST && isset($_POST['action'])) {
             }
             redirectWithMessage('outils.php?section=tags', $msg, 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'delete_tag') {
@@ -140,7 +140,7 @@ if ($_POST && isset($_POST['action'])) {
             $count = $bookManager->deleteTagEverywhere($_POST['tag'] ?? '');
             redirectWithMessage('outils.php?section=tags', "Tag supprimé de $count livre(s).", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'delete_orphan_authors') {
@@ -148,7 +148,7 @@ if ($_POST && isset($_POST['action'])) {
             $count = $bookManager->deleteOrphanAuthors();
             redirectWithMessage('outils.php?section=bdd', "$count fiche(s) d'auteur sans livre supprimée(s).", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     } elseif ($_POST['action'] === 'delete_orphans') {
@@ -156,7 +156,7 @@ if ($_POST && isset($_POST['action'])) {
             $count = $bookManager->deleteOrphanUploads();
             redirectWithMessage('outils.php?section=bdd', "$count fichier(s) orphelin(s) supprimé(s).", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     }

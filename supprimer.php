@@ -20,7 +20,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'delete' && !empty
             $book = $bookManager->getBookById($_POST['book_id']);
             if ($book) {
                 if ($bookManager->deleteBook($_POST['book_id'])) {
-                    $successMessage = "Le livre \"" . h($book['titre']) . "\" a été supprimé avec succès.";
+                    $successMessage = "Le livre \"" . $book['titre'] . "\" a été supprimé avec succès.";
                     logMessage("Book deleted: " . $book['titre'] . " (ID: " . $book['id'] . ")", 'INFO');
                     
                     // Préserver les paramètres de recherche après suppression
@@ -37,7 +37,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'delete' && !empty
                 $messageType = 'error';
             }
         } catch (Exception $e) {
-            $message = "Erreur lors de la suppression : " . $e->getMessage();
+            $message = "Erreur lors de la suppression : " . messageErreur($e);
             $messageType = 'error';
             logMessage("Delete error: " . $e->getMessage(), 'ERROR');
         }

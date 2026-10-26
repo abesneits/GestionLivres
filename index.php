@@ -54,7 +54,7 @@ if ($_POST) {
             );
             
         } catch (Exception $e) {
-            $message = "Erreur lors de la mise à jour : " . $e->getMessage();
+            $message = "Erreur lors de la mise à jour : " . messageErreur($e);
             $messageType = 'error';
             logMessage("Erreur update_notes: " . $e->getMessage(), 'ERROR');
         }
@@ -74,7 +74,7 @@ if ($_POST) {
                 $messageType = 'error';
             }
         } catch (Exception $e) {
-            $message = "Erreur lors de la suppression : " . $e->getMessage();
+            $message = "Erreur lors de la suppression : " . messageErreur($e);
             $messageType = 'error';
             logMessage("Erreur delete: " . $e->getMessage(), 'ERROR');
         }

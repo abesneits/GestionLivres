@@ -23,6 +23,8 @@ define('SESSION_TIMEOUT', 3600); // 1 heure en secondes
 define('LOGIN_MAX_ATTEMPTS', 5);    // échecs autorisés avant blocage
 define('LOGIN_LOCK_SECONDS', 300);  // durée du blocage (5 minutes), et durée pendant laquelle un échec « compte »
 
+define('JOURNAL_TAILLE_MAX', 1048576); // 1 Mo : au-delà, le journal est archivé en « .1 » (voir ecrireJournal())
+
 /**
  * Démarrer la session avec un cookie durci :
  * HttpOnly (invisible du JavaScript), SameSite (pas envoyé depuis un autre site),
@@ -256,18 +258,35 @@ function validateAuthCSRFToken($token) {
  * Logger les événements de sécurité
  */
 function logSecurityEvent($type, $message) {
-    $logDir = 'logs';
-    if (!is_dir($logDir)) {
-        mkdir($logDir, 0755, true);
-    }
-    
-    $logFile = $logDir . '/security.log';
     $timestamp = date('Y-m-d H:i:s');
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-    
-    $logEntry = "[$timestamp] [$type] IP:$ip - $message - UserAgent:$userAgent" . PHP_EOL;
-    file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+
+    ecrireJournal('security.log', "[$timestamp] [$type] IP:$ip - $message - UserAgent:$userAgent");
+}
+
+/**
+ * Ajouter UNE ligne à un fichier de logs/.
+ * - les retours à la ligne et caractères de contrôle sont remplacés par une espace : une valeur
+ *   venue du navigateur (User-Agent, titre saisi...) ne peut pas fabriquer de fausses lignes de journal ;
+ * - au-delà de JOURNAL_TAILLE_MAX, le fichier devient « <nom>.1 » (l'ancien « .1 » est écrasé) :
+ *   un journal ne grossit donc jamais sans limite.
+ */
+function ecrireJournal($nomFichier, $ligne) {
+    $dossier = __DIR__ . '/../logs';
+    if (!is_dir($dossier)) {
+        @mkdir($dossier, 0755, true);
+    }
+
+    $fichier = $dossier . '/' . $nomFichier;
+    clearstatcache(true, $fichier);
+    if (is_file($fichier) && filesize($fichier) > JOURNAL_TAILLE_MAX) {
+        @unlink($fichier . '.1');
+        @rename($fichier, $fichier . '.1');
+    }
+
+    $ligne = preg_replace('/[\x00-\x1F\x7F]+/', ' ', (string)$ligne);
+    @file_put_contents($fichier, $ligne . PHP_EOL, FILE_APPEND | LOCK_EX);
 }
 
 ?>

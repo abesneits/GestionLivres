@@ -42,21 +42,39 @@ function buildUrl($newParams = [], $removeParams = []) {
 }
 
 /**
- * Afficher un message flash
+ * Afficher un message flash.
+ * Le texte est échappé : une valeur saisie par l'utilisateur ne peut pas y injecter de HTML.
+ * $html = true seulement pour un message dont le code construit lui-même le balisage
+ * (<strong>, <br>) en passant chaque valeur variable par h().
  */
-function showMessage($message, $type = 'info') {
+function showMessage($message, $type = 'info', $html = false) {
     if (empty($message)) return '';
-    
+
     $classes = [
         'success' => 'message success',
         'error' => 'message error',
         'warning' => 'message warning',
         'info' => 'message info'
     ];
-    
+
     $class = $classes[$type] ?? $classes['info'];
-    
-    return "<div class=\"$class\">$message</div>";
+
+    return "<div class=\"$class\">" . ($html ? $message : h($message)) . "</div>";
+}
+
+/**
+ * Texte d'une exception à montrer à l'utilisateur.
+ * Les messages écrits dans le code (« Le titre est obligatoire. ») sont affichés tels quels ;
+ * une erreur SQL (qui peut citer des noms de tables, de colonnes ou des valeurs) est seulement
+ * journalisée et remplacée par un texte générique.
+ */
+function messageErreur($e) {
+    $texte = $e->getMessage();
+    if ($e instanceof PDOException || strpos($texte, 'SQLSTATE[') !== false) {
+        logMessage('Erreur base de données : ' . $texte, 'ERROR');
+        return "Une erreur de base de données est survenue (détail dans logs/app.log).";
+    }
+    return $texte;
 }
 
 /**
@@ -398,9 +416,10 @@ function validateCSRFToken($token) {
 /**
  * Rediriger avec un message flash
  */
-function redirectWithMessage($url, $message, $type = 'success') {
+function redirectWithMessage($url, $message, $type = 'success', $html = false) {
     $_SESSION['flash_message'] = $message;
     $_SESSION['flash_type'] = $type;
+    $_SESSION['flash_html'] = $html;
     header("Location: $url");
     exit();
 }
@@ -412,10 +431,11 @@ function getFlashMessage() {
     if (isset($_SESSION['flash_message'])) {
         $message = $_SESSION['flash_message'];
         $type = $_SESSION['flash_type'] ?? 'info';
-        
-        unset($_SESSION['flash_message'], $_SESSION['flash_type']);
-        
-        return showMessage($message, $type);
+        $html = !empty($_SESSION['flash_html']);
+
+        unset($_SESSION['flash_message'], $_SESSION['flash_type'], $_SESSION['flash_html']);
+
+        return showMessage($message, $type, $html);
     }
     
     return '';
@@ -460,17 +480,7 @@ function formatFileSize($bytes) {
  * Logger une erreur ou information
  */
 function logMessage($message, $level = 'INFO') {
-    $logFile = 'logs/app.log';
-    $logDir = dirname($logFile);
-    
-    if (!is_dir($logDir)) {
-        mkdir($logDir, 0755, true);
-    }
-    
-    $timestamp = date('Y-m-d H:i:s');
-    $logEntry = "[$timestamp] [$level] $message" . PHP_EOL;
-    
-    file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+    ecrireJournal('app.log', '[' . date('Y-m-d H:i:s') . "] [$level] $message");
 }
 
 /**
@@ -510,34 +520,4 @@ function jsonResponse($data, $statusCode = 200) {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit();
-}
-/**
- * Fonction de logging simple
- * À ajouter dans votre fichier includes/utils.php
- */
-
-if (!function_exists('logMessage')) {
-    function logMessage($message, $level = 'INFO') {
-        $logFile = 'logs/app.log';
-        
-        // Créer le dossier logs s'il n'existe pas
-        if (!is_dir('logs')) {
-            mkdir('logs', 0755, true);
-        }
-        
-        $timestamp = date('Y-m-d H:i:s');
-        $logEntry = "[$timestamp] [$level] $message" . PHP_EOL;
-        
-        // Écrire dans le fichier de log (en mode append)
-        file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-    }
-}
-
-// Alternative plus simple si vous ne voulez pas de fichier de log :
-if (!function_exists('logMessage')) {
-    function logMessage($message, $level = 'INFO') {
-        // Ne rien faire - fonction vide pour éviter les erreurs
-        // Ou utiliser error_log() pour les logs système :
-        // error_log("[$level] $message");
-    }
 }

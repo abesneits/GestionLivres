@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 logMessage("ISBN search successful for: " . $cleanISBN, 'INFO');
                             }
                         } else {
-                            $message = "Impossible de trouver les informations pour cet ISBN : " . h($cleanISBN) . ". Vous pouvez les saisir manuellement.";
+                            $message = "Impossible de trouver les informations pour cet ISBN : " . $cleanISBN . ". Vous pouvez les saisir manuellement.";
                             $messageType = 'warning';
                             if (function_exists('logMessage')) {
                                 logMessage("ISBN not found: " . $cleanISBN, 'INFO');
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $step = 2;
                         }
                     } catch (Exception $e) {
-                        $message = "Erreur lors de la recherche : " . $e->getMessage();
+                        $message = "Erreur lors de la recherche : " . messageErreur($e);
                         $messageType = 'error';
                         if (function_exists('logMessage')) {
                             logMessage("ISBN search error: " . $e->getMessage(), 'ERROR');
@@ -253,14 +253,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         // Redirection avec message flash
-                        redirectWithMessage('ajouter.php', $successMessage, 'success');
+                        redirectWithMessage('ajouter.php', $successMessage, 'success', true);
                         exit(); // Important : arrêter l'exécution après redirection
                     } else {
                         throw new Exception("Erreur lors de l'enregistrement du livre");
                     }
 
                 } catch (Exception $e) {
-                    $message = "Erreur lors de l'ajout : " . $e->getMessage();
+                    $message = "Erreur lors de l'ajout : " . messageErreur($e);
                     $messageType = 'error';
                     if (function_exists('logMessage')) {
                         logMessage("Add book error: " . $e->getMessage(), 'ERROR');

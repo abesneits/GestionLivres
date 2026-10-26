@@ -29,7 +29,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'merge_authors') {
             $verbe = $cibleExistaitDeja ? "Fusion effectuée avec l'auteur existant" : "Auteur renommé en";
             redirectWithMessage('auteurs.php', "$verbe « " . $target . " » : $count livre(s) mis à jour.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur lors de la fusion : " . $e->getMessage();
+            $message = "Erreur lors de la fusion : " . messageErreur($e);
             $messageType = 'error';
         }
     }
@@ -56,7 +56,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'ignore_suspect') 
             $bookManager->ignoreSuspiciousAuthor($_POST['nom'] ?? '');
             redirectWithMessage('auteurs.php', "Ce nom ne sera plus signalé.", 'success');
         } catch (Exception $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
         }
     }
@@ -99,7 +99,7 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_biographie
             }
             redirectWithMessage('auteurs.php', $message, 'success');
         } catch (Exception $e) {
-            $message = "Erreur lors de la mise à jour : " . $e->getMessage();
+            $message = "Erreur lors de la mise à jour : " . messageErreur($e);
             $messageType = 'error';
         }
     }

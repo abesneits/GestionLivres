@@ -1,8 +1,9 @@
 # Pas de listing des dossiers
+# (si le serveur répond « 500 », l'hébergeur n'autorise pas cette directive : supprimez cette ligne)
 Options -Indexes
 
-# Fichiers sensibles : jamais accessibles depuis le web
-<FilesMatch "^(config\.php|config\.example\.php|.*\.log)$">
+# Fichiers sensibles ou sans intérêt pour le web : jamais accessibles par URL
+<FilesMatch "^(config\.php|config\.example\.php|CLAUDE\.md|.*\.(log(\.[0-9]+)?|docx|code-workspace|sql))$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -10,3 +11,10 @@ Options -Indexes
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# Dépôt Git et réglages d'éditeur (dossiers et fichiers cachés)
+<IfModule mod_alias.c>
+    RedirectMatch 404 /\.(git|claude)(/|$)
+    # Code interne : jamais appelé directement depuis le navigateur
+    RedirectMatch 403 (^|/)(src|includes|views|backups)/
+</IfModule>

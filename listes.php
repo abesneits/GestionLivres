@@ -28,7 +28,7 @@ if ($_POST) {
                 $listId = $bookManager->createList($_POST['nom'], $_POST['description'] ?? '', $couverture);
                 redirectWithMessage('listes.php', "Liste créée avec succès !", 'success');
             } catch (Exception $e) {
-                $message = "Erreur lors de la création : " . $e->getMessage();
+                $message = "Erreur lors de la création : " . messageErreur($e);
                 $messageType = 'error';
             }
         }
@@ -51,7 +51,7 @@ if ($_POST) {
                 $bookManager->updateList($_POST['liste_id'], $_POST['nom'], $_POST['description'] ?? '', $couverture);
                 redirectWithMessage('listes.php', "Liste mise à jour !", 'success');
             } catch (Exception $e) {
-                $message = "Erreur lors de la mise à jour : " . $e->getMessage();
+                $message = "Erreur lors de la mise à jour : " . messageErreur($e);
                 $messageType = 'error';
             }
         }
@@ -66,7 +66,7 @@ if ($_POST) {
                 $bookManager->deleteList($_POST['liste_id']);
                 redirectWithMessage('listes.php', "Liste supprimée.", 'success');
             } catch (Exception $e) {
-                $message = "Erreur lors de la suppression : " . $e->getMessage();
+                $message = "Erreur lors de la suppression : " . messageErreur($e);
                 $messageType = 'error';
             }
         }
@@ -95,7 +95,7 @@ if ($_POST) {
                     redirectWithMessage('listes.php?view=' . $_POST['liste_id'], "Tous les livres sont déjà dans cette liste.", 'warning');
                 }
             } catch (Exception $e) {
-                $message = "Erreur : " . $e->getMessage();
+                $message = "Erreur : " . messageErreur($e);
                 $messageType = 'error';
             }
         }
@@ -106,7 +106,7 @@ if ($_POST) {
                 $bookManager->removeBookFromList($_POST['liste_id'], $_POST['livre_id']);
                 redirectWithMessage('listes.php?view=' . $_POST['liste_id'], "Livre retiré de la liste.", 'success');
             } catch (Exception $e) {
-                $message = "Erreur : " . $e->getMessage();
+                $message = "Erreur : " . messageErreur($e);
                 $messageType = 'error';
             }
         }

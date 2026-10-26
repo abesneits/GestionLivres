@@ -82,21 +82,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $messageType = 'error';
                 } elseif ($id > 0) {
                     $bookManager->updateAchat($id, $data);
-                    redirectWithMessage('achats.php', "Achat modifié : <strong>" . h($data['titre']) . "</strong>", 'success');
+                    redirectWithMessage('achats.php', "Achat modifié : <strong>" . h($data['titre']) . "</strong>", 'success', true);
                 } else {
                     $bookManager->addAchat($data);
-                    redirectWithMessage('achats.php', "Ajouté aux achats : <strong>" . h($data['titre']) . "</strong>", 'success');
+                    redirectWithMessage('achats.php', "Ajouté aux achats : <strong>" . h($data['titre']) . "</strong>", 'success', true);
                 }
             } elseif ($action === 'valider_achat') {
                 $statut = in_array($_POST['statut'] ?? '', ['À lire', 'En cours', 'Lu'], true) ? $_POST['statut'] : 'À lire';
                 $achat = $bookManager->validerAchat((int)($_POST['achat_id'] ?? 0), $statut);
-                redirectWithMessage('achats.php', "Achat validé, ajouté à votre collection : <strong>" . h($achat['titre']) . "</strong>", 'success');
+                redirectWithMessage('achats.php', "Achat validé, ajouté à votre collection : <strong>" . h($achat['titre']) . "</strong>", 'success', true);
             } elseif ($action === 'delete_achat') {
                 $bookManager->deleteAchat((int)($_POST['achat_id'] ?? 0));
                 redirectWithMessage('achats.php', "Achat supprimé de la liste.", 'success');
             }
         } catch (Exception $e) {
-            $message = "Erreur : " . h($e->getMessage());
+            $message = "Erreur : " . messageErreur($e);
             $messageType = 'error';
             if (function_exists('logMessage')) {
                 logMessage("Achats error: " . $e->getMessage(), 'ERROR');

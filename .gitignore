@@ -2,7 +2,7 @@
 config.php
 
 # Journaux applicatifs
-logs/*.log
+logs/*.log*
 logs/*.json
 
 # Sauvegardes de sécurité créées avant une restauration
