@@ -10,6 +10,13 @@ class AuteurRepository {
     // Particules qui font partie du nom de famille (« de Saint-Exupéry », « Le Guin »)
     private const PARTICULES = ['de', 'du', 'des', 'le', 'la', 'les', 'van', 'von', 'der', 'den', 'ten', 'ter', 'da', 'di', 'del', 'della', 'dos', 'das', 'do', 'el', 'al', 'bin', 'ben', 'ibn', "d'", 'd’'];
 
+    // Rôles d'un auteur sur un livre (« Prénom Nom (Scénariste) » dans la saisie). « Auteur » est le rôle
+    // par défaut et n'apparaît pas dans le texte affiché. Ajouter un rôle ici suffit : la colonne est un texte libre.
+    public const ROLES = ['Auteur', 'Scénariste', 'Dessinateur', 'Illustrateur', 'Coloriste', 'Traducteur'];
+    public const ROLE_DEFAUT = 'Auteur';
+    // Formes féminines reconnues à la saisie (clé sans accents ni majuscules => rôle)
+    private const ROLES_SYNONYMES = ['autrice' => 'Auteur', 'dessinatrice' => 'Dessinateur', 'illustratrice' => 'Illustrateur', 'traductrice' => 'Traducteur'];
+
     private $pdo;
     private $tags;
 
@@ -49,33 +56,68 @@ class AuteurRepository {
     }
 
     /**
-     * Créer la table de liaison livres <-> auteurs (un livre peut avoir plusieurs auteurs,
-     * dans un ordre). À appeler après la création des tables livres et auteurs.
-     * Les liens sont supprimés automatiquement avec le livre ou l'auteur.
+     * Créer la table de liaison livres <-> auteurs (un livre peut avoir plusieurs auteurs, dans un ordre,
+     * chacun avec un ou plusieurs rôles : une ligne par livre, auteur et rôle). À appeler après la création
+     * des tables livres et auteurs. Les liens sont supprimés automatiquement avec le livre ou l'auteur.
+     * Une table créée avant l'introduction des rôles reçoit la colonne (rôle « Auteur ») et la nouvelle clé.
      */
     public function createBookAuthorsTable() {
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS livres_auteurs (
             livre_id INT NOT NULL,
             auteur_id INT NOT NULL,
+            role VARCHAR(40) NOT NULL DEFAULT 'Auteur',
             ordre SMALLINT NOT NULL DEFAULT 0,
-            PRIMARY KEY (livre_id, auteur_id),
+            PRIMARY KEY (livre_id, auteur_id, role),
             KEY idx_livres_auteurs_auteur (auteur_id),
             CONSTRAINT fk_livres_auteurs_livre FOREIGN KEY (livre_id) REFERENCES livres(id) ON DELETE CASCADE,
             CONSTRAINT fk_livres_auteurs_auteur FOREIGN KEY (auteur_id) REFERENCES auteurs(id) ON DELETE CASCADE
         ) ENGINE=InnoDB");
+
+        if ($this->pdo->query("SHOW COLUMNS FROM livres_auteurs LIKE 'role'")->rowCount() === 0) {
+            $this->pdo->exec("ALTER TABLE livres_auteurs ADD COLUMN role VARCHAR(40) NOT NULL DEFAULT 'Auteur' AFTER auteur_id");
+        }
+        // Un même auteur peut avoir plusieurs rôles sur un livre : le rôle fait partie de la clé primaire
+        // (une seule instruction : la clé de remplacement garde l'index exigé par la clé étrangère livre_id)
+        if ($this->pdo->query("SHOW INDEX FROM livres_auteurs WHERE Key_name = 'PRIMARY' AND Column_name = 'role'")->rowCount() === 0) {
+            $this->pdo->exec("ALTER TABLE livres_auteurs DROP PRIMARY KEY, ADD PRIMARY KEY (livre_id, auteur_id, role)");
+        }
     }
 
     /**
-     * Expression SQL du texte d'affichage « Nom1, Nom2 » des auteurs d'un livre (dans l'ordre),
-     * à utiliser comme colonne : « SELECT l.*, <expression> AS auteur FROM livres l ».
+     * Rôles proposés à la saisie.
+     */
+    public function getAuthorRoles() {
+        return self::ROLES;
+    }
+
+    /**
+     * Rôle reconnu (forme canonique) pour un mot saisi, ou null : insensible à la casse et aux accents,
+     * avec les formes féminines courantes (« dessinatrice »).
+     */
+    private function canonicalRole($mot) {
+        $cle = $this->normalizeAuthorName($mot);
+        foreach (self::ROLES as $role) {
+            if ($this->normalizeAuthorName($role) === $cle) {
+                return $role;
+            }
+        }
+        return self::ROLES_SYNONYMES[$cle] ?? null;
+    }
+
+    /**
+     * Expression SQL du texte d'affichage des auteurs d'un livre (dans l'ordre), à utiliser comme
+     * colonne : « SELECT l.*, <expression> AS auteur FROM livres l ». Format : « Nom1, Nom2 (Dessinateur) » ;
+     * le rôle par défaut n'est pas écrit, un auteur qui cumule deux rôles apparaît une fois par rôle.
      * $alias est l'alias de la table livres dans la requête. Chaîne vide si le livre n'a pas d'auteur.
+     * Ce texte est celui que la saisie accepte en retour (setBookAuthors).
      */
     public static function sqlTexteAuteurs($alias = 'l') {
-        return "COALESCE((SELECT GROUP_CONCAT(a.nom ORDER BY la.ordre SEPARATOR ', ')
+        $defaut = self::ROLE_DEFAUT;
+        return "COALESCE((SELECT GROUP_CONCAT(CONCAT(a.nom, IF(la.role = '$defaut', '', CONCAT(' (', la.role, ')')))
+                                              ORDER BY la.ordre, la.role SEPARATOR ', ')
                           FROM livres_auteurs la JOIN auteurs a ON a.id = la.auteur_id
                           WHERE la.livre_id = $alias.id), '')";
     }
-
     /**
      * Condition SQL « un des auteurs du livre contient le motif $parametre » (ex. ':search'),
      * pour les recherches textuelles ; ignore casse et accents comme le reste de la base.
@@ -185,58 +227,109 @@ class AuteurRepository {
     }
 
     /**
-     * Découpe un texte « Nom1, Nom2 » en noms d'auteurs (espaces de bord retirés, doublons
-     * et valeur de remplacement « Auteur non disponible » écartés).
+     * Découpe un texte « Nom1, Nom2 (Rôle) » en auteurs avec leurs rôles. Une virgule sépare deux auteurs,
+     * sauf entre parenthèses : « Nom (Scénariste, Dessinateur) » ou « Nom (Scénariste/Dessinateur) » donne deux
+     * rôles au même auteur. Des parenthèses qui ne contiennent pas que des rôles connus font partie du nom
+     * (« Claire Marc (médiatrice) »). Sans rôle, c'est « Auteur ». Les morceaux vides et la valeur de
+     * remplacement « Auteur non disponible » sont écartés.
+     * Retourne une liste de ['nom' => ..., 'roles' => [...]].
      */
     private function parseAuthorNames($texte) {
-        $noms = [];
-        foreach (explode(',', (string)$texte) as $nom) {
-            $nom = trim($nom);
+        $auteurs = [];
+        foreach ($this->splitOutsideParentheses((string)$texte) as $morceau) {
+            $morceau = trim($morceau);
+            if (preg_match('/^\([^()]*\)$/u', $morceau)) {
+                continue; // « (Scénariste) » seul : pas de nom
+            }
+            $nom = $morceau;
+            $roles = [];
+
+            if (preg_match('/^(.*\S)\s*\(([^()]*)\)$/u', $morceau, $m)) {
+                $candidats = array_values(array_filter(array_map('trim', preg_split('/[,\/;]/u', $m[2])), 'strlen'));
+                $reconnus = array_map([$this, 'canonicalRole'], $candidats);
+                if ($candidats && !in_array(null, $reconnus, true)) {
+                    $nom = trim($m[1]);
+                    $roles = array_values(array_unique($reconnus));
+                }
+            }
+
             if ($nom === '' || mb_strtolower($nom, 'UTF-8') === 'auteur non disponible') {
                 continue;
             }
-            $noms[] = $nom;
+            $auteurs[] = ['nom' => $nom, 'roles' => $roles ?: [self::ROLE_DEFAUT]];
         }
-        return $noms;
+        return $auteurs;
     }
 
     /**
-     * Remplace les liens d'un livre par ceux de la liste de noms (les auteurs inconnus sont créés).
-     * Retourne les noms enregistrés, dans l'ordre, sans doublon (la comparaison de la base ignore
-     * casse et accents : « eric schmitt » et « Éric Schmitt » désignent le même auteur).
+     * Découpe sur les virgules qui ne sont pas entre parenthèses.
      */
-    private function linkBookToAuthors($livreId, array $noms) {
+    private function splitOutsideParentheses($texte) {
+        $morceaux = [];
+        $courant = '';
+        $profondeur = 0;
+        foreach (preg_split('//u', $texte, -1, PREG_SPLIT_NO_EMPTY) as $car) {
+            if ($car === '(') {
+                $profondeur++;
+            } elseif ($car === ')' && $profondeur > 0) {
+                $profondeur--;
+            }
+            if ($car === ',' && $profondeur === 0) {
+                $morceaux[] = $courant;
+                $courant = '';
+            } else {
+                $courant .= $car;
+            }
+        }
+        $morceaux[] = $courant;
+        return $morceaux;
+    }
+
+    /**
+     * Remplace les liens d'un livre par ceux de la liste d'auteurs (les auteurs inconnus sont créés).
+     * Un auteur cité plusieurs fois (même nom à la casse ou aux accents près : la comparaison de la
+     * base les confond) n'est lié qu'une fois, avec l'ensemble de ses rôles.
+     * Retourne les noms enregistrés, dans l'ordre.
+     */
+    private function linkBookToAuthors($livreId, array $auteurs) {
         $this->pdo->prepare("DELETE FROM livres_auteurs WHERE livre_id = :id")->execute([':id' => $livreId]);
 
         $cherche = $this->pdo->prepare("SELECT id, nom FROM auteurs WHERE nom = :nom");
         $cree = $this->pdo->prepare("INSERT INTO auteurs (nom) VALUES (:nom)");
-        $lie = $this->pdo->prepare("INSERT INTO livres_auteurs (livre_id, auteur_id, ordre) VALUES (:livre, :auteur, :ordre)");
+        $lie = $this->pdo->prepare("INSERT INTO livres_auteurs (livre_id, auteur_id, role, ordre) VALUES (:livre, :auteur, :role, :ordre)");
 
-        $vus = [];
-        $nomsEnregistres = [];
-        foreach ($noms as $nom) {
-            $cherche->execute([':nom' => $nom]);
+        $ordre = [];    // id de l'auteur => position
+        $noms = [];     // id de l'auteur => nom enregistré
+        $roles = [];    // id de l'auteur => rôles
+        foreach ($auteurs as $entree) {
+            $cherche->execute([':nom' => $entree['nom']]);
             $auteur = $cherche->fetch(PDO::FETCH_ASSOC);
             if (!$auteur) {
-                $cree->execute([':nom' => $nom]);
-                $auteur = ['id' => $this->pdo->lastInsertId(), 'nom' => $nom];
+                $cree->execute([':nom' => $entree['nom']]);
+                $auteur = ['id' => $this->pdo->lastInsertId(), 'nom' => $entree['nom']];
             }
-            if (isset($vus[$auteur['id']])) {
-                continue;
+            $id = (string)$auteur['id'];
+            if (!isset($ordre[$id])) {
+                $ordre[$id] = count($ordre);
+                $noms[$id] = $auteur['nom'];
+                $roles[$id] = [];
             }
-            $vus[$auteur['id']] = true;
-            $lie->execute([':livre' => $livreId, ':auteur' => $auteur['id'], ':ordre' => count($nomsEnregistres)]);
-            $nomsEnregistres[] = $auteur['nom'];
+            $roles[$id] = array_values(array_unique(array_merge($roles[$id], $entree['roles'])));
         }
 
-        return $nomsEnregistres;
-    }
+        foreach ($ordre as $id => $position) {
+            foreach ($roles[$id] as $role) {
+                $lie->execute([':livre' => $livreId, ':auteur' => $id, ':role' => $role, ':ordre' => $position]);
+            }
+        }
 
+        return array_values($noms);
+    }
     /**
      * Regrouper tous les livres de la collection par auteur (via la table de liaison livres_auteurs)
      */
-    public function getAllAuthorsWithBooks($search = null, $support = null, $tag = null, $sort = 'alpha', $missingBioOnly = false) {
-        $sql = "SELECT l.id, l.titre, l.couverture, l.statut, l.support, l.tags, l.date_ajout,
+    public function getAllAuthorsWithBooks($search = null, $support = null, $tag = null, $sort = 'alpha', $missingBioOnly = false, $role = null) {
+        $sql = "SELECT l.id, l.titre, l.couverture, l.statut, l.support, l.tags, l.date_ajout, la.role AS auteur_role,
                        a.id AS auteur_id, a.nom AS auteur_nom, a.image_url AS auteur_image,
                        a.prenom AS auteur_prenom, a.nom_famille AS auteur_nom_famille,
                        (a.biographie IS NOT NULL AND a.biographie != '') AS auteur_a_bio
@@ -251,6 +344,11 @@ class AuteurRepository {
             $params[':support'] = $support;
         }
 
+        if ($role) {
+            $sql .= " AND la.role = :role";
+            $params[':role'] = $role;
+        }
+
         if ($tag) {
             // Correspondance EXACTE d'un tag (« lu » ne doit pas trouver « relu »)
             $cond = $this->tags->buildTagCondition($tag, '_auteur');
@@ -258,7 +356,7 @@ class AuteurRepository {
             $params = array_merge($params, $cond['params']);
         }
 
-        $sql .= " ORDER BY l.titre ASC";
+        $sql .= " ORDER BY l.titre ASC, la.role ASC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -278,6 +376,7 @@ class AuteurRepository {
                     'id' => (int)$ligne['auteur_id'],
                     'nom' => $nom,
                     'livres' => [],
+                    'roles' => [],
                     'image_url' => $ligne['auteur_image'] !== null && $ligne['auteur_image'] !== '' ? $ligne['auteur_image'] : null,
                     'a_une_biographie' => (bool)$ligne['auteur_a_bio'],
                     'prenom' => $parties['prenom'],
@@ -287,8 +386,20 @@ class AuteurRepository {
                     'cle_prenom' => $this->normalizeAuthorName($parties['prenom'] !== '' ? $parties['prenom'] : $parties['nom_famille']),
                 ];
             }
-            $authors[$nom]['livres'][] = array_intersect_key($ligne, $colonnesLivre);
+            // Un livre n'apparaît qu'une fois par auteur, avec tous les rôles que cet auteur y a
+            $idLivre = $ligne['id'];
+            if (!isset($authors[$nom]['livres'][$idLivre])) {
+                $authors[$nom]['livres'][$idLivre] = array_intersect_key($ligne, $colonnesLivre) + ['roles' => []];
+            }
+            $authors[$nom]['livres'][$idLivre]['roles'][] = $ligne['auteur_role'];
+            if (!in_array($ligne['auteur_role'], $authors[$nom]['roles'], true)) {
+                $authors[$nom]['roles'][] = $ligne['auteur_role'];
+            }
         }
+        foreach ($authors as &$auteurRegroupe) {
+            $auteurRegroupe['livres'] = array_values($auteurRegroupe['livres']);
+        }
+        unset($auteurRegroupe);
 
         if ($search) {
             $search = mb_strtolower($search, 'UTF-8');
@@ -397,7 +508,7 @@ class AuteurRepository {
         // BOM UTF-8 pour Excel
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        fputcsv($output, ['Nom', 'Prénom', 'Nom de famille', 'Nombre de livres', 'Naissance', 'Décès', 'Nationalité', 'Biographie', 'Titres possédés'], ';');
+        fputcsv($output, ['Nom', 'Prénom', 'Nom de famille', 'Nombre de livres', 'Rôles', 'Naissance', 'Décès', 'Nationalité', 'Biographie', 'Titres possédés'], ';');
 
         // Une seule requête pour toutes les fiches, indexées par nom (au lieu d'une requête par auteur)
         $metas = [];
@@ -416,6 +527,7 @@ class AuteurRepository {
                 $auteur['prenom'] ?? '',
                 $auteur['nom_famille'] ?? '',
                 count($auteur['livres']),
+                implode(', ', $auteur['roles'] ?? []),
                 $meta['naissance'] ?? '',
                 $meta['deces'] ?? '',
                 $meta['nationalite'] ?? '',
@@ -877,6 +989,176 @@ class AuteurRepository {
     }
 
     /**
+     * Fiches d'auteurs sans aucun livre (reliquats de livres supprimés ou d'auteurs renommés) : elles ne
+     * s'affichent nulle part. Chaque fiche : id, nom, a_bio (biographie présente), photo_locale (photo envoyée).
+     */
+    public function getOrphanAuthors() {
+        $lignes = $this->pdo->query(
+            "SELECT a.id, a.nom, a.image_url,
+                    (a.biographie IS NOT NULL AND a.biographie != '') AS a_bio
+             FROM auteurs a
+             WHERE NOT EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.auteur_id = a.id)
+             ORDER BY a.nom ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(function ($ligne) {
+            return [
+                'id' => (int)$ligne['id'],
+                'nom' => $ligne['nom'],
+                'a_bio' => (bool)$ligne['a_bio'],
+                'photo_locale' => strpos((string)$ligne['image_url'], 'uploads/auteurs/') === 0,
+            ];
+        }, $lignes);
+    }
+
+    /**
+     * Supprime les fiches d'auteurs sans livre, ainsi que leur photo envoyée (uploads/auteurs/).
+     * Chaque suppression revérifie qu'aucun livre n'est rattaché à la fiche. Retourne le nombre de fiches supprimées.
+     */
+    public function deleteOrphanAuthors() {
+        $supprimees = 0;
+        $photos = [];
+
+        $this->pdo->beginTransaction();
+        try {
+            $lignes = $this->pdo->query(
+                "SELECT a.id, a.image_url FROM auteurs a
+                 WHERE NOT EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.auteur_id = a.id)"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $supprime = $this->pdo->prepare(
+                "DELETE FROM auteurs WHERE id = :id AND NOT EXISTS (SELECT 1 FROM livres_auteurs la WHERE la.auteur_id = :id2)"
+            );
+            foreach ($lignes as $ligne) {
+                $supprime->execute([':id' => $ligne['id'], ':id2' => $ligne['id']]);
+                if ($supprime->rowCount() > 0) {
+                    $supprimees++;
+                    $photos[] = (string)$ligne['image_url'];
+                }
+            }
+            $this->pdo->commit();
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        // Photos envoyées par l'utilisateur uniquement (jamais une URL distante), une fois la suppression validée
+        foreach ($photos as $chemin) {
+            if (strpos($chemin, 'uploads/auteurs/') === 0 && strpos($chemin, '..') === false && is_file($chemin)) {
+                $encoreUtilisee = $this->pdo->prepare("SELECT COUNT(*) FROM auteurs WHERE image_url = :chemin");
+                $encoreUtilisee->execute([':chemin' => $chemin]);
+                if ((int)$encoreUtilisee->fetchColumn() === 0) {
+                    @unlink($chemin);
+                }
+            }
+        }
+
+        return $supprimees;
+    }
+
+    /**
+     * Livres d'un auteur avec les rôles qu'il y a (tous, sans filtre) : [['id', 'titre', 'roles' => [...]], ...],
+     * triés par titre. Sert à la fenêtre « Éditer l'auteur ».
+     */
+    public function getAuthorBookRoles($nom) {
+        $stmt = $this->pdo->prepare(
+            "SELECT l.id, l.titre, la.role
+             FROM livres_auteurs la
+             JOIN livres l ON l.id = la.livre_id
+             JOIN auteurs a ON a.id = la.auteur_id
+             WHERE a.nom = :nom
+             ORDER BY l.titre ASC, la.role ASC"
+        );
+        $stmt->execute([':nom' => trim($nom)]);
+
+        $livres = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $id = (int)$ligne['id'];
+            if (!isset($livres[$id])) {
+                $livres[$id] = ['id' => $id, 'titre' => $ligne['titre'], 'roles' => []];
+            }
+            $livres[$id]['roles'][] = $ligne['role'];
+        }
+        return array_values($livres);
+    }
+
+    /**
+     * Définit les rôles d'un auteur sur ses livres : $rolesParLivre = [id du livre => [rôles...]].
+     * Seuls les livres de cet auteur cités dans le tableau sont modifiés ; les rôles inconnus sont ignorés,
+     * et un livre sans aucun rôle valide garde le rôle par défaut (cette méthode ne retire jamais un livre
+     * à un auteur). Retourne le nombre de livres dont les rôles ont changé.
+     */
+    public function setAuthorRoles($nom, array $rolesParLivre) {
+        $stmt = $this->pdo->prepare("SELECT id FROM auteurs WHERE nom = :nom");
+        $stmt->execute([':nom' => trim($nom)]);
+        $idAuteur = $stmt->fetchColumn();
+        if ($idAuteur === false) {
+            throw new Exception("Auteur introuvable.");
+        }
+
+        $actuels = [];
+        $stmt = $this->pdo->prepare("SELECT livre_id, role, ordre FROM livres_auteurs WHERE auteur_id = :id ORDER BY livre_id, role");
+        $stmt->execute([':id' => $idAuteur]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $livre = (int)$ligne['livre_id'];
+            $actuels[$livre]['roles'][] = $ligne['role'];
+            $actuels[$livre]['ordre'] = isset($actuels[$livre]['ordre']) ? min($actuels[$livre]['ordre'], (int)$ligne['ordre']) : (int)$ligne['ordre'];
+        }
+
+        $propreTransaction = !$this->pdo->inTransaction();
+        if ($propreTransaction) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $supprime = $this->pdo->prepare("DELETE FROM livres_auteurs WHERE livre_id = :livre AND auteur_id = :auteur");
+            $ajoute = $this->pdo->prepare("INSERT INTO livres_auteurs (livre_id, auteur_id, role, ordre) VALUES (:livre, :auteur, :role, :ordre)");
+            $modifies = 0;
+
+            foreach ($actuels as $livre => $etat) {
+                if (!array_key_exists($livre, $rolesParLivre)) {
+                    continue;
+                }
+                $roles = [];
+                foreach ((array)$rolesParLivre[$livre] as $role) {
+                    $canonique = $this->canonicalRole((string)$role);
+                    if ($canonique !== null && !in_array($canonique, $roles, true)) {
+                        $roles[] = $canonique;
+                    }
+                }
+                if (!$roles) {
+                    $roles = [self::ROLE_DEFAUT];
+                }
+
+                $avant = $etat['roles'];
+                sort($avant);
+                $apres = $roles;
+                sort($apres);
+                if ($avant === $apres) {
+                    continue;
+                }
+
+                $supprime->execute([':livre' => $livre, ':auteur' => $idAuteur]);
+                foreach ($roles as $role) {
+                    $ajoute->execute([':livre' => $livre, ':auteur' => $idAuteur, ':role' => $role, ':ordre' => $etat['ordre']]);
+                }
+                $modifies++;
+            }
+
+            if ($propreTransaction) {
+                $this->pdo->commit();
+            }
+            return $modifies;
+        } catch (Exception $e) {
+            if ($propreTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
      * Noms de tous les auteurs qui ont au moins un livre (triés), pour les suggestions de saisie.
      */
     public function getAuthorNames() {
@@ -966,8 +1248,8 @@ class AuteurRepository {
             // Rattacher les livres des autres fiches à la fiche conservée, puis les supprimer
             // (INSERT IGNORE : un livre qui avait déjà les deux auteurs n'en garde qu'un)
             $rattache = $this->pdo->prepare(
-                "INSERT IGNORE INTO livres_auteurs (livre_id, auteur_id, ordre)
-                 SELECT livre_id, :garde, ordre FROM livres_auteurs WHERE auteur_id = :source"
+                "INSERT IGNORE INTO livres_auteurs (livre_id, auteur_id, role, ordre)
+                 SELECT livre_id, :garde, role, ordre FROM livres_auteurs WHERE auteur_id = :source"
             );
             $supprime = $this->pdo->prepare("DELETE FROM auteurs WHERE id = :id");
             foreach (array_keys($fichesSources) as $idSource) {
@@ -976,6 +1258,16 @@ class AuteurRepository {
                     $supprime->execute([':id' => $idSource]);
                 }
             }
+
+            // Un auteur fusionné apparaît à sa première position dans chaque livre (ses rôles restent côte à côte)
+            $stmt = $this->pdo->prepare(
+                "UPDATE livres_auteurs la
+                 JOIN (SELECT livre_id, MIN(ordre) AS premier FROM livres_auteurs WHERE auteur_id = :garde GROUP BY livre_id) m
+                   ON m.livre_id = la.livre_id
+                 SET la.ordre = m.premier
+                 WHERE la.auteur_id = :garde2"
+            );
+            $stmt->execute([':garde' => $idGarde, ':garde2' => $idGarde]);
 
             // La fiche conservée prend exactement le nom cible (casse comprise)
             $stmt = $this->pdo->prepare("UPDATE auteurs SET nom = :nom WHERE id = :id");

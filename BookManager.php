@@ -229,8 +229,8 @@ class BookManager {
         return $this->auteurs->createAuthorTable();
     }
 
-    public function getAllAuthorsWithBooks($search = null, $support = null, $tag = null, $sort = 'alpha', $missingBioOnly = false) {
-        return $this->auteurs->getAllAuthorsWithBooks($search, $support, $tag, $sort, $missingBioOnly);
+    public function getAllAuthorsWithBooks($search = null, $support = null, $tag = null, $sort = 'alpha', $missingBioOnly = false, $role = null) {
+        return $this->auteurs->getAllAuthorsWithBooks($search, $support, $tag, $sort, $missingBioOnly, $role);
     }
 
     public function exportAuthorsCSV($authors) {
@@ -267,6 +267,26 @@ class BookManager {
 
     public function authorExists($nom) {
         return $this->auteurs->authorExists($nom);
+    }
+
+    public function getAuthorBookRoles($nom) {
+        return $this->auteurs->getAuthorBookRoles($nom);
+    }
+
+    public function setAuthorRoles($nom, array $rolesParLivre) {
+        return $this->auteurs->setAuthorRoles($nom, $rolesParLivre);
+    }
+
+    public function getAuthorRoles() {
+        return $this->auteurs->getAuthorRoles();
+    }
+
+    public function getOrphanAuthors() {
+        return $this->auteurs->getOrphanAuthors();
+    }
+
+    public function deleteOrphanAuthors() {
+        return $this->auteurs->deleteOrphanAuthors();
     }
 
     public function getAuthorNames() {

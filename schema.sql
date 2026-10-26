@@ -106,14 +106,16 @@ CREATE TABLE IF NOT EXISTS `auteurs` (
   UNIQUE KEY `nom` (`nom`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Liaison livres <-> auteurs : un livre peut avoir plusieurs auteurs, dans un ordre.
--- C'est le seul endroit où les auteurs d'un livre sont stockés ; le texte « Nom1, Nom2 » affiché par
--- l'application est calculé par une jointure.
+-- Liaison livres <-> auteurs : un livre peut avoir plusieurs auteurs, dans un ordre, chacun avec un ou
+-- plusieurs rôles (Auteur par défaut, Scénariste, Dessinateur...) : une ligne par livre, auteur et rôle.
+-- C'est le seul endroit où les auteurs d'un livre sont stockés ; le texte « Nom1, Nom2 (Dessinateur) »
+-- affiché par l'application est calculé par une jointure.
 CREATE TABLE IF NOT EXISTS `livres_auteurs` (
   `livre_id` int NOT NULL,
   `auteur_id` int NOT NULL,
+  `role` varchar(40) NOT NULL DEFAULT 'Auteur',
   `ordre` smallint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`livre_id`,`auteur_id`),
+  PRIMARY KEY (`livre_id`,`auteur_id`,`role`),
   KEY `idx_livres_auteurs_auteur` (`auteur_id`),
   CONSTRAINT `fk_livres_auteurs_livre` FOREIGN KEY (`livre_id`) REFERENCES `livres` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_livres_auteurs_auteur` FOREIGN KEY (`auteur_id`) REFERENCES `auteurs` (`id`) ON DELETE CASCADE

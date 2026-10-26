@@ -81,7 +81,23 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update_biographie
                 $_POST['prenom'] ?? '',
                 $_POST['nom_famille'] ?? ''
             );
-            redirectWithMessage('auteurs.php', "Biographie mise à jour.", 'success');
+            $message = "Auteur mis à jour.";
+            // Les rôles ne sont envoyés qu'une fois la liste des livres chargée dans la fenêtre
+            if (($_POST['roles_envoyes'] ?? '') === '1') {
+                $rolesParLivre = [];
+                foreach ((array)($_POST['roles'] ?? []) as $livreId => $roles) {
+                    $rolesParLivre[(int)$livreId] = (array)$roles;
+                }
+                // Un livre dont toutes les cases sont décochées n'envoie rien : il revient au rôle par défaut
+                foreach ((array)($_POST['livres_ids'] ?? []) as $livreId) {
+                    $rolesParLivre += [(int)$livreId => []];
+                }
+                $nbRoles = $bookManager->setAuthorRoles($_POST['nom'] ?? '', $rolesParLivre);
+                if ($nbRoles > 0) {
+                    $message .= " Rôles modifiés sur $nbRoles livre(s).";
+                }
+            }
+            redirectWithMessage('auteurs.php', $message, 'success');
         } catch (Exception $e) {
             $message = "Erreur lors de la mise à jour : " . $e->getMessage();
             $messageType = 'error';
@@ -94,13 +110,15 @@ $filterSupport = trim($_GET['filter'] ?? '');
 $filterTag = trim($_GET['tag'] ?? '');
 $tri = in_array($_GET['tri'] ?? '', ['alpha', 'prenom', 'count_desc', 'recent']) ? $_GET['tri'] : 'alpha';
 $bioManquante = isset($_GET['bio_manquante']) && $_GET['bio_manquante'] === '1';
+$allRoles = $bookManager->getAuthorRoles();
+$filterRole = in_array($_GET['role'] ?? '', $allRoles, true) ? $_GET['role'] : '';
 
 // La liste complète est calculée UNE seule fois, puis réutilisée (noms, doublons, et affichage s'il n'y a pas de filtre)
 $tousLesAuteurs = $bookManager->getAllAuthorsWithBooks();
-if (!$search && !$filterSupport && !$filterTag && !$bioManquante && $tri === 'alpha') {
+if (!$search && !$filterSupport && !$filterTag && !$bioManquante && !$filterRole && $tri === 'alpha') {
     $authors = $tousLesAuteurs;
 } else {
-    $authors = $bookManager->getAllAuthorsWithBooks($search ?: null, $filterSupport ?: null, $filterTag ?: null, $tri, $bioManquante);
+    $authors = $bookManager->getAllAuthorsWithBooks($search ?: null, $filterSupport ?: null, $filterTag ?: null, $tri, $bioManquante, $filterRole ?: null);
 }
 
 // Export CSV du résultat filtré, avant tout envoi de HTML

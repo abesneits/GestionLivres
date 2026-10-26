@@ -88,6 +88,44 @@ renderHead('Outils - Ma Collection');
             </div>
 
             <div class="search-section">
+                <h3>Fiches d'auteurs sans livre</h3>
+                <?php if (empty($orphanAuthors)): ?>
+                    <p style="color:#666;">Aucune : chaque fiche d'auteur est rattachée à au moins un livre.</p>
+                <?php else: ?>
+                    <?php
+                    $nbAvecBio = count(array_filter($orphanAuthors, function ($a) { return $a['a_bio']; }));
+                    $nbAvecPhoto = count(array_filter($orphanAuthors, function ($a) { return $a['photo_locale']; }));
+                    ?>
+                    <p style="color:#666; margin-bottom: 10px;">
+                        <strong><?= count($orphanAuthors) ?></strong> fiche(s) d'auteur n'ont plus aucun livre (livre supprimé, auteur renommé...).
+                        Elles n'apparaissent nulle part dans l'application.
+                        <?php if ($nbAvecBio > 0 || $nbAvecPhoto > 0): ?>
+                            Parmi elles : <?= $nbAvecBio ?> avec une biographie, <?= $nbAvecPhoto ?> avec une photo envoyée.
+                        <?php endif; ?>
+                    </p>
+                    <ul class="orphan-authors-list">
+                        <?php foreach (array_slice($orphanAuthors, 0, 30) as $orphan): ?>
+                            <li><?= h($orphan['nom']) ?>
+                                <?php if ($orphan['a_bio']): ?><small>biographie</small><?php endif; ?>
+                                <?php if ($orphan['photo_locale']): ?><small>photo</small><?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (count($orphanAuthors) > 30): ?>
+                            <li>… et <?= count($orphanAuthors) - 30 ?> autre(s)</li>
+                        <?php endif; ?>
+                    </ul>
+                    <p style="color:#999; font-size:0.85em; margin: 10px 0 15px;">
+                        Si un de ces auteurs est de nouveau saisi sur un livre, sa fiche est recréée ; une biographie saisie à la main serait alors perdue.
+                    </p>
+                    <form method="POST" onsubmit="return confirm('Supprimer définitivement <?= count($orphanAuthors) ?> fiche(s) d\'auteur sans livre ?');">
+                        <input type="hidden" name="action" value="delete_orphan_authors">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <button type="submit" class="btn-danger"><?= icone('gomme') ?> Supprimer les fiches sans livre</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <div class="search-section">
                 <h3>Maintenance</h3>
                 <form method="POST" style="display:inline-block; margin-right:10px;" onsubmit="return confirm('Optimiser toutes les tables ?');">
                     <input type="hidden" name="action" value="optimize_tables">

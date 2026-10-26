@@ -108,6 +108,15 @@ renderHead('Auteurs - Ma Collection');
                     </select>
                 </div>
                 <div class="search-group">
+                    <label>Rôle</label>
+                    <select name="role">
+                        <option value="">Tous les rôles</option>
+                        <?php foreach ($allRoles as $roleOption): ?>
+                            <option value="<?= h($roleOption) ?>" <?= $filterRole === $roleOption ? 'selected' : '' ?>><?= h($roleOption) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="search-group">
                     <label>Trier par</label>
                     <select name="tri">
                         <option value="alpha" <?= $tri === 'alpha' ? 'selected' : '' ?>>Nom de famille (A-Z)</option>
@@ -125,7 +134,7 @@ renderHead('Auteurs - Ma Collection');
                 <button type="submit" class="btn-search">Filtrer</button>
             </form>
 
-            <?php if ($search || $filterSupport || $filterTag || $tri !== 'alpha' || $bioManquante): ?>
+            <?php if ($search || $filterSupport || $filterTag || $filterRole || $tri !== 'alpha' || $bioManquante): ?>
                 <div style="margin-top: 10px;">
                     <a href="auteurs.php" class="btn-secondary" style="font-size: 0.9em;">Réinitialiser les filtres</a>
                 </div>
@@ -135,14 +144,14 @@ renderHead('Auteurs - Ma Collection');
         <?php if (empty($authors)): ?>
             <div class="empty-state">
                 <div class="empty-icon"><?= icone('plume') ?></div>
-                <h3><?= ($search || $filterSupport || $filterTag || $bioManquante) ? 'Aucun auteur trouvé' : 'Aucun auteur pour le moment' ?></h3>
-                <p><?= ($search || $filterSupport || $filterTag || $bioManquante) ? 'Essayez d\'autres critères.' : 'Ajoutez des livres à votre collection pour voir apparaître leurs auteurs ici.' ?></p>
+                <h3><?= ($search || $filterSupport || $filterTag || $filterRole || $bioManquante) ? 'Aucun auteur trouvé' : 'Aucun auteur pour le moment' ?></h3>
+                <p><?= ($search || $filterSupport || $filterTag || $filterRole || $bioManquante) ? 'Essayez d\'autres critères.' : 'Ajoutez des livres à votre collection pour voir apparaître leurs auteurs ici.' ?></p>
             </div>
         <?php else: ?>
             <p class="auteur-total">
                 <?= count($authors) ?> auteur<?= count($authors) > 1 ? 's' : '' ?>
                 <a href="<?= h('auteurs.php?' . http_build_query(array_filter([
-                    'q' => $search, 'filter' => $filterSupport, 'tag' => $filterTag, 'tri' => $tri,
+                    'q' => $search, 'filter' => $filterSupport, 'tag' => $filterTag, 'role' => $filterRole, 'tri' => $tri,
                     'bio_manquante' => $bioManquante ? '1' : '', 'export' => 'csv'
                 ]))) ?>" class="btn-secondary btn-small auteur-export-link"><?= icone('telecharger') ?> Exporter en CSV</a>
             </p>
@@ -203,6 +212,9 @@ renderHead('Auteurs - Ma Collection');
                                              onerror="this.parentElement.innerHTML='<div class=&quot;cover-placeholder&quot;><?= h(icone('livres')) ?></div>';">
                                     </span>
                                     <span class="auteur-livre-titre"><?= h($livre['titre']) ?></span>
+                                    <?php if ($livre['roles'] !== [AuteurRepository::ROLE_DEFAUT]): ?>
+                                        <span class="auteur-livre-role"><?= h(implode(', ', $livre['roles'])) ?></span>
+                                    <?php endif; ?>
                                     <span class="book-card-statut <?= getStatusClass($livre['statut'] ?? 'À lire') ?>"><?= h($livre['statut'] ?? 'À lire') ?></span>
                                 </a>
                             <?php endforeach; ?>
@@ -255,6 +267,13 @@ renderHead('Auteurs - Ma Collection');
                 </div>
                 <small class="edit-auteur-aide">Utilisés pour trier les auteurs par nom de famille. Déterminés automatiquement à partir du nom complet ; corrigez-les si besoin.</small>
 
+                <details class="form-group auteur-roles-section" id="editAuteurRoles">
+                    <summary>Rôles sur ses livres <span id="editAuteurRolesResume" class="auteur-roles-resume"></span></summary>
+                    <input type="hidden" name="roles_envoyes" id="editAuteurRolesEnvoyes" value="">
+                    <div id="editAuteurRolesListe" class="auteur-roles-liste"><p class="auteur-bio-loading">Chargement des livres...</p></div>
+                    <small class="edit-auteur-aide">Cochez un ou plusieurs rôles par livre (« Auteur » si rien n'est coché). La ligne « Tous les livres » applique un rôle à toute la liste.</small>
+                </details>
+
                 <div class="form-group">
                     <label for="editAuteurBio">Biographie :</label>
                     <textarea id="editAuteurBio" name="biographie" rows="8" placeholder="Biographie de l'auteur..."></textarea>
@@ -302,6 +321,8 @@ renderHead('Auteurs - Ma Collection');
         const ICONE_NAISSANCE = <?= json_encode(icone('calendrier')) ?>;
         const ICONE_NATIONALITE = <?= json_encode(icone('globe')) ?>;
         const ICONE_ACTUALISER = <?= json_encode(icone('actualiser')) ?>;
+        const ROLES_AUTEURS = <?= json_encode($allRoles, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        const ROLE_DEFAUT = <?= json_encode(AuteurRepository::ROLE_DEFAUT) ?>;
 
         // Échappe du texte avant de l'insérer dans du HTML
         function echapper(texte) {
@@ -441,6 +462,7 @@ renderHead('Auteurs - Ma Collection');
         document.getElementById('editAuteurNationalite').value = '';
         document.getElementById('editAuteurPrenom').value = '';
         document.getElementById('editAuteurNomFamille').value = '';
+        reinitialiserRolesAuteur();
 
         fetch('get_biographie.php?nom=' + encodeURIComponent(nom))
             .then(function(r) { return r.json(); })
@@ -453,11 +475,93 @@ renderHead('Auteurs - Ma Collection');
                     document.getElementById('editAuteurNationalite').value = data.nationalite || '';
                     document.getElementById('editAuteurPrenom').value = data.prenom || '';
                     document.getElementById('editAuteurNomFamille').value = data.nom_famille || '';
+                    afficherRolesAuteur(data.livres || []);
                 }
             })
             .catch(function() {});
 
         document.getElementById('editAuteurModal').style.display = 'flex';
+    }
+
+    // ----- Rôles de l'auteur sur chacun de ses livres (cases à cocher, une ligne par livre)
+    function reinitialiserRolesAuteur() {
+        document.getElementById('editAuteurRolesEnvoyes').value = '';
+        document.getElementById('editAuteurRolesListe').innerHTML = '<p class="auteur-bio-loading">Chargement des livres...</p>';
+        document.getElementById('editAuteurRolesResume').textContent = '';
+        document.getElementById('editAuteurRoles').open = false;
+    }
+
+    function afficherRolesAuteur(livres) {
+        const liste = document.getElementById('editAuteurRolesListe');
+        liste.innerHTML = '';
+
+        const ligneRoles = function(titre, estTous) {
+            const ligne = document.createElement('div');
+            ligne.className = 'auteur-roles-ligne' + (estTous ? ' auteur-roles-tous' : '');
+            const libelle = document.createElement('span');
+            libelle.className = 'auteur-roles-titre';
+            libelle.textContent = titre;
+            ligne.appendChild(libelle);
+            return ligne;
+        };
+
+        const entete = ligneRoles('Tous les livres', true);
+        ROLES_AUTEURS.forEach(function(role) {
+            const label = document.createElement('label');
+            label.className = 'auteur-role-case';
+            const caseTous = document.createElement('input');
+            caseTous.type = 'checkbox';
+            caseTous.addEventListener('change', function() {
+                liste.querySelectorAll('input[data-role="' + role + '"]').forEach(function(c) { c.checked = caseTous.checked; });
+                mettreAJourResumeRoles();
+            });
+            label.appendChild(caseTous);
+            label.appendChild(document.createTextNode(' ' + role));
+            entete.appendChild(label);
+        });
+        liste.appendChild(entete);
+
+        livres.forEach(function(livre) {
+            const ligne = ligneRoles(livre.titre, false);
+            const ident = document.createElement('input');
+            ident.type = 'hidden';
+            ident.name = 'livres_ids[]';
+            ident.value = livre.id;
+            ligne.appendChild(ident);
+            ROLES_AUTEURS.forEach(function(role) {
+                const label = document.createElement('label');
+                label.className = 'auteur-role-case';
+                const c = document.createElement('input');
+                c.type = 'checkbox';
+                c.name = 'roles[' + livre.id + '][]';
+                c.value = role;
+                c.dataset.role = role;
+                c.checked = livre.roles.indexOf(role) !== -1;
+                c.addEventListener('change', mettreAJourResumeRoles);
+                label.appendChild(c);
+                label.appendChild(document.createTextNode(' ' + role));
+                ligne.appendChild(label);
+            });
+            liste.appendChild(ligne);
+        });
+
+        document.getElementById('editAuteurRolesEnvoyes').value = '1';
+        mettreAJourResumeRoles();
+        // Ouvert d'office quand l'auteur a déjà un rôle autre que « Auteur »
+        document.getElementById('editAuteurRoles').open = livres.some(function(l) {
+            return l.roles.some(function(r) { return r !== ROLE_DEFAUT; });
+        });
+    }
+
+    function mettreAJourResumeRoles() {
+        const comptes = {};
+        document.querySelectorAll('#editAuteurRolesListe input[data-role]:checked').forEach(function(c) {
+            comptes[c.dataset.role] = (comptes[c.dataset.role] || 0) + 1;
+        });
+        document.getElementById('editAuteurRolesResume').textContent = ROLES_AUTEURS
+            .filter(function(r) { return comptes[r]; })
+            .map(function(r) { return r + ' × ' + comptes[r]; })
+            .join(' · ');
     }
 
     function closeEditAuteurModal() {

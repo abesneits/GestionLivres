@@ -32,5 +32,6 @@ jsonResponse([
     'deces' => $data['deces'] ?? null,
     'nationalite' => $data['nationalite'] ?? null,
     'prenom' => $data['prenom'] ?? '',
-    'nom_famille' => $data['nom_famille'] ?? ''
+    'nom_famille' => $data['nom_famille'] ?? '',
+    'livres' => $bookManager->getAuthorBookRoles($nom)
 ]);

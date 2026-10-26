@@ -312,6 +312,7 @@ try {
 } catch (Exception $e) {
     $allAuteurs = [];
 }
+$rolesAuteurs = $bookManager->getAuthorRoles();
 
 // Formats numériques disponibles (pour le champ Type = Numérique)
 try {

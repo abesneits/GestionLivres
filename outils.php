@@ -143,6 +143,14 @@ if ($_POST && isset($_POST['action'])) {
             $message = "Erreur : " . $e->getMessage();
             $messageType = 'error';
         }
+    } elseif ($_POST['action'] === 'delete_orphan_authors') {
+        try {
+            $count = $bookManager->deleteOrphanAuthors();
+            redirectWithMessage('outils.php?section=bdd', "$count fiche(s) d'auteur sans livre supprimée(s).", 'success');
+        } catch (Exception $e) {
+            $message = "Erreur : " . $e->getMessage();
+            $messageType = 'error';
+        }
     } elseif ($_POST['action'] === 'delete_orphans') {
         try {
             $count = $bookManager->deleteOrphanUploads();
@@ -157,6 +165,7 @@ if ($_POST && isset($_POST['action'])) {
 $flashMessage = getFlashMessage();
 $dbInfo = $section === 'bdd' ? $bookManager->getDatabaseInfo() : null;
 $storageInfo = $section === 'bdd' ? $bookManager->getUploadsStorageInfo() : null;
+$orphanAuthors = $section === 'bdd' ? $bookManager->getOrphanAuthors() : [];
 
 $criteres = null;
 $resultatsLivres = [];

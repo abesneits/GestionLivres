@@ -3286,3 +3286,99 @@ summary:focus-visible {
     background: var(--border);
     color: var(--text);
 }
+
+/* Rôle d'un auteur sur un livre (page Auteurs) */
+.auteur-livre-role {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 0.75em;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Outils : liste des fiches d'auteurs sans livre */
+.orphan-authors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.orphan-authors-list li {
+    padding: 4px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    font-size: 0.9em;
+}
+
+.orphan-authors-list small {
+    margin-left: 4px;
+    color: var(--text-muted);
+}
+
+/* Fenêtre « Éditer l'auteur » : rôles sur chacun de ses livres */
+.auteur-roles-section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--surface-2);
+}
+
+.auteur-roles-section summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.auteur-roles-resume {
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
+.auteur-roles-liste {
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.auteur-roles-ligne {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.85em;
+}
+
+.auteur-roles-tous {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    font-weight: 600;
+}
+
+.auteur-roles-titre {
+    flex: 1 1 100%;
+    color: var(--text);
+}
+
+.auteur-role-case {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    font-weight: normal;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.auteur-role-case input {
+    width: auto;
+    margin: 0;
+}

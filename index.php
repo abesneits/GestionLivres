@@ -120,6 +120,7 @@ $books = $bookManager->getAllBooks(
 $stats = $bookManager->getStats();
 $allTags = $bookManager->getAllTags();
 $allAuteurs = $bookManager->getAuthorNames();
+$rolesAuteurs = $bookManager->getAuthorRoles();
 $allSeries = $bookManager->getAllSeries();
 $allFormatsNumeriques = $bookManager->getFormatsNumeriquesWithCounts();
 $allExtensionsNumeriques = $bookManager->getAllExtensionsNumeriques();

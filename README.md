@@ -8,7 +8,7 @@ Application web personnelle pour gérer sa collection de livres, bandes dessiné
 - **Ajout manuel** et envoi de couvertures personnalisées
 - **Listes de lecture** réordonnables par glisser-déposer
 - **Achats à effectuer** : liste de livres à acheter (priorité, prix estimé), validation qui les ajoute à la collection, version imprimable
-- **Fiches auteurs** avec biographie issue de Wikipédia, tri par nom de famille avec index alphabétique, détection et fusion des doublons, repérage des noms à vérifier
+- **Fiches auteurs** avec biographie issue de Wikipédia, tri par nom de famille avec index alphabétique, détection et fusion des doublons, repérage des noms à vérifier, rôles (scénariste, dessinateur...)
 - **Séries et tomes** : rattachez un livre à une série (« Cycle de Fondation », « One Piece »…) avec son numéro de tome, puis filtrez et triez par série
 - **Livres numériques** : distinction papier/numérique, formats extensibles (PDF, Epub…), envoi et téléchargement du fichier protégés par mot de passe
 - **Tags**, **statuts de lecture** (À lire, En cours, Lu, Abandonné), notes personnelles

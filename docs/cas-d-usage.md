@@ -16,7 +16,7 @@ L'objectif est de répondre à quelques questions simples :
 
 | Besoin | Comment l'application y répond | Où |
 |---|---|---|
-| **Ajouter un livre rapidement** | Saisie de l'ISBN : titre, auteur, description, couverture et date sont récupérés automatiquement (Google Books, puis Open Library, puis BnF). Le champ auteur propose les auteurs déjà présents (format « Prénom Nom », virgule entre plusieurs auteurs). | Ajouter |
+| **Ajouter un livre rapidement** | Saisie de l'ISBN : titre, auteur, description, couverture et date sont récupérés automatiquement (Google Books, puis Open Library, puis BnF). Le champ auteur propose les auteurs déjà présents (format « Prénom Nom », virgule entre plusieurs auteurs) et les rôles (« Prénom Nom (Scénariste) »). | Ajouter |
 | **Ajouter un livre sans ISBN** | Saisie manuelle de tous les champs. Un identifiant temporaire (`TEMP_…`) est généré à la place de l'ISBN. | Ajouter |
 | **Retrouver un livre** | Recherche par titre, auteur, ISBN ou série ; filtres par support, statut, tag et série ; pagination. | Ma collection |
 | **Éviter les doublons** | L'ISBN est unique : ajouter deux fois le même livre est refusé avec un message clair. | Ajouter |
@@ -25,7 +25,7 @@ L'objectif est de répondre à quelques questions simples :
 | **Suivre une série** | Rattachement d'un livre à une série avec son numéro de tome ; filtre par série et tri par série puis par tome. | Ma collection, Édition |
 | **Préparer mes achats** | Liste d'achats avec priorité, prix estimé et lieu ; validation d'un achat = ajout automatique à la collection ; version imprimable avec cases à cocher. | Achats |
 | **Préparer des lectures** | Listes de lecture nommées, dont l'ordre se change par glisser-déposer. | Listes |
-| **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; tri par nom de famille avec index alphabétique ; renommage d'un auteur sans perdre sa fiche ; détection et fusion des doublons dus à la casse, aux accents ou à l'ordre prénom/nom (« victor hugo » / « Hugo Victor ») ; liste des noms à vérifier (parenthèses, titres pris pour des auteurs, noms d'un seul mot). | Auteurs |
+| **Connaître un auteur** | Fiche avec biographie, dates et nationalité (Wikipédia et Wikidata), photo ; regroupement des livres par auteur ; tri par nom de famille avec index alphabétique ; renommage d'un auteur sans perdre sa fiche ; détection et fusion des doublons dus à la casse, aux accents ou à l'ordre prénom/nom (« victor hugo » / « Hugo Victor ») ; liste des noms à vérifier (parenthèses, titres pris pour des auteurs, noms d'un seul mot) ; rôle de l'auteur sur chaque livre (scénariste, dessinateur...) modifiable livre par livre ou pour tous les livres d'un auteur, filtre par rôle ; nettoyage des fiches d'auteurs qui n'ont plus de livre (Outils). | Auteurs |
 | **Avoir une vue d'ensemble** | Répartition par support et par statut, ajouts par mois, tags et auteurs les plus fréquents. | Statistiques |
 | **Emporter une liste hors connexion** | Export de toute la collection ou d'une liste au format CSV, Excel, JSON, TXT ou HTML, avec recherche avancée et sélection manuelle des livres. | Export, Listes |
 | **Corriger beaucoup de livres d'un coup** | Édition en masse du support, du statut et des tags sur le résultat d'une recherche. | Outils |

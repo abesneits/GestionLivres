@@ -181,7 +181,7 @@ class Stats {
     public function getAuthorStats($limit = 10) {
         // Plus de livres d'abord, puis ordre alphabétique à égalité
         $stmt = $this->pdo->prepare(
-            "SELECT a.nom AS auteur, COUNT(*) AS count
+            "SELECT a.nom AS auteur, COUNT(DISTINCT la.livre_id) AS count
              FROM livres_auteurs la
              JOIN auteurs a ON a.id = la.auteur_id
              GROUP BY a.id, a.nom
