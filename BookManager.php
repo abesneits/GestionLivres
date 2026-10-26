@@ -3,6 +3,7 @@
  * Gestionnaire de Collection de Livres
  * Classe principale pour gérer les livres via ISBN
  */
+require_once __DIR__ . '/src/Fichiers.php';
 require_once __DIR__ . '/src/IsbnLookup.php';
 require_once __DIR__ . '/src/Stats.php';
 require_once __DIR__ . '/src/ListeRepository.php';

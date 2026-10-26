@@ -139,6 +139,7 @@ Chaque page charge `includes/bootstrap.php`, qui ouvre la session, vérifie la c
 | `SupportRepository` | types de support (Livre, Bande dessinée, Manga…) |
 | `AchatRepository` | achats à effectuer : liste, validation (ajout à la collection) |
 | `FormatNumeriqueRepository` | formats numériques (PDF, Epub…) et leur extension attendue |
+| `Fichiers` | contrôle des chemins de fichiers lus en base (uniquement `uploads/`) |
 | `IsbnLookup` | recherche par ISBN : Google Books, Open Library, BnF |
 | `Stats` | statistiques de la collection |
 | `Schema` | création et mise à jour automatiques des tables et des index |

@@ -226,10 +226,7 @@ class LivreRepository {
         // Gestion de la suppression de couverture
         if ($supprimer_couverture) {
             if ($book['couverture'] && strpos($book['couverture'], 'uploads/') !== false) {
-                $chemin_fichier = $book['couverture'];
-                if (file_exists($chemin_fichier)) {
-                    unlink($chemin_fichier);
-                }
+                Fichiers::supprimer($book['couverture']);
             }
             $nouvelle_couverture = null;
         }
@@ -240,10 +237,7 @@ class LivreRepository {
             
             // Supprimer l'ancienne couverture locale
             if ($book['couverture'] && strpos($book['couverture'], 'uploads/') !== false && !$supprimer_couverture) {
-                $ancien_fichier = $book['couverture'];
-                if (file_exists($ancien_fichier)) {
-                    unlink($ancien_fichier);
-                }
+                Fichiers::supprimer($book['couverture']);
             }
         }
         
@@ -259,17 +253,13 @@ class LivreRepository {
         if ($type_effectif === 'Papier') {
             // Un livre papier n'a ni format ni fichier numérique associé : on
             // efface l'éventuel fichier existant si le livre bascule de numérique à papier.
-            if ($book['fichier_numerique'] && file_exists($book['fichier_numerique'])) {
-                unlink($book['fichier_numerique']);
-            }
+            Fichiers::supprimer($book['fichier_numerique']);
             $nouveau_fichier_numerique = null;
             $format_numerique = '';
         } else {
             // Gestion de la suppression du fichier numérique
             if ($supprimer_fichier_numerique) {
-                if ($book['fichier_numerique'] && file_exists($book['fichier_numerique'])) {
-                    unlink($book['fichier_numerique']);
-                }
+                Fichiers::supprimer($book['fichier_numerique']);
                 $nouveau_fichier_numerique = null;
             }
 
@@ -278,8 +268,8 @@ class LivreRepository {
                 $nouveau_fichier_numerique = $this->uploadFichierNumerique($fichier_numerique_upload, $format_numerique);
 
                 // Supprimer l'ancien fichier
-                if ($book['fichier_numerique'] && !$supprimer_fichier_numerique && file_exists($book['fichier_numerique'])) {
-                    unlink($book['fichier_numerique']);
+                if (!$supprimer_fichier_numerique) {
+                    Fichiers::supprimer($book['fichier_numerique']);
                 }
             }
 
@@ -483,10 +473,8 @@ class LivreRepository {
     public function deleteBook($id) {
         // Récupérer les infos du livre pour supprimer la couverture si nécessaire
         $book = $this->getBookById($id);
-        if ($book && $book['couverture'] && strpos($book['couverture'], 'uploads/') !== false) {
-            if (file_exists($book['couverture'])) {
-                unlink($book['couverture']);
-            }
+        if ($book) {
+            Fichiers::supprimer($book['couverture']);
         }
         
         $sql = "DELETE FROM livres WHERE id = :id";

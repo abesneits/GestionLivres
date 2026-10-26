@@ -556,8 +556,8 @@ class AuteurRepository {
             $stmtAncien = $this->pdo->prepare("SELECT image_url FROM auteurs WHERE nom = :nom");
             $stmtAncien->execute([':nom' => $nom]);
             $ancienneImage = $stmtAncien->fetchColumn();
-            if ($ancienneImage && strpos($ancienneImage, 'uploads/auteurs/') !== false && file_exists($ancienneImage)) {
-                unlink($ancienneImage);
+            if ($ancienneImage && strpos($ancienneImage, 'uploads/auteurs/') === 0) {
+                Fichiers::supprimer($ancienneImage);
             }
 
             $imageUrl = $this->uploadAuteurPhoto($photoFile);
@@ -1046,11 +1046,11 @@ class AuteurRepository {
 
         // Photos envoyées par l'utilisateur uniquement (jamais une URL distante), une fois la suppression validée
         foreach ($photos as $chemin) {
-            if (strpos($chemin, 'uploads/auteurs/') === 0 && strpos($chemin, '..') === false && is_file($chemin)) {
+            if (strpos($chemin, 'uploads/auteurs/') === 0) {
                 $encoreUtilisee = $this->pdo->prepare("SELECT COUNT(*) FROM auteurs WHERE image_url = :chemin");
                 $encoreUtilisee->execute([':chemin' => $chemin]);
                 if ((int)$encoreUtilisee->fetchColumn() === 0) {
-                    @unlink($chemin);
+                    Fichiers::supprimer($chemin);
                 }
             }
         }

@@ -3,19 +3,24 @@
  * Système d'authentification sécurisé pour la bibliothèque
  */
 
-// Tant que l'application n'est pas installée (config.php absent), on renvoie
-// vers l'assistant d'installation.
+// Tant que l'application n'est pas configurée (config.php absent), on renvoie
+// vers l'assistant d'installation s'il est présent.
 $configFile = __DIR__ . '/../config.php';
 if (!file_exists($configFile)) {
-    header('Location: install/');
+    if (is_dir(__DIR__ . '/../install')) {
+        header('Location: install/');
+    } else {
+        http_response_code(500);
+        echo "config.php est introuvable : copiez config.example.php en config.php et renseignez-le.";
+    }
     exit();
 }
 
-// Le hash du mot de passe administrateur et le sel de session sont générés
-// par l'assistant d'installation et stockés dans config.php.
+// Le hash (bcrypt) du mot de passe administrateur et le sel de session ne sont pas dans le code :
+// ils viennent de config.php (clés admin_password_hash et session_salt), hors dépôt Git.
 $authConfig = require $configFile;
 define('ADMIN_PASSWORD_HASH', $authConfig['admin_password_hash'] ?? '');
-define('SESSION_SALT', $authConfig['session_salt'] ?? 'bibliotheque_secret_salt');
+define('SESSION_SALT', $authConfig['session_salt'] ?? '');
 unset($authConfig, $configFile);
 
 define('SESSION_TIMEOUT', 3600); // 1 heure en secondes
@@ -26,6 +31,36 @@ define('LOGIN_LOCK_SECONDS', 300);  // durée du blocage (5 minutes), et durée 
 define('JOURNAL_TAILLE_MAX', 1048576); // 1 Mo : au-delà, le journal est archivé en « .1 » (voir ecrireJournal())
 
 /**
+ * En-têtes HTTP de sécurité, envoyés depuis PHP (et non par .htaccess) car mod_headers
+ * est souvent absent des hébergements mutualisés.
+ *
+ * La CSP garde 'unsafe-inline' pour les scripts : chaque page a son <script> en fin de fichier
+ * et quelques attributs onclick. Elle interdit en revanche les scripts, formulaires, cadres et
+ * connexions venant d'autres sites, ce qui limite la portée d'une éventuelle faille XSS.
+ * La caméra reste autorisée pour la page du site (scan de l'ISBN).
+ */
+function envoyerEnTetesSecurite() {
+    if (headers_sent()) {
+        return;
+    }
+    $csp = "default-src 'self'; "
+        . "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+        . "style-src 'self' 'unsafe-inline'; "
+        . "img-src 'self' https: data: blob:; "
+        . "connect-src 'self'; "
+        . "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+
+    header('Content-Security-Policy: ' . $csp);
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: same-origin');
+    header('Permissions-Policy: camera=(self), microphone=(), geolocation=()');
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        header('Strict-Transport-Security: max-age=15552000');
+    }
+}
+
+/**
  * Démarrer la session avec un cookie durci :
  * HttpOnly (invisible du JavaScript), SameSite (pas envoyé depuis un autre site),
  * Secure si la connexion est en HTTPS, et identifiants de session non imposables par l'adresse.
@@ -34,6 +69,7 @@ function startSecureSession() {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
+    envoyerEnTetesSecurite();
     $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
     $params = session_get_cookie_params();
     ini_set('session.use_strict_mode', '1');
@@ -155,12 +191,13 @@ function isLoggedIn() {
 }
 
 /**
- * Générer un token de session unique
+ * Générer un token de session unique.
+ * Il dépend du navigateur (User-Agent) mais pas de l'adresse IP : sur smartphone, passer du
+ * Wi-Fi à la 4G (par exemple pendant un scan d'ISBN en librairie) changerait l'IP et déconnecterait.
  */
 function getExpectedSessionToken() {
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-    return hash('sha256', $userAgent . $ip . SESSION_SALT);
+    return hash('sha256', $userAgent . SESSION_SALT);
 }
 
 /**
@@ -168,8 +205,8 @@ function getExpectedSessionToken() {
  */
 function login($password) {
     // Vérifier si le hash est configuré
-    if (ADMIN_PASSWORD_HASH === '') {
-        throw new Exception("Le mot de passe administrateur n'est pas configuré. Relancez l'installation (supprimez config.php).");
+    if (ADMIN_PASSWORD_HASH === '' || SESSION_SALT === '') {
+        throw new Exception("Le mot de passe administrateur n'est pas configuré : renseignez admin_password_hash et session_salt dans config.php.");
     }
     
     // Vérification sécurisée du mot de passe
@@ -226,14 +263,21 @@ function requireAuth() {
         exit();
     }
     
-    // Vérifier que l'IP n'a pas changé (sécurité basique)
+    // Un changement d'IP n'est plus bloquant (réseau mobile) : on le note, puis on mémorise la nouvelle
     if (isset($_SESSION['user_ip']) && $_SESSION['user_ip'] !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
-        logSecurityEvent('IP_CHANGE', 'Session IP changed');
-        logout();
+        logSecurityEvent('IP_CHANGE', 'Session IP changed from ' . $_SESSION['user_ip']);
+        $_SESSION['user_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
     }
-    
+
     // Renouveler la session
     $_SESSION['login_time'] = time();
+
+    // Changer l'identifiant de session toutes les 15 minutes (une session volée a une durée de vie limitée)
+    if (time() - ($_SESSION['id_regenere_le'] ?? 0) > 900 && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        // false : l'ancien identifiant reste valable un instant, pour ne pas casser une requête AJAX en cours
+        session_regenerate_id(false);
+        $_SESSION['id_regenere_le'] = time();
+    }
 }
 
 /**

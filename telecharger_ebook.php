@@ -24,11 +24,12 @@ if (!isset($_GET['id'])) {
 
 $book = $bookManager->getBookById((int)$_GET['id']);
 
-if (!$book || $book['type_livre'] !== 'Numérique' || empty($book['fichier_numerique']) || !file_exists($book['fichier_numerique'])) {
+// cheminSur() n'accepte qu'un fichier réellement situé dans uploads/ (jamais un chemin détourné depuis la base)
+$chemin = ($book && $book['type_livre'] === 'Numérique') ? Fichiers::cheminSur($book['fichier_numerique'] ?? '') : null;
+
+if ($chemin === null) {
     erreurTelechargement(404, 'Fichier introuvable');
 }
-
-$chemin = $book['fichier_numerique'];
 $extension = strtolower(pathinfo($chemin, PATHINFO_EXTENSION));
 
 $mimesConnus = ['pdf' => 'application/pdf', 'epub' => 'application/epub+zip'];

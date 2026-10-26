@@ -42,9 +42,7 @@ if ($_POST) {
                 if (isset($_FILES['couverture']) && $_FILES['couverture']['error'] === UPLOAD_ERR_OK) {
                     $nouvelleCouverture = $bookManager->uploadCouvertureListe($_FILES['couverture']);
                     // Supprimer l'ancienne couverture une fois la nouvelle bien enregistrée
-                    if ($couverture && file_exists($couverture)) {
-                        unlink($couverture);
-                    }
+                    Fichiers::supprimer($couverture);
                     $couverture = $nouvelleCouverture;
                 }
 
@@ -60,8 +58,8 @@ if ($_POST) {
         if (isset($_POST['action']) && $_POST['action'] === 'delete_list') {
             try {
                 $liste = $bookManager->getListById($_POST['liste_id']);
-                if ($liste && $liste['couverture'] && file_exists($liste['couverture'])) {
-                    unlink($liste['couverture']);
+                if ($liste) {
+                    Fichiers::supprimer($liste['couverture']);
                 }
                 $bookManager->deleteList($_POST['liste_id']);
                 redirectWithMessage('listes.php', "Liste supprimée.", 'success');

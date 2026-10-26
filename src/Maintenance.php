@@ -190,8 +190,19 @@ class Maintenance {
         $listeColonnes = implode(', ', $colonnes);
         $stmt = $this->pdo->prepare("INSERT INTO $table ($listeColonnes) VALUES ($placeholders)");
 
+        // Colonnes qui contiennent un chemin de fichier local ou une URL d'image
+        $colonnesFichier = ['couverture', 'image_url', 'fichier_numerique'];
+
         foreach ($rows as $row) {
             $ligne = array_intersect_key($row, $colonnesReelles);
+            // Une sauvegarde ne doit pas pouvoir faire pointer l'application vers un fichier hors de uploads/
+            foreach ($colonnesFichier as $c) {
+                $valeur = $ligne[$c] ?? null;
+                if (is_string($valeur) && $valeur !== ''
+                    && !preg_match('#^https?://#i', $valeur) && !Fichiers::estCheminUpload($valeur)) {
+                    $ligne[$c] = null;
+                }
+            }
             $valeurs = [];
             foreach ($colonnes as $c) {
                 $valeurs[":$c"] = $ligne[$c] ?? null;

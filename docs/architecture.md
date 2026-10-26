@@ -192,6 +192,7 @@ Le modèle est entièrement dans `src/`. `BookManager.php` n'en fait pas partie 
 | `SupportRepository` | S4 | Types de support, stockés dans l'`ENUM` de `livres.support`. | — |
 | `AchatRepository` | F7 | Achats à effectuer (`achats`) : liste, modification, suppression ; la validation ajoute le livre à `livres` via `LivreRepository::addBook()` puis supprime l'achat, dans une transaction. Table non couverte par la sauvegarde JSON. | `LivreRepository` |
 | `FormatNumeriqueRepository` | S4 | Formats numériques (PDF, Epub, ...) : catalogue extensible `formats_numeriques` (nom + extension attendue), utilisé pour valider les livres numériques. | — |
+| `Fichiers` | S5, S6 | Garde-fou sur les chemins de fichiers lus en base : n'accepte que des fichiers situés dans `uploads/` (lecture, suppression, restauration de sauvegarde). | — |
 | `IsbnLookup` | S3 | Recherche par ISBN auprès de Google Books, Open Library, BnF. N'utilise pas la base. | — |
 | `Stats` | F4 | Statistiques. | `LivreRepository` (comptage) |
 | `Schema` | S7 | Création et migration des tables, index. | les autres classes (création de leurs tables) |
@@ -242,7 +243,10 @@ Application à un seul utilisateur : le hash bcrypt du mot de passe et le sel de
 - **XSS** : toute donnée saisie est affichée via `h()` (un `htmlspecialchars`).
 - **SQL** : uniquement des requêtes préparées PDO.
 - **Envois de fichiers** : taille (5 Mo pour les images, 100 Mo pour les fichiers numériques), type MIME réel (`finfo`) et extension vérifiés (l'extension d'un fichier numérique doit correspondre à celle du format choisi dans `formats_numeriques`) ; noms générés ; le dossier `uploads/` interdit l'exécution de scripts (`.htaccess`).
-- **Sessions** : expiration après 1 h, verrouillage après 5 échecs de connexion.
+- **Sessions** : expiration après 1 h, identifiant renouvelé toutes les 15 minutes, verrouillage après 5 échecs de connexion (par IP, côté serveur). Le jeton de session dépend du navigateur mais pas de l'adresse IP, pour ne pas déconnecter un smartphone qui passe du Wi-Fi à la 4G.
+- **En-têtes HTTP** : `envoyerEnTetesSecurite()` (appelée par `startSecureSession()`) envoie une CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (caméra autorisée pour le scan ISBN) et HSTS en HTTPS. La CSP garde `unsafe-inline` pour les scripts, chaque page ayant son `<script>` en fin de fichier.
+- **Chemins de fichiers** : tout `unlink` ou `readfile` sur un chemin lu en base passe par `Fichiers` (`src/Fichiers.php`), qui refuse ce qui n'est pas dans `uploads/` ; la restauration d'une sauvegarde met à `NULL` les chemins hors de `uploads/`.
+- **Erreurs et journaux** : `display_errors` est désactivé et un gestionnaire d'exceptions global journalise le détail ; `messageErreur()` remplace les erreurs SQL par un texte générique ; `showMessage()` échappe le texte par défaut ; `ecrireJournal()` neutralise les retours à la ligne et archive un journal au-delà de 1 Mo ; la clé de l'API Google Books n'est jamais journalisée.
 - Messages « flash » après une action : `redirectWithMessage()` / `getFlashMessage()`, pour éviter le double envoi d'un formulaire.
 
 ## Autour de l'application
